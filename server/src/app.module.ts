@@ -4,9 +4,10 @@ import { CommonModule } from './common/common.module.js';
 import { ProblemDetailsFilter } from './common/problem-details/problem-details.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import { HealthModule } from './health/health.module.js';
+import { TbcClientModule } from './tbc-client/tbc-client.module.js';
 
 @Module({
-  imports: [ConfigModule, CommonModule, HealthModule],
+  imports: [ConfigModule, CommonModule, HealthModule, TbcClientModule],
   providers: [
     {
       provide: APP_PIPE,

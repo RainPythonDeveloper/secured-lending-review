@@ -1,0 +1,14 @@
+{
+  "type": "about:blank",
+  "title": "RESOURCE_UNKNOWN",
+  "status": 404,
+  "code": "RESOURCE_UNKNOWN",
+  "detail": "Account resourceId not found",
+  "tppMessages": [
+    {
+      "category": "ERROR",
+      "code": "RESOURCE_UNKNOWN",
+      "text": "Account resourceId not found"
+    }
+  ]
+}

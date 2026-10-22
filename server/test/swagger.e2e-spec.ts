@@ -6,7 +6,7 @@ describe('Swagger documentation', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    app = await createTestApp();
+    ({ app } = await createTestApp());
   });
 
   afterAll(async () => {

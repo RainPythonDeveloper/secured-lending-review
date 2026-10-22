@@ -9,7 +9,7 @@ describe('Gateway error responses', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    app = await createTestApp();
+    ({ app } = await createTestApp());
   });
 
   afterAll(async () => {

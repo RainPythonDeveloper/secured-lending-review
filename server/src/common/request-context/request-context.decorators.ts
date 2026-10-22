@@ -1,5 +1,6 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import type { UpstreamCallContext } from '../../tbc-client/upstream-call-context.js';
 import {
   readConsentIdHeader,
   readPsuIdHeader,
@@ -18,10 +19,7 @@ export const PsuIdHeader = createParamDecorator(
 );
 
 export const UpstreamContext = createParamDecorator(
-  (
-    _data: unknown,
-    context: ExecutionContext,
-  ): { readonly gatewayRequestId: string; readonly psuIpAddress?: string } => {
+  (_data: unknown, context: ExecutionContext): UpstreamCallContext => {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
     return {

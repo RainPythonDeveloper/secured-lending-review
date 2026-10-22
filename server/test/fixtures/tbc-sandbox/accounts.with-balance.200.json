@@ -1,0 +1,93 @@
+{
+  "accounts": [
+    {
+      "resourceId": "acc-gel-001",
+      "iban": "GE11TB1000000000000010",
+      "currency": "GEL",
+      "name": "Demo current account",
+      "displayName": "ყოველდღიური ანგარიში",
+      "ownerName": "მოქი მოქიაშვილი",
+      "cashAccountType": "CACC",
+      "status": "enabled",
+      "bic": "TBCBGE22",
+      "usage": "PRIV",
+      "balances": [
+        {
+          "balanceAmount": {
+            "currency": "GEL",
+            "amount": "3247.50"
+          },
+          "balanceType": "interimBooked",
+          "creditLimitIncluded": false,
+          "referenceDate": "2026-10-20",
+          "lastChangeDateTime": "2026-10-20T09:00:00+04:00"
+        },
+        {
+          "balanceAmount": {
+            "currency": "GEL",
+            "amount": "3225.00"
+          },
+          "balanceType": "interimAvailable",
+          "creditLimitIncluded": false,
+          "referenceDate": "2026-10-20",
+          "lastChangeDateTime": "2026-10-20T09:00:00+04:00"
+        }
+      ],
+      "_links": {
+        "account": {
+          "href": "/0.8/v1/accounts/acc-gel-001"
+        },
+        "balances": {
+          "href": "/0.8/v1/accounts/acc-gel-001/balances"
+        },
+        "transactions": {
+          "href": "/0.8/v1/accounts/acc-gel-001/transactions"
+        }
+      }
+    },
+    {
+      "resourceId": "acc-usd-002",
+      "iban": "GE22TB2000000000000020",
+      "currency": "USD",
+      "name": "Demo USD account",
+      "ownerName": "მოქი მოქიაშვილი",
+      "cashAccountType": "CACC",
+      "status": "enabled",
+      "bic": "TBCBGE22",
+      "usage": "PRIV",
+      "balances": [
+        {
+          "balanceAmount": {
+            "currency": "USD",
+            "amount": "850.00"
+          },
+          "balanceType": "interimBooked",
+          "creditLimitIncluded": false,
+          "referenceDate": "2026-10-20",
+          "lastChangeDateTime": "2026-10-20T09:00:00+04:00"
+        },
+        {
+          "balanceAmount": {
+            "currency": "USD",
+            "amount": "850.00"
+          },
+          "balanceType": "interimAvailable",
+          "creditLimitIncluded": false,
+          "referenceDate": "2026-10-20",
+          "lastChangeDateTime": "2026-10-20T09:00:00+04:00"
+        }
+      ],
+      "_links": {
+        "account": {
+          "href": "/0.8/v1/accounts/acc-usd-002"
+        },
+        "balances": {
+          "href": "/0.8/v1/accounts/acc-usd-002/balances"
+        },
+        "transactions": {
+          "href": "/0.8/v1/accounts/acc-usd-002/transactions"
+        }
+      }
+    }
+  ]
+}

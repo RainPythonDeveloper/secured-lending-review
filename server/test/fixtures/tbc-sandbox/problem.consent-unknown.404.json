@@ -1,0 +1,14 @@
+{
+  "type": "about:blank",
+  "title": "CONSENT_UNKNOWN",
+  "status": 404,
+  "code": "CONSENT_UNKNOWN",
+  "detail": "Consent not found for this API",
+  "tppMessages": [
+    {
+      "category": "ERROR",
+      "code": "CONSENT_UNKNOWN",
+      "text": "Consent not found for this API"
+    }
+  ]
+}

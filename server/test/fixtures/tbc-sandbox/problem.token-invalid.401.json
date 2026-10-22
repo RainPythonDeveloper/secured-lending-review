@@ -1,0 +1,14 @@
+{
+  "type": "about:blank",
+  "title": "TOKEN_INVALID",
+  "status": 401,
+  "code": "TOKEN_INVALID",
+  "detail": "A valid mock bearer token is required",
+  "tppMessages": [
+    {
+      "category": "ERROR",
+      "code": "TOKEN_INVALID",
+      "text": "A valid mock bearer token is required"
+    }
+  ]
+}

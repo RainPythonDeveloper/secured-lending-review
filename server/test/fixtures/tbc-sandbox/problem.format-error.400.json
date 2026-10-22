@@ -1,0 +1,14 @@
+{
+  "type": "about:blank",
+  "title": "FORMAT_ERROR",
+  "status": 400,
+  "code": "FORMAT_ERROR",
+  "detail": "body.recurringIndicator is required",
+  "tppMessages": [
+    {
+      "category": "ERROR",
+      "code": "FORMAT_ERROR",
+      "text": "body.recurringIndicator is required"
+    }
+  ]
+}
