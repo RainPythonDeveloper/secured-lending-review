@@ -13,6 +13,7 @@ endpoints our pipeline needs and hides OAuth, consent handling and sandbox failu
 | Method | Path | Upstream |
 |---|---|---|
 | GET | `/health` | – |
+| GET | `/oauth/callback` | `POST /openbanking/oauth/token` (authorization code + PKCE) |
 
 Swagger UI: http://localhost:3000/api/docs
 
