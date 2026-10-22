@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
+import { setupSwagger } from '../../src/common/swagger/setup-swagger.js';
 import { GatewayConfig } from '../../src/config/gateway-config.js';
 import { testGatewayConfig } from './test-gateway-config.js';
 
@@ -10,6 +11,7 @@ export async function createTestApp(): Promise<INestApplication> {
     .useValue(testGatewayConfig)
     .compile();
   const app = moduleRef.createNestApplication();
+  setupSwagger(app);
   await app.init();
   return app;
 }
