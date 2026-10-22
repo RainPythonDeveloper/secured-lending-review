@@ -56,3 +56,6 @@ npm test
 npm run test:e2e
 npm run build
 ```
+
+Opt-in live smoke test against the real TBC sandbox (needs a running gateway and `.env`; not part of
+`npm test` or CI): `npm run smoke:sandbox`.
