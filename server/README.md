@@ -25,7 +25,9 @@ cp .env.example .env
 npm run start:dev      # http://localhost:3000
 ```
 Every environment variable is described in `.env.example`. The gateway refuses to start and lists
-each missing or invalid variable.
+each missing or invalid variable. At startup it reads the synthetic organizer dataset from
+`DATASET_XLSX_PATH` (`../data/open-banking-synthetic-100-customers.xlsx`) and refuses to start if a
+row is malformed or an account does not reconcile.
 
 With Docker, from the repository root: `docker compose up --build open-banking-gateway`.
 

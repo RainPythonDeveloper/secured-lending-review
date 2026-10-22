@@ -5,6 +5,7 @@ import { ProblemDetailsFilter } from './common/problem-details/problem-details.f
 import { ConfigModule } from './config/config.module.js';
 import { HealthModule } from './health/health.module.js';
 import { OAuthModule } from './oauth/oauth.module.js';
+import { OrganizerDatasetModule } from './organizer-dataset/organizer-dataset.module.js';
 import { TbcClientModule } from './tbc-client/tbc-client.module.js';
 
 @Module({
@@ -14,6 +15,7 @@ import { TbcClientModule } from './tbc-client/tbc-client.module.js';
     HealthModule,
     TbcClientModule,
     OAuthModule,
+    OrganizerDatasetModule,
   ],
   providers: [
     {

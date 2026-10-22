@@ -1,8 +1,10 @@
+import { OrganizerDataset } from '../src/organizer-dataset/organizer-dataset.js';
 import { FETCH, type FetchFunction } from '../src/tbc-client/fetch.token.js';
 import { TbcClientService } from '../src/tbc-client/tbc-client.service.js';
 import { TbcHttpTransport } from '../src/tbc-client/tbc-http-transport.js';
 import { createTestApp, type TestApp } from './support/create-test-app.js';
 import { loadSandboxFixture } from './fixtures/load-fixture.js';
+import { personaRecords } from './fixtures/organizer-dataset/persona-records.js';
 
 describe('e2e test application', () => {
   let testApp: TestApp;
@@ -26,6 +28,16 @@ describe('e2e test application', () => {
     expect(consent).toEqual(
       loadSandboxFixture('consent-status.valid.200.json'),
     );
+  });
+
+  it('serves the organizer dataset from the persona fixture records', () => {
+    const dataset = testApp.app.get(OrganizerDataset);
+
+    expect(dataset.counts).toEqual({
+      customers: personaRecords.customers.length,
+      accounts: personaRecords.accounts.length,
+      transactions: personaRecords.transactions.length,
+    });
   });
 
   it('refuses network access through the injected fetch', async () => {

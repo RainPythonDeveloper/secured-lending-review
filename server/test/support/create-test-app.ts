@@ -4,8 +4,10 @@ import { AppModule } from '../../src/app.module.js';
 import { setupSwagger } from '../../src/common/swagger/setup-swagger.js';
 import { GatewayConfig } from '../../src/config/gateway-config.js';
 import { OAuthService } from '../../src/oauth/oauth.service.js';
+import { OrganizerDataset } from '../../src/organizer-dataset/organizer-dataset.js';
 import { FETCH, type FetchFunction } from '../../src/tbc-client/fetch.token.js';
 import { TbcClientService } from '../../src/tbc-client/tbc-client.service.js';
+import { personaRecords } from '../fixtures/organizer-dataset/persona-records.js';
 import { createFakeTbcClient, type FakeTbcClient } from './fake-tbc-client.js';
 import { testGatewayConfig } from './test-gateway-config.js';
 
@@ -27,6 +29,8 @@ export async function createTestApp(): Promise<TestApp> {
     .useValue(fakeTbcClient)
     .overrideProvider(FETCH)
     .useValue(disabledFetch)
+    .overrideProvider(OrganizerDataset)
+    .useValue(OrganizerDataset.fromRecords(personaRecords))
     .compile();
   const app = moduleRef.createNestApplication();
   setupSwagger(app);
