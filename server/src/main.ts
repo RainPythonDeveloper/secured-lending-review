@@ -1,31 +1,23 @@
-import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule, ObserveInstrument } from './app.module.js';
+import { AppModule } from './app.module.js';
 
-async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+const DEFAULT_PORT = 3000;
+const SWAGGER_UI_PATH = 'api/docs';
 
-  const app = await NestFactory.create(AppModule, {
-    instrument: ObserveInstrument,
-  });
-
-  // Настройка Swagger (если вы не настраивали его отдельно в другом месте)
-  const config = new DocumentBuilder()
-    .setTitle('TBC Bank Mock Open Banking API')
-    .setDescription('API documentation for Accounts Information Service')
-    .setVersion('0.8')
-    .addBearerAuth()
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
+  const documentConfig = new DocumentBuilder()
+    .setTitle('Open Banking AIS gateway')
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
-
-  const port = process.env.PORT ?? 3000;
+  SwaggerModule.setup(SWAGGER_UI_PATH, app, () =>
+    SwaggerModule.createDocument(app, documentConfig),
+  );
+  const port = process.env.PORT ?? DEFAULT_PORT;
   await app.listen(port);
-
-  // Вывод красивых логов с адресами для проверки
-  logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  logger.log(`📄 Swagger documentation is ready at: http://localhost:${port}/api/docs`);
+  new Logger('Bootstrap').log(`Gateway listening on port ${port}`);
 }
 
 void bootstrap();

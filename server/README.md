@@ -12,7 +12,7 @@ endpoints our pipeline needs and hides OAuth, consent handling and sandbox failu
 
 | Method | Path | Upstream |
 |---|---|---|
-| GET | `/v1/accounts` | `GET /0.8/v1/accounts` |
+| GET | `/health` | – |
 
 Swagger UI: http://localhost:3000/api/docs
 
