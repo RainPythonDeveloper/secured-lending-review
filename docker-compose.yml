@@ -1,10 +1,25 @@
 services:
   open-banking-gateway:
     build: ./server
-    ports: ["3000:3000"]
+    # Callers are not authenticated (a Consent-ID acts as a capability), so publish on localhost only.
+    ports: ["127.0.0.1:3000:3000"]
     environment:
       PORT: 3000
       NODE_ENV: production
+      TBC_API_BASE_URL: https://tbc-bank-mock-open-banking-api.vercel.app/0.8
+      TBC_OAUTH_AUTHORIZE_URL: https://tbc-bank-mock-open-banking-api.vercel.app/psd2/openbanking/oauth/authorize
+      TBC_OAUTH_TOKEN_URL: https://tbc-bank-mock-open-banking-api.vercel.app/openbanking/oauth/token
+      TBC_OAUTH_CLIENT_ID: virtual-field-visit-gateway
+      TBC_OAUTH_REDIRECT_URI: http://localhost:3000/oauth/callback
+      TBC_OAUTH_UI_LOCALE: en
+      TBC_HTTP_TIMEOUT_MS: 8000
+      TBC_RETRY_MAX_ATTEMPTS: 3
+      TBC_RETRY_BASE_DELAY_MS: 250
+      TBC_RETRY_MAX_DELAY_MS: 2000
+      OAUTH_STATE_TTL_MS: 600000
+      OAUTH_TOKEN_REFRESH_MARGIN_MS: 60000
+      DATASET_XLSX_PATH: /app/data/open-banking-synthetic-100-customers.xlsx
+    volumes: ["./data:/app/data:ro"]
     restart: unless-stopped
 
   income-engine-api:
