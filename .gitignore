@@ -9,6 +9,7 @@ __pycache__/
 .ruff_cache/
 node_modules/
 coverage/
+.worktrees/
 
 # Kept local: the repository is public.
 docs/hackathon/
