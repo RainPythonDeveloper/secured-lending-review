@@ -2,8 +2,8 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { GatewayConfig } from './config/gateway-config.js';
 
-const DEFAULT_PORT = 3000;
 const SWAGGER_UI_PATH = 'api/docs';
 
 async function bootstrap(): Promise<void> {
@@ -15,7 +15,7 @@ async function bootstrap(): Promise<void> {
   SwaggerModule.setup(SWAGGER_UI_PATH, app, () =>
     SwaggerModule.createDocument(app, documentConfig),
   );
-  const port = process.env.PORT ?? DEFAULT_PORT;
+  const { port } = app.get(GatewayConfig);
   await app.listen(port);
   new Logger('Bootstrap').log(`Gateway listening on port ${port}`);
 }

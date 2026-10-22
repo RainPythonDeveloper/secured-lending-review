@@ -23,6 +23,8 @@ npm ci
 cp .env.example .env
 npm run start:dev      # http://localhost:3000
 ```
+Every environment variable is described in `.env.example`. The gateway refuses to start and lists
+each missing or invalid variable.
 
 With Docker, from the repository root: `docker compose up --build open-banking-gateway`.
 
