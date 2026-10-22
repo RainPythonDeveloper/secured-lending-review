@@ -15,6 +15,9 @@ import { PendingAuthorisationStore } from './pending-authorisation.store.js';
 import { createPkcePair } from './pkce.js';
 import { parseTokenResponse, type IssuedTokens } from './token-response.js';
 
+export const UNAUTHORISED_CONSENT_DETAIL =
+  'Consent has not been authorised through this gateway';
+
 const AUTHORISATION_CODE_RESPONSE_TYPE = 'code';
 const PKCE_S256_METHOD = 'S256';
 const ACCESS_DENIED_OAUTH_ERROR = 'access_denied';
@@ -90,7 +93,7 @@ export class OAuthService {
       throw createOAuthProblem(
         HttpStatus.UNAUTHORIZED,
         PROBLEM_CODE.TOKEN_INVALID,
-        'Consent has not been authorised through this gateway',
+        UNAUTHORISED_CONSENT_DETAIL,
       );
     }
     const refreshDueAtMs =

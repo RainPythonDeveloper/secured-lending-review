@@ -17,7 +17,9 @@ import { OrganizerDataset } from '../../organizer-dataset/organizer-dataset.js';
 import type { TbcClientService } from '../../tbc-client/tbc-client.service.js';
 import type { UpstreamCallContext } from '../../tbc-client/upstream-call-context.js';
 import { AisProviderResolver } from '../providers/ais-provider-resolver.js';
+import { DatasetAisProvider } from '../providers/dataset/dataset-ais-provider.js';
 import { PersonaBindingStore } from '../providers/persona-binding.store.js';
+import { SandboxAisProvider } from '../providers/sandbox/sandbox-ais-provider.js';
 import { ConsentsService } from './consents.service.js';
 import type { CreateConsentRequestDto } from './dto/create-consent-request.dto.js';
 
@@ -52,12 +54,17 @@ describe('ConsentsService', () => {
       testGatewayConfig,
     );
     bindings = new PersonaBindingStore();
+    const dataset = OrganizerDataset.fromRecords(personaRecords);
     consentsService = new ConsentsService(
       tbcClient,
       oauthService,
-      OrganizerDataset.fromRecords(personaRecords),
+      dataset,
       bindings,
-      new AisProviderResolver(bindings),
+      new AisProviderResolver(
+        bindings,
+        new SandboxAisProvider(tbcClient, oauthService),
+        new DatasetAisProvider(tbcClient, oauthService, dataset, bindings),
+      ),
     );
   });
 

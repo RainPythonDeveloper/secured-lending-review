@@ -1,18 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ORGANIZER_DATASET_DATA_SOURCE,
-  TBC_SANDBOX_DATA_SOURCE,
-  type DataSource,
-} from '../../common/data-source/data-source.js';
+import type { DataSource } from '../../common/data-source/data-source.js';
+import type { AisDataProvider } from './ais-data-provider.js';
+import { DatasetAisProvider } from './dataset/dataset-ais-provider.js';
 import { PersonaBindingStore } from './persona-binding.store.js';
+import { SandboxAisProvider } from './sandbox/sandbox-ais-provider.js';
 
 @Injectable()
 export class AisProviderResolver {
-  constructor(private readonly bindings: PersonaBindingStore) {}
+  constructor(
+    private readonly bindings: PersonaBindingStore,
+    private readonly sandboxProvider: SandboxAisProvider,
+    private readonly datasetProvider: DatasetAisProvider,
+  ) {}
+
+  resolve(consentId: string): AisDataProvider {
+    return this.bindings.findCustomerId(consentId) === undefined
+      ? this.sandboxProvider
+      : this.datasetProvider;
+  }
 
   dataSourceFor(consentId: string): DataSource {
-    return this.bindings.findCustomerId(consentId) === undefined
-      ? TBC_SANDBOX_DATA_SOURCE
-      : ORGANIZER_DATASET_DATA_SOURCE;
+    return this.resolve(consentId).dataSource;
   }
 }

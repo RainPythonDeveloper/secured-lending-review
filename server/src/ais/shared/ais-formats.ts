@@ -33,5 +33,7 @@ export const AVAILABLE_ACCOUNTS_VALUES = [
 export const CASH_ACCOUNT_TYPES = ['CACC', 'CARD'] as const;
 
 export type ConsentStatus = (typeof CONSENT_STATUSES)[number];
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+export type BalanceType = (typeof BALANCE_TYPES)[number];
 export type AvailableAccountsValue = (typeof AVAILABLE_ACCOUNTS_VALUES)[number];
 export type CashAccountType = (typeof CASH_ACCOUNT_TYPES)[number];
