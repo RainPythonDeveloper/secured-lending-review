@@ -14,6 +14,13 @@ endpoints our pipeline needs and hides OAuth, consent handling and sandbox failu
 |---|---|---|
 | GET | `/health` | – |
 | GET | `/oauth/callback` | `POST /openbanking/oauth/token` (authorization code + PKCE) |
+| POST | `/v1/consents` | `POST /0.8/v1/consents`; optional `PSU-ID` header binds an organizer dataset persona |
+| GET | `/v1/consents/{consentId}` | `GET /0.8/v1/consents/{consentId}` |
+| GET | `/v1/consents/{consentId}/status` | `GET /0.8/v1/consents/{consentId}/status` |
+| DELETE | `/v1/consents/{consentId}` | `DELETE /0.8/v1/consents/{consentId}`, then local tokens and binding are forgotten |
+
+Every `/v1/*` success response carries `X-Data-Source` (`tbc-sandbox` or `organizer-dataset`): the
+source of the synthetic account data served under that consent.
 
 Swagger UI: http://localhost:3000/api/docs
 

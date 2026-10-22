@@ -6,6 +6,10 @@ import {
   getSchemaPath,
   type ApiResponseOptions,
 } from '@nestjs/swagger';
+import {
+  DATA_SOURCES,
+  DATA_SOURCE_HEADER,
+} from '../data-source/data-source.js';
 import { OPEN_BANKING_HEADER } from '../open-banking-headers.js';
 import { ProblemDetailsDto } from '../problem-details/dto/problem-details.dto.js';
 import {
@@ -14,9 +18,6 @@ import {
 } from '../problem-details/problem-details.js';
 
 type ApiDecorator = MethodDecorator & ClassDecorator;
-
-const DATA_SOURCE_HEADER = 'X-Data-Source';
-const DATA_SOURCES = ['tbc-sandbox', 'organizer-dataset'];
 
 export function ApiConsentIdHeader(): ApiDecorator {
   return ApiHeader({
@@ -58,7 +59,7 @@ export function ApiDataSourceResponseHeader(
       [DATA_SOURCE_HEADER]: {
         description:
           'Source of the account data served under the consent: the TBC mock sandbox or the organizer dataset.',
-        schema: { type: 'string', enum: DATA_SOURCES },
+        schema: { type: 'string', enum: [...DATA_SOURCES] },
       },
     },
   });

@@ -1,6 +1,8 @@
 import { Module, ValidationPipe } from '@nestjs/common';
-import { APP_FILTER, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ConsentsModule } from './ais/consents/consents.module.js';
 import { CommonModule } from './common/common.module.js';
+import { DataSourceHeaderInterceptor } from './common/data-source/data-source-header.interceptor.js';
 import { ProblemDetailsFilter } from './common/problem-details/problem-details.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -16,6 +18,7 @@ import { TbcClientModule } from './tbc-client/tbc-client.module.js';
     TbcClientModule,
     OAuthModule,
     OrganizerDatasetModule,
+    ConsentsModule,
   ],
   providers: [
     {
@@ -27,6 +30,7 @@ import { TbcClientModule } from './tbc-client/tbc-client.module.js';
       }),
     },
     { provide: APP_FILTER, useClass: ProblemDetailsFilter },
+    { provide: APP_INTERCEPTOR, useClass: DataSourceHeaderInterceptor },
   ],
 })
 export class AppModule {}

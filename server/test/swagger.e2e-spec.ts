@@ -30,4 +30,24 @@ describe('Swagger documentation', () => {
 
     expect(response.body.paths['/health']).toHaveProperty('get');
   });
+
+  it.each([
+    ['/oauth/callback', 'get'],
+    ['/v1/consents', 'post'],
+    ['/v1/consents/{consentId}', 'get'],
+    ['/v1/consents/{consentId}', 'delete'],
+    ['/v1/consents/{consentId}/status', 'get'],
+  ])('documents %s %s', async (path, method) => {
+    const response = await request(app.getHttpServer()).get('/api/docs-json');
+
+    expect(response.body.paths[path]).toHaveProperty(method);
+  });
+
+  it('documents the X-Data-Source header on consent creation', async () => {
+    const response = await request(app.getHttpServer()).get('/api/docs-json');
+
+    expect(
+      response.body.paths['/v1/consents'].post.responses['201'].headers,
+    ).toHaveProperty('X-Data-Source');
+  });
 });
