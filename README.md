@@ -14,7 +14,7 @@ officer makes the decision; every step is written to a tamper-evident audit log.
 
 | Path | What | Stack |
 |---|---|---|
-| `server/` | Open Banking gateway to the TBC AIS sandbox (consents, accounts, transactions) | NestJS, TypeScript |
+| `server/` | Open Banking AIS gateway to the TBC mock sandbox (consents with OAuth/PKCE, accounts, balances, transactions); also serves organizer dataset personas through the same endpoints, marked by `X-Data-Source` | NestJS, TypeScript |
 | `income-engine/` | Income estimation from transactions, NBG PTI/LTV rules, explainable risk model, audit log, officer console | Python, FastAPI, Streamlit |
 | `data/` | Organizer-provided synthetic dataset: 100 customers, 6 months of transactions | XLSX |
 | `CLAUDE.md` | Engineering rules for everyone writing code here, human or AI | |
@@ -32,6 +32,10 @@ docker compose up --build
 | Open Banking gateway (Swagger) | http://localhost:3000/api/docs |
 | Income engine API | http://localhost:8000/docs |
 | Officer console | http://localhost:8501 |
+
+The gateway gets its settings from `docker-compose.yml`, reads the organizer workbook from `data/`
+(mounted read-only) and listens on `127.0.0.1` only. To run it without Docker, copy
+`server/.env.example` to `server/.env` first; see [`server/README.md`](server/README.md).
 
 Each component's README covers local development: [`server/README.md`](server/README.md),
 [`income-engine/README.md`](income-engine/README.md).
