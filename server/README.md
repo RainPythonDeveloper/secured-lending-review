@@ -30,6 +30,7 @@ With Docker, from the repository root: `docker compose up --build open-banking-g
 
 ```bash
 npm run lint
+npm run typecheck
 npm test
 npm run test:e2e
 npm run build
