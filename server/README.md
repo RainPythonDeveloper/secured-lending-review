@@ -18,9 +18,18 @@ endpoints our pipeline needs and hides OAuth, consent handling and sandbox failu
 | GET | `/v1/consents/{consentId}` | `GET /0.8/v1/consents/{consentId}` |
 | GET | `/v1/consents/{consentId}/status` | `GET /0.8/v1/consents/{consentId}/status` |
 | DELETE | `/v1/consents/{consentId}` | `DELETE /0.8/v1/consents/{consentId}`, then local tokens and binding are forgotten |
+| GET | `/v1/accounts?withBalance=true\|false` | `GET /0.8/v1/accounts`, or the organizer dataset for a persona consent |
+| GET | `/v1/accounts/{accountId}?withBalance=true\|false` | `GET /0.8/v1/accounts/{accountId}`, or the organizer dataset |
+| GET | `/v1/accounts/{accountId}/balances` | `GET /0.8/v1/accounts/{accountId}/balances`, or the organizer dataset |
+| GET | `/v1/accounts/{accountId}/transactions?dateFrom&dateTo&bookingStatus` | `GET /0.8/v1/accounts/{accountId}/transactions`, or the organizer dataset |
 
 Every `/v1/*` success response carries `X-Data-Source` (`tbc-sandbox` or `organizer-dataset`): the
 source of the synthetic account data served under that consent.
+
+Account endpoints require the `Consent-ID` header of a consent authorised through `/oauth/callback`.
+`dateFrom` and `dateTo` are inclusive ISO dates; `bookingStatus` is `booked` (default), `pending` or
+`both`. Amounts are decimal strings. For persona consents the gateway still reads the consent at the
+bank on every request and enforces its status and access like the sandbox does.
 
 Swagger UI: http://localhost:3000/api/docs
 

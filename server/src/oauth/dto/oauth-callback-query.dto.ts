@@ -22,7 +22,7 @@ export class OAuthCallbackQueryDto {
 
   @ApiPropertyOptional({
     description:
-      'OAuth error reported by the bank, for example access_denied when the PSU rejected the consent.',
+      'OAuth error code reported by the bank (RFC 6749 section 4.1.2.1), for example when the PSU rejected the consent.',
   })
   @IsOptional()
   @IsString()

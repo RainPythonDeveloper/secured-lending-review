@@ -1,6 +1,9 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { AccountsModule } from './ais/accounts/accounts.module.js';
+import { BalancesModule } from './ais/balances/balances.module.js';
 import { ConsentsModule } from './ais/consents/consents.module.js';
+import { TransactionsModule } from './ais/transactions/transactions.module.js';
 import { CommonModule } from './common/common.module.js';
 import { DataSourceHeaderInterceptor } from './common/data-source/data-source-header.interceptor.js';
 import { ProblemDetailsFilter } from './common/problem-details/problem-details.filter.js';
@@ -19,6 +22,9 @@ import { TbcClientModule } from './tbc-client/tbc-client.module.js';
     OAuthModule,
     OrganizerDatasetModule,
     ConsentsModule,
+    AccountsModule,
+    BalancesModule,
+    TransactionsModule,
   ],
   providers: [
     {
