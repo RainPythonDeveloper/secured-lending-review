@@ -1,72 +1,42 @@
-# Finance Hackathon - TBC Open Banking Proxy Server
+# Virtual Field Visit
 
-A NestJS-based proxy service designed to securely interact with the TBC Bank Mock Open Banking API (/0.8/v1/accounts), featuring built-in Swagger documentation and full Docker containerization.
+**NBG AI & Open Banking Hackathon 2026 · Track 1: AI in Finance · AI1: Credit Risk & Lending**
 
----
+Banks must confirm the occupation and income of borrowers without documented income, today by visiting
+them on site (NBG Order 44/04). Virtual Field Visit replaces the trip with a recorded video call: an AI
+interviewer follows a profession-specific playbook, asks the borrower to show verifiable evidence, and
+builds a claim-by-claim report. Versioned rules, not the language model, set each claim's status. The loan
+officer makes the decision; every step is written to a tamper-evident audit log.
 
-## Tech Stack
+> All data is synthetic. No real person, account or bank customer is represented.
 
-- Framework: NestJS (TypeScript)
-- HTTP Client: @nestjs/axios
-- Documentation: @nestjs/swagger
-- Containerization: Docker & Docker Compose
+## Repository layout
 
----
+| Path | What | Stack |
+|---|---|---|
+| `server/` | Open Banking gateway to the TBC AIS sandbox (consents, accounts, transactions) | NestJS, TypeScript |
+| `income-engine/` | Income estimation from transactions, NBG PTI/LTV rules, explainable risk model, audit log, officer console | Python, FastAPI, Streamlit |
+| `data/` | Organizer-provided synthetic dataset: 100 customers, 6 months of transactions | XLSX |
+| `CLAUDE.md` | Engineering rules for everyone writing code here, human or AI | |
 
-## Project Structure
+Planned: `video-agent/` (real-time interviewer), `judge/` (evidence verification), `borrower-web/` (call UI).
 
-FINANCE-HACKATHON/
-├── docker-compose.yml       # Root orchestration file
-└── server/                  # Backend application
-    ├── Dockerfile           # Multi-stage production Dockerfile
-    ├── dockerignore         # Files to ignore in Docker build
-    ├── package.json         # Dependencies and scripts
-    └── src/
-        └── account/         # Accounts controller, service, and DTOs
+## Run everything
 
----
+```bash
+docker compose up --build
+```
 
-## Getting Started
+| Service | URL |
+|---|---|
+| Open Banking gateway (Swagger) | http://localhost:3000/api/docs |
+| Income engine API | http://localhost:8000/docs |
+| Officer console | http://localhost:8501 |
 
-### Prerequisites
+Each component's README covers local development: [`server/README.md`](server/README.md),
+[`income-engine/README.md`](income-engine/README.md).
 
-Ensure you have the following installed on your machine:
-- Docker & Docker Compose
-- Node.js (v20+ recommended, for local development)
+## External services
 
----
-
-### Method 1: Running with Docker (Recommended)
-
-To run the server containerized using Docker Compose from the project root:
-
-1. Open your terminal in the project root directory (finance-hackathon).
-2. Build and start the services in detached mode:
-   docker compose up --build -d
-3. View container logs:
-   docker compose logs -f
-4. Stop the containers when needed:
-   docker compose down
-
----
-
-### Method 2: Running Locally (Development Mode)
-
-If you want to run the NestJS server natively on your machine:
-
-1. Navigate to the server folder:
-   cd server
-2. Install dependencies:
-   npm install
-3. Start the application in watch/development mode:
-   npm run start:dev
-
----
-
-## API Documentation (Swagger)
-
-Once the application is up and running, open your browser and navigate to the interactive Swagger UI:
-
-- URL: http://localhost:3000/api/docs
-
-The Swagger interface comes pre-configured with default mock headers and parameters for the TBC Bank Open Banking API, allowing you to test endpoints instantly.
+- TBC Open Banking sandbox (mock): https://tbc-bank-mock-open-banking-api.vercel.app/reference/aisapioverview
+- Sandbox status: https://tbc-bank-status.vercel.app/

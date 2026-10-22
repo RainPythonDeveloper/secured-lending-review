@@ -1,0 +1,18 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+node_modules/
+coverage/
+
+# Kept local: the repository is public.
+docs/hackathon/
+docs/research/
+
+# Local session notes
+*-results-copyhtml.txt

@@ -1,0 +1,37 @@
+# NBG responsible-lending limits for natural persons (retail).
+# Source: nbg.gov.ge "PTI and LTV Requirements"; 2027 threshold change announced by the
+# NBG Financial Stability Committee (reported 30 Sep 2026).
+# VERIFY every value with NBG before production use. Each version has an effective date,
+# so the engine always applies the rules in force on the application date.
+versions:
+  - id: "2026-10"
+    effective_from: "2022-01-01"
+    pti:
+      income_threshold_gel: 1500          # monthly net income
+      below: {hedged: 0.25, unhedged: 0.20}   # hedged = loan in GEL, or in the borrower's income currency
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: {gel: 0.85, fx: 0.70}
+  - id: "2027-02"
+    effective_from: "2027-02-01"
+    pti:
+      income_threshold_gel: 2000
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: {gel: 0.85, fx: 0.70}
+  - id: "2027-09"
+    effective_from: "2027-09-01"
+    pti:
+      income_threshold_gel: 2500
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: {gel: 0.85, fx: 0.70}
+
+# Internal policy (bank-configurable, not NBG rules)
+policy:
+  income_quantile_for_pti: 0.25      # conservative income estimate used for affordability
+  pd_approve_max: 0.12               # auto-recommend approve below this PD
+  pd_reject_min: 0.30                # recommend reject above this PD
+  band_width_review: 0.45            # (P90-P10)/P50 above this -> human review required
+  round_trip_review: 0.15            # share of inflows that are circular -> review
+  lgd: 0.55                          # loss given default for unsecured retail (assumption)
+  min_loan_gel: 500

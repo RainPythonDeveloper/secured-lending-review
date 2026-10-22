@@ -1,14 +1,24 @@
-version: '3.8'
-
 services:
-  server:
-    build:
-      context: ./server   
-      dockerfile: Dockerfile
-    container_name: finance-hackathon-server
-    ports:
-      - "3000:3000"
+  open-banking-gateway:
+    build: ./server
+    ports: ["3000:3000"]
     environment:
-      - PORT=3000
-      - NODE_ENV=production
+      PORT: 3000
+      NODE_ENV: production
     restart: unless-stopped
+
+  income-engine-api:
+    build: ./income-engine
+    ports: ["8000:8000"]
+    environment:
+      ITE_API_KEY: ${ITE_API_KEY:-demo-key-change-me}
+      ITE_AUDIT_DB: /data/audit.db
+    volumes: ["audit:/data"]
+
+  officer-console:
+    build: ./income-engine
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports: ["8501:8501"]
+
+volumes:
+  audit:
