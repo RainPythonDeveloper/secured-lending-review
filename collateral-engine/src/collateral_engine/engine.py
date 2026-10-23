@@ -39,7 +39,7 @@ from collateral_engine.photos import (
     near_duplicate_pairs,
     prepare_for_vision,
 )
-from collateral_engine.policy import ConditionRules, ValuationPolicy
+from collateral_engine.policy import ConditionRules, PhotoPolicy, ValuationPolicy
 from collateral_engine.report import (
     AppraisalCheck,
     ConditionVerification,
@@ -182,15 +182,11 @@ class CollateralEngine:
         return report
 
     def _examine_photo(self, application_id: str, photo: PhotoUpload) -> _ExaminedPhoto:
-        inspection = inspect_photo(photo.content, self._config.policy.photos)
-        self._stores.evidence_store.save(inspection.sha256, photo.content)
+        inspection, seen_elsewhere = inspect_and_store_photo(
+            application_id, photo, self._config.policy.photos, self._stores
+        )
         if not inspection.is_usable or inspection.difference_hash is None:
             return _ExaminedPhoto(inspection, None, [])
-        seen_elsewhere = self._stores.photo_registry.applications_with_similar_photo(
-            inspection.difference_hash,
-            self._config.policy.photos.near_duplicate_max_hamming,
-            application_id,
-        )
         return _ExaminedPhoto(inspection, self._classify(photo.content), seen_elsewhere)
 
     def _classify(self, content: bytes) -> PhotoClassification:
@@ -280,11 +276,33 @@ class CollateralEngine:
         return to_flags(findings, policy)
 
     def _register_photos(self, application_id: str, examined: list[_ExaminedPhoto]) -> None:
-        for photo in examined:
-            if photo.inspection.difference_hash is not None:
-                self._stores.photo_registry.register(
-                    application_id, photo.inspection.sha256, photo.inspection.difference_hash
-                )
+        register_photos(
+            self._stores.photo_registry,
+            application_id,
+            [photo.inspection for photo in examined],
+        )
+
+
+def inspect_and_store_photo(
+    application_id: str, photo: PhotoUpload, policy: PhotoPolicy, stores: EngineStores
+) -> tuple[PhotoInspection, list[str]]:
+    """Checks a photo, keeps it as evidence and finds other applications with a similar one."""
+    inspection = inspect_photo(photo.content, policy)
+    stores.evidence_store.save(inspection.sha256, photo.content)
+    if not inspection.is_usable or inspection.difference_hash is None:
+        return inspection, []
+    seen_elsewhere = stores.photo_registry.applications_with_similar_photo(
+        inspection.difference_hash, policy.near_duplicate_max_hamming, application_id
+    )
+    return inspection, seen_elsewhere
+
+
+def register_photos(
+    registry: PhotoRegistry, application_id: str, inspections: list[PhotoInspection]
+) -> None:
+    for inspection in inspections:
+        if inspection.difference_hash is not None:
+            registry.register(application_id, inspection.sha256, inspection.difference_hash)
 
 
 def _assessments(examined: list[_ExaminedPhoto]) -> list[PhotoAssessment]:

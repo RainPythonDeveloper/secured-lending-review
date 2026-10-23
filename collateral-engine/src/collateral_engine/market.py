@@ -4,7 +4,6 @@ In production the sales come from registered transactions (NAPR) or the bank's a
 exported to CSV in this schema. The demo uses synthetic sales from collateral_engine.synth.
 """
 
-import csv
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
@@ -12,16 +11,10 @@ from pathlib import Path
 from typing import Annotated, Self
 
 import pandas as pd
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    ValidationError,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from collateral_engine.cadastral import TbilisiCadastralCode
+from collateral_engine.csv_contract import DataContractError, read_validated_rows, write_rows
 from collateral_engine.domain import (
     AreaSquareMetres,
     BuildingStatus,
@@ -36,8 +29,6 @@ from collateral_engine.domain import (
     check_property_kind,
 )
 from collateral_engine.reference import metro_distance_km
-
-MAX_REPORTED_ROW_ERRORS = 5
 
 
 class MarketDataError(ValueError):
@@ -121,38 +112,12 @@ class MarketData:
 
 
 def load_market_data(path: Path) -> MarketData:
-    with path.open(newline="", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
-        _check_header(reader.fieldnames, path)
-        sales, row_errors = _parse_rows(reader)
-    if row_errors:
-        shown = "; ".join(row_errors[:MAX_REPORTED_ROW_ERRORS])
-        raise MarketDataError(f"{path}: {len(row_errors)} rows break the data contract: {shown}")
+    try:
+        sales = read_validated_rows(path, ComparableSale)
+    except DataContractError as error:
+        raise MarketDataError(str(error)) from error
     return MarketData.from_sales(sales)
 
 
-def _check_header(fieldnames: list[str] | None, path: Path) -> None:
-    if fieldnames is None or tuple(fieldnames) != MARKET_COLUMNS:
-        raise MarketDataError(f"{path}: the header must be {','.join(MARKET_COLUMNS)}")
-
-
-def _parse_rows(reader: csv.DictReader) -> tuple[list[ComparableSale], list[str]]:
-    sales: list[ComparableSale] = []
-    row_errors: list[str] = []
-    for line_number, row in enumerate(reader, start=2):
-        try:
-            sales.append(ComparableSale.model_validate(row))
-        except ValidationError as error:
-            first = error.errors()[0]
-            location = ".".join(str(part) for part in first["loc"])
-            row_errors.append(f"line {line_number}: {location}: {first['msg']}")
-    return sales, row_errors
-
-
 def write_market_data(sales: Iterable[ComparableSale], path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=MARKET_COLUMNS)
-        writer.writeheader()
-        for sale in sales:
-            writer.writerow(sale.model_dump(mode="json"))
+    write_rows(sales, ComparableSale, path)
