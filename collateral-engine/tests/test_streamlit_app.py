@@ -6,6 +6,7 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
+from collateral_engine.domain import PropertyKind
 from collateral_engine.flags import Recommendation
 from collateral_engine.i18n import Language
 from collateral_engine.market import write_market_data
@@ -135,3 +136,20 @@ def test_off_plan_demo_shows_stage_discount(console: AppTest) -> None:
     report = console.session_state["report"]
     assert not console.exception
     assert report.ltv is not None and report.ltv.completion_risk_factor is not None
+
+
+def test_house_demo_is_valued_with_land_column(console: AppTest) -> None:
+    console.selectbox(key="demo_case").set_value("DEMO-DID-005").run()
+
+    assess(console)
+
+    report = console.session_state["report"]
+    assert not console.exception
+    assert report.subject.property_kind == PropertyKind.HOUSE
+    assert report.valuation is not None
+
+
+def test_quality_tab_backtests_houses(console: AppTest) -> None:
+    console.radio(key="quality_property_kind").set_value(PropertyKind.HOUSE).run()
+
+    assert not console.exception

@@ -7,7 +7,7 @@ recommendation. The officer decides; the engine only advises.
 
 import logging
 import uuid
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -16,7 +16,7 @@ from collateral_engine.appraisal import check_appraisal
 from collateral_engine.audit import AuditLog, record_valuation
 from collateral_engine.comparables import InsufficientComparablesError, PropertyFeatures
 from collateral_engine.condition import verify_condition
-from collateral_engine.domain import Condition, SubjectProperty, ValuationRequest
+from collateral_engine.domain import Condition, PropertyKind, SubjectProperty, ValuationRequest
 from collateral_engine.evidence import EvidenceStore
 from collateral_engine.findings import (
     appraisal_findings,
@@ -120,7 +120,7 @@ class CollateralEngine:
         config: EngineConfig,
         stores: EngineStores,
         classifier: ConditionClassifier | None,
-        calibration: IntervalCalibration | None = None,
+        calibrations: Mapping[PropertyKind, IntervalCalibration] | None = None,
         new_valuation_id: Callable[[], str] = lambda: str(uuid.uuid4()),
     ) -> None:
         self._market = market
@@ -129,12 +129,16 @@ class CollateralEngine:
         self._classifier = classifier
         self._new_valuation_id = new_valuation_id
         calibration_end = market.last_sale_date + timedelta(days=1)
-        self.calibration = calibration or calibrate_interval(
-            market,
-            calibration_end,
-            config.policy,
-            rule_version_in_force(config.nbg_rules, calibration_end).valuation,
-        )
+        limits = rule_version_in_force(config.nbg_rules, calibration_end).valuation
+        self.calibrations = calibrations or {
+            kind: calibrate_interval(market, calibration_end, config.policy, limits, kind)
+            for kind in PropertyKind
+        }
+
+    @property
+    def calibration(self) -> IntervalCalibration:
+        """Calibration of the flat model, shown on the console's provenance panel."""
+        return self.calibrations[PropertyKind.FLAT]
 
     @property
     def market(self) -> MarketData:
@@ -204,7 +208,7 @@ class CollateralEngine:
                 features,
                 self._market,
                 request.valuation_date,
-                self.calibration,
+                self.calibrations[request.subject.property_kind],
                 self._config.policy,
                 rule_version_in_force(self._config.nbg_rules, request.valuation_date).valuation,
             )

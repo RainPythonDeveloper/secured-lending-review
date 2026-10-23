@@ -2,32 +2,37 @@
 
 **NBG AI & Open Banking Hackathon 2026 · Track 1: AI in Finance · AI1: Credit Risk & Lending**
 
-A loan officer in Tbilisi receives a licensed valuer's report on the flat offered as collateral.
-This service gives an independent second opinion. It values the flat from comparable sales with a
+A loan officer in Tbilisi receives a licensed valuer's report on the flat or private house offered as
+collateral. This service gives an independent second opinion. It values the property from comparable
+sales with a
 calibrated range, reads the declared condition from interior photos, flags an appraisal outside the
 market range, and computes the NBG loan-to-value check. The officer decides, and every assessment and
 decision goes to a tamper-evident audit log.
 
-> All data is synthetic. No real person, flat, valuer or transaction is represented.
+> All data is synthetic. No real person, property, valuer or transaction is represented.
 
 ## Results on synthetic data
 
-Out-of-time backtest: 528 sales from 21 July to 20 October 2026, each valued only from sales before
+Out-of-time backtest on sales from 21 July to 20 October 2026, each valued only from sales before
 its own date and only with comparables within the NBG 84/04 adjustment limits, with the range
-calibrated on the six months before. `make evaluate` reproduces it.
+calibrated on the six months before. Flats are valued from flats and houses from houses, each with
+its own hedonic rates and range. `make evaluate` reproduces it.
 
-| Metric | Value | Reference |
-|---|---|---|
-| Median absolute error | 8.4% | |
-| Within ±10% / ±20% | 59% / 91% | |
-| Range coverage | 77.1% | target 80% |
-| Coefficient of dispersion (COD) | 9.7 | IAAO ≤ 15 for residential |
-| Price-related differential (PRD) | 1.013 | IAAO 0.98–1.03 |
-| Sales without enough comparables | 0 of 528 | |
+| Metric | Flats | Houses | Reference |
+|---|---|---|---|
+| Sales tested | 528 | 96 | |
+| Median absolute error | 8.4% | 11.0% | |
+| Range coverage | 77.1% | 71.9% | target 80% |
+| Coefficient of dispersion (COD) | 9.7 | 14.2 | IAAO ≤ 15 for residential |
+| Price-related differential (PRD) | 1.013 | 1.025 | IAAO 0.98–1.03 |
+| Slope of ln(ratio) on ln(estimate) | 0.013 | 0.041 | gate ±0.05 |
+| Sales without enough comparables | 0 | 2 | |
 
 The sales are synthetic, so these numbers check the method and its implementation, not real-world
-accuracy. Coverage is slightly below target because prices drift between the calibration and test
-windows; `tests/test_evaluation.py` fails the build if any metric leaves its gate.
+accuracy. Coverage is below target because prices drift between the calibration and test windows;
+`tests/test_evaluation.py` fails the build if any metric leaves its gate. For houses the PRD is
+reported but not gated: the 14% noise in synthetic house prices alone puts it near 1.03 even for
+unbiased estimates, so regressivity is gated on the slope against the estimate instead.
 
 ## Georgian and NBG specifics
 
@@ -37,8 +42,10 @@ windows; `tests/test_evaluation.py` fails the build if any metric leaves its gat
 | NBG valuation rules (Order 84/04) | At least 3 comparables; each adjustment within ±15% and the gross adjustment within ±25% (Art. 4(5)). Sales beyond the limits are not used; if too few remain, sales up to ±35% gross are used and the report asks for a written justification; if still too few, a valuer has to inspect. The limits are in the same dated rules file. |
 | Exchange rate | Official NBG rate from the nbg.gov.ge public API. The API answers an unpublished date with the latest rate, so the date of every answer is checked. |
 | Currency | Tbilisi flats trade in USD, and loans are mostly in GEL. The value is converted at the NBG rate, and the report shows the LTV if the lari strengthens by 20%. Money is `Decimal` and travels as a decimal string. |
-| Property identity | NAPR cadastral code (`01.14.14.011.008.01.527`). Only Tbilisi (region `01`) flats with building and unit segments are accepted. |
-| Market prices | Synthetic sales anchored to Geostat's Q1 2026 average price per m² in each of the ten Tbilisi districts. |
+| Property identity | NAPR cadastral code, Tbilisi (region `01`) only. A flat's code has building and unit segments (`01.14.14.011.008.01.527`); a house's code is the parcel code (`01.15.09.214.033`). |
+| Market prices | Synthetic sales anchored to Geostat's Q1 2026 price per m² of new flats and of new private houses in each of the ten Tbilisi districts (offer prices from myhome.ge and ss.ge). House prices grow 5.5% a year, the Geostat Q2 2026 figure. |
+| Private houses | House area, land plot area and number of storeys. Comparables are houses only, searched within 3 km (5 km if too few) and 24 months, and ranked by plot size as well; land is a separate adjustment in the grid. Houses under construction are rejected. |
+| Land without a building | Not valued by the model: Georgia has no official land price series and NAPR publishes no transaction prices. A valuer's report on land goes through the 84/04 report check. |
 | Flats under construction | Developer, construction stage, completion date and NAPR registration of the purchase agreement; comparables are other unfinished buildings (the 84/04 limits rule out larger status adjustments); the lending value is cut by a bank-policy factor per stage (70% foundation to 95% finishing); overdue or distant completion and an unregistered agreement are flagged. |
 | Condition | The seven classes of Georgian listings: black, white and green frame (შავი, თეთრი, მწვანე კარკასი), needs renovation, under renovation, old renovation, newly renovated. |
 | Location | The ten Tbilisi districts and the distance to the nearest of 23 metro stations (OpenStreetMap). |
@@ -48,11 +55,11 @@ windows; `tests/test_evaluation.py` fails the build if any metric leaves its gat
 
 ```bash
 make install        # Python 3.12 virtual environment with pinned dependencies
-make data           # 6,000 synthetic comparable sales -> data/comparables.csv
+make data           # 6,000 flat and 1,200 house synthetic sales -> data/comparables.csv
 make app            # officer console on http://localhost:8502 (restart it after editing src/)
 make api            # REST API on http://localhost:8100/docs
-make check          # ruff format --check, ruff check, pytest (295 tests, about 20 s)
-make evaluate       # backtest -> reports/metrics.json
+make check          # ruff format --check, ruff check, pytest (322 tests, about 25 s)
+make evaluate       # backtest of flats and houses -> reports/metrics.json
 ```
 
 From the repository root: `docker compose up --build collateral-engine-api collateral-console`.
@@ -117,13 +124,15 @@ every invalid row.
 | Column | Type | Rule |
 |---|---|---|
 | `sale_id` | text | letters, digits, `-` |
-| `cadastral_code` | text | NAPR code of a flat in Tbilisi |
+| `cadastral_code` | text | NAPR code in Tbilisi: with unit segments for a flat, parcel code for a house |
+| `property_kind` | text | `flat` or `house` |
+| `land_area_m2` | decimal | plot area of a house, 20–100000; empty for a flat |
 | `district` | text | one of the ten district codes, for example `vake` |
 | `latitude`, `longitude` | decimal | WGS 84, inside Tbilisi |
 | `sale_date` | date | ISO 8601 |
 | `price_usd` | decimal | registered price, USD |
 | `total_area_m2` | decimal | 15–1000 |
-| `rooms`, `floor`, `building_floors` | integer | floor not above the top floor |
+| `rooms`, `floor`, `building_floors` | integer | floor not above the top floor; a house has floor 1 and its storeys in `building_floors` |
 | `building_status` | text | `new_building`, `old_building`, `under_construction` |
 | `condition` | text | one of the seven condition classes |
 
@@ -199,7 +208,10 @@ unassessed.
 - The condition reading has not been measured on labelled photos; the vision path is tested with
   a stand-in client only.
 - The cadastral code format is inferred from registry extracts; verify it against the NAPR rule.
-- Flats in Tbilisi only. Houses, land and commercial property are out of scope.
+- Flats and private houses in Tbilisi only. Land and commercial property get the valuer report
+  check, not a model valuation.
+- Geostat's house prices are offer prices of new houses; the release does not say whether the
+  price per m² is of the house or includes the plot. Confirm with Geostat before production.
 - The API does not authenticate callers; run it on localhost or a private network.
 - Have a native speaker review the Georgian texts.
 

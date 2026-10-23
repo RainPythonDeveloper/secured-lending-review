@@ -1,9 +1,10 @@
 """Synthetic comparable sales in Tbilisi, anchored to Geostat district averages.
 
 Every sale is invented. The price of a square metre starts from the Geostat Q1 2026 average for
-new buildings in the district, converted at the NBG rate of 31 March 2026, and is then moved by
-condition, building status, floor, size, metro distance, a smooth local premium, time and noise.
-These factors are demo assumptions, not estimates from real transactions.
+new flats or new houses in the district, converted at the NBG rate of 31 March 2026, and is then
+moved by condition, building status, floor (flats), size, land area (houses), metro distance, a
+smooth local premium, time and noise. These factors are demo assumptions, not estimates from real
+transactions.
 
     python -m collateral_engine.synth --out data/comparables.csv
 """
@@ -17,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-from collateral_engine.domain import BuildingStatus, Condition, District
+from collateral_engine.domain import BuildingStatus, Condition, District, PropertyKind
 from collateral_engine.market import ComparableSale, write_market_data
 from collateral_engine.policy import SERVICE_ROOT
 from collateral_engine.reference import load_districts, metro_distance_km
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SEED = 20261022
 DEFAULT_SALE_COUNT = 6000
+DEFAULT_HOUSE_COUNT = 1200
 DEFAULT_END_DATE = date(2026, 10, 20)
 DEFAULT_HISTORY_DAYS = 3 * 365
 DEFAULT_OUTPUT_PATH = SERVICE_ROOT / "data" / "comparables.csv"
@@ -107,6 +109,27 @@ SQUARE_METRES_PER_ROOM = 28.0
 MAX_ROOMS = 6
 PRICE_ROUNDING_USD = 100
 
+HOUSE_RANDOM_STREAM = 2
+HOUSE_STATUS_SHARE = {
+    BuildingStatus.NEW_BUILDING: 0.45,
+    BuildingStatus.OLD_BUILDING: 0.55,
+}
+HOUSE_MEDIAN_AREA_M2 = 160.0
+HOUSE_AREA_LOG_SIGMA = 0.40
+HOUSE_AREA_RANGE_M2 = (50.0, 600.0)
+HOUSE_REFERENCE_AREA_M2 = 160.0
+HOUSE_SIZE_ELASTICITY = -0.10
+MEDIAN_LAND_AREA_M2 = 450.0
+LAND_AREA_LOG_SIGMA = 0.55
+LAND_AREA_RANGE_M2 = (100.0, 3000.0)
+LAND_ELASTICITY = 0.15
+HOUSE_STOREYS_RANGE = (1, 3)
+HOUSE_SQUARE_METRES_PER_ROOM = 35.0
+MAX_HOUSE_ROOMS = 10
+# Geostat Q2 2026: house prices rose 5.5% in a year, that is about 0.45% a month.
+HOUSE_MONTHLY_PRICE_GROWTH = 0.0045
+HOUSE_PRICE_NOISE_SIGMA = 0.14
+
 
 @dataclass(frozen=True)
 class _SyntheticFlats:
@@ -121,16 +144,41 @@ class _SyntheticFlats:
     sale_dates: list[date]
 
 
+@dataclass(frozen=True)
+class _SyntheticHouses:
+    districts: list[District]
+    statuses: list[BuildingStatus]
+    conditions: list[Condition]
+    latitudes: np.ndarray
+    longitudes: np.ndarray
+    areas_m2: np.ndarray
+    land_areas_m2: np.ndarray
+    storeys: np.ndarray
+    sale_dates: list[date]
+
+
 def generate_sales(
     sale_count: int = DEFAULT_SALE_COUNT,
     seed: int = DEFAULT_SEED,
     end_date: date = DEFAULT_END_DATE,
     history_days: int = DEFAULT_HISTORY_DAYS,
+    house_count: int = DEFAULT_HOUSE_COUNT,
 ) -> list[ComparableSale]:
     rng = np.random.default_rng(seed)
     flats = _draw_flats(rng, sale_count, end_date, history_days)
     prices_usd = _prices_usd(rng, flats)
-    return [_to_sale(rng, flats, index, prices_usd[index]) for index in range(sale_count)]
+    flat_sales = [_to_sale(rng, flats, index, prices_usd[index]) for index in range(sale_count)]
+    return flat_sales + generate_house_sales(house_count, seed, end_date, history_days)
+
+
+def generate_house_sales(
+    house_count: int, seed: int, end_date: date, history_days: int
+) -> list[ComparableSale]:
+    # Houses draw from their own stream, so adding them leaves the flat sales unchanged.
+    rng = np.random.default_rng([seed, HOUSE_RANDOM_STREAM])
+    houses = _draw_houses(rng, house_count, end_date, history_days)
+    prices_usd = _house_prices_usd(rng, houses)
+    return [_to_house_sale(rng, houses, index, prices_usd[index]) for index in range(house_count)]
 
 
 def _draw_flats(
@@ -163,6 +211,8 @@ def _to_sale(
     return ComparableSale(
         sale_id=f"SYN-{index + 1:05d}",
         cadastral_code=_synthetic_cadastral_code(rng, flats.districts[index]),
+        property_kind=PropertyKind.FLAT,
+        land_area_m2=None,
         district=flats.districts[index],
         latitude=round(float(flats.latitudes[index]), 6),
         longitude=round(float(flats.longitudes[index]), 6),
@@ -174,6 +224,56 @@ def _to_sale(
         building_floors=int(flats.building_floors[index]),
         building_status=flats.statuses[index],
         condition=flats.conditions[index],
+    )
+
+
+def _draw_houses(
+    rng: np.random.Generator, house_count: int, end_date: date, history_days: int
+) -> _SyntheticHouses:
+    districts = _choose(rng, DISTRICT_SHARE, house_count)
+    statuses = _choose(rng, HOUSE_STATUS_SHARE, house_count)
+    latitudes, longitudes = _locations(rng, districts)
+    days_before_end = rng.integers(1, history_days, house_count)
+    return _SyntheticHouses(
+        districts=districts,
+        statuses=statuses,
+        conditions=[_choose(rng, CONDITION_SHARE_BY_STATUS[status], 1)[0] for status in statuses],
+        latitudes=latitudes,
+        longitudes=longitudes,
+        areas_m2=np.clip(
+            rng.lognormal(np.log(HOUSE_MEDIAN_AREA_M2), HOUSE_AREA_LOG_SIGMA, house_count),
+            *HOUSE_AREA_RANGE_M2,
+        ),
+        land_areas_m2=np.clip(
+            rng.lognormal(np.log(MEDIAN_LAND_AREA_M2), LAND_AREA_LOG_SIGMA, house_count),
+            *LAND_AREA_RANGE_M2,
+        ),
+        storeys=rng.integers(*HOUSE_STOREYS_RANGE, size=house_count, endpoint=True),
+        sale_dates=[end_date - timedelta(days=int(days)) for days in days_before_end],
+    )
+
+
+def _to_house_sale(
+    rng: np.random.Generator, houses: _SyntheticHouses, index: int, price_usd: float
+) -> ComparableSale:
+    area_m2 = round(float(houses.areas_m2[index]), 1)
+    return ComparableSale(
+        sale_id=f"SYN-H{index + 1:05d}",
+        cadastral_code=_synthetic_parcel_code(rng, houses.districts[index]),
+        property_kind=PropertyKind.HOUSE,
+        land_area_m2=Decimal(str(round(float(houses.land_areas_m2[index])))),
+        district=houses.districts[index],
+        latitude=round(float(houses.latitudes[index]), 6),
+        longitude=round(float(houses.longitudes[index]), 6),
+        sale_date=houses.sale_dates[index],
+        price_usd=Decimal(int(price_usd)),
+        total_area_m2=Decimal(str(area_m2)),
+        rooms=int(np.clip(round(area_m2 / HOUSE_SQUARE_METRES_PER_ROOM), 1, MAX_HOUSE_ROOMS)),
+        # A house is entered at ground level; building_floors holds its number of storeys.
+        floor=1,
+        building_floors=int(houses.storeys[index]),
+        building_status=houses.statuses[index],
+        condition=houses.conditions[index],
     )
 
 
@@ -225,6 +325,27 @@ def _prices_usd(rng: np.random.Generator, flats: _SyntheticFlats) -> np.ndarray:
     return np.maximum(np.round(prices / PRICE_ROUNDING_USD), 1) * PRICE_ROUNDING_USD
 
 
+def _house_prices_usd(rng: np.random.Generator, houses: _SyntheticHouses) -> np.ndarray:
+    reference = load_districts()
+    anchor_usd_per_m2 = np.array(
+        [
+            float(reference[district].geostat_house_gel_per_m2 / NBG_USD_RATE_ON_2026_03_31)
+            for district in houses.districts
+        ]
+    )
+    log_factor = (
+        np.log([CONDITION_PRICE_FACTOR[condition] for condition in houses.conditions])
+        + np.log([STATUS_PRICE_FACTOR[status] for status in houses.statuses])
+        + HOUSE_SIZE_ELASTICITY * np.log(houses.areas_m2 / HOUSE_REFERENCE_AREA_M2)
+        + LAND_ELASTICITY * np.log(houses.land_areas_m2 / MEDIAN_LAND_AREA_M2)
+        + _location_log_factor(houses.latitudes, houses.longitudes)
+        + HOUSE_MONTHLY_PRICE_GROWTH * _months_since_geostat_period(houses.sale_dates)
+        + rng.normal(0.0, HOUSE_PRICE_NOISE_SIGMA, len(houses.districts))
+    )
+    prices = anchor_usd_per_m2 * np.exp(log_factor) * houses.areas_m2
+    return np.maximum(np.round(prices / PRICE_ROUNDING_USD), 1) * PRICE_ROUNDING_USD
+
+
 def _floor_log_factor(floors: np.ndarray, building_floors: np.ndarray) -> np.ndarray:
     is_top_floor = (floors == building_floors) & (building_floors > 1)
     return np.where(floors == 1, np.log(FIRST_FLOOR_FACTOR), 0.0) + np.where(
@@ -255,15 +376,23 @@ def _synthetic_cadastral_code(rng: np.random.Generator, district: District) -> s
     return f"01.{district_segment:02d}.{zone:02d}.{parcel:03d}.{sub_parcel:03d}.01.{unit:03d}"
 
 
+def _synthetic_parcel_code(rng: np.random.Generator, district: District) -> str:
+    district_segment = 10 + list(District).index(district)
+    zone, parcel, sub_parcel = rng.integers(1, 21), rng.integers(1, 1000), rng.integers(1, 100)
+    return f"01.{district_segment:02d}.{zone:02d}.{parcel:03d}.{sub_parcel:03d}"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate synthetic Tbilisi comparable sales")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--sales", type=int, default=DEFAULT_SALE_COUNT)
+    parser.add_argument("--houses", type=int, default=DEFAULT_HOUSE_COUNT)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     arguments = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    write_market_data(generate_sales(arguments.sales, arguments.seed), arguments.out)
-    logger.info("Wrote %d synthetic sales to %s", arguments.sales, arguments.out)
+    sales = generate_sales(arguments.sales, arguments.seed, house_count=arguments.houses)
+    write_market_data(sales, arguments.out)
+    logger.info("Wrote %d synthetic sales to %s", len(sales), arguments.out)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,13 @@ no free-form model text is shown as a reason. Have a native speaker review the G
 
 from enum import StrEnum
 
-from collateral_engine.domain import BuildingStatus, ClaimStatus, Condition, ConstructionStage
+from collateral_engine.domain import (
+    BuildingStatus,
+    ClaimStatus,
+    Condition,
+    ConstructionStage,
+    PropertyKind,
+)
 from collateral_engine.flags import Flag, ReasonCode, Recommendation, Severity
 from collateral_engine.report import AppraisalPosition, LendingValueBasis
 from collateral_engine.report_check import ReportFinding, ReportIssue
@@ -36,6 +42,11 @@ CONDITION_NAMES: dict[Condition, Bilingual] = {
         Language.GEORGIAN: "ახალი გარემონტებული",
         Language.ENGLISH: "Newly renovated",
     },
+}
+
+PROPERTY_KIND_NAMES: dict[PropertyKind, Bilingual] = {
+    PropertyKind.FLAT: {Language.GEORGIAN: "ბინა", Language.ENGLISH: "Flat"},
+    PropertyKind.HOUSE: {Language.GEORGIAN: "კერძო სახლი", Language.ENGLISH: "Private house"},
 }
 
 BUILDING_STATUS_NAMES: dict[BuildingStatus, Bilingual] = {
@@ -144,9 +155,9 @@ REASON_TEMPLATES: dict[ReasonCode, Bilingual] = {
     ReasonCode.INSUFFICIENT_COMPARABLES: {
         Language.GEORGIAN: "{radius_km} კმ რადიუსში მხოლოდ {found} ანალოგიური გაყიდვაა, რომლის "
         "კორექტირებაც სებ-ის №84/04 ბრძანების ლიმიტებშია (მუხ. 4(5)); "
-        "საჭიროა შემფასებლის მიერ ბინის დათვალიერება.",
+        "საჭიროა შემფასებლის მიერ ობიექტის დათვალიერება.",
         Language.ENGLISH: "Only {found} comparable sales within {radius_km} km have adjustments "
-        "within the limits of NBG Order 84/04 (Art. 4(5)); a valuer has to inspect the flat.",
+        "within the limits of NBG Order 84/04 (Art. 4(5)); a valuer has to inspect the property.",
     },
     ReasonCode.ADJUSTMENT_JUSTIFICATION_REQUIRED: {
         Language.GEORGIAN: "ანალოგების ჯამური კორექტირება {gross}%-ს აღწევს, რაც {limit}%-იან "
@@ -180,9 +191,9 @@ REASON_TEMPLATES: dict[ReasonCode, Bilingual] = {
     },
     ReasonCode.CONDITION_PARTLY_CONFIRMED: {
         Language.GEORGIAN: "ფოტოებზე ჩანს „{observed}“, დეკლარირებულია „{declared}“; "
-        "ბინა შეფასდა ფოტოების მიხედვით.",
+        "ობიექტი შეფასდა ფოტოების მიხედვით.",
         Language.ENGLISH: "Photos show '{observed}', not the declared '{declared}'; "
-        "the flat is valued as shown.",
+        "the property is valued as shown.",
     },
     ReasonCode.CONDITION_CONTRADICTED: {
         Language.GEORGIAN: "ფოტოებზე ჩანს „{observed}“, დეკლარირებულია „{declared}“; "
@@ -191,17 +202,18 @@ REASON_TEMPLATES: dict[ReasonCode, Bilingual] = {
     },
     ReasonCode.CONDITION_INCONCLUSIVE: {
         Language.GEORGIAN: "ფოტოებით მდგომარეობის დადგენა ვერ მოხერხდა; "
-        "ბინა შეფასდა დეკლარირებული მდგომარეობით.",
-        Language.ENGLISH: "The photos do not settle the condition; the flat is valued as declared.",
+        "ობიექტი შეფასდა დეკლარირებული მდგომარეობით.",
+        Language.ENGLISH: "The photos do not settle the condition; "
+        "the property is valued as declared.",
     },
     ReasonCode.CONDITION_NOT_VERIFIED: {
         Language.GEORGIAN: "ფოტოები არ არის წარმოდგენილი; დეკლარირებული მდგომარეობა "
-        "გადაუმოწმებელია. საჭიროა ბინის მინიმუმ {required} ფოტო.",
+        "გადაუმოწმებელია. საჭიროა ობიექტის მინიმუმ {required} ფოტო.",
         Language.ENGLISH: "No photos were provided; the declared condition is unverified. "
-        "At least {required} photos of the flat are needed.",
+        "At least {required} photos of the property are needed.",
     },
     ReasonCode.TOO_FEW_PHOTOS: {
-        Language.GEORGIAN: "ატვირთულია {count} ფოტო {required}-დან; მოითხოვეთ ბინის "
+        Language.GEORGIAN: "ატვირთულია {count} ფოტო {required}-დან; მოითხოვეთ ობიექტის "
         "სხვადასხვა ოთახის მინიმუმ {required} ფოტო.",
         Language.ENGLISH: "{count} of {required} required photos uploaded; ask for at least "
         "{required} photos of different rooms.",

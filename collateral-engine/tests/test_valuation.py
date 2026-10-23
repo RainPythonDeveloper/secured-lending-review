@@ -14,7 +14,7 @@ from collateral_engine.comparables import (
     PropertyFeatures,
     select_comparables,
 )
-from collateral_engine.domain import Condition, District
+from collateral_engine.domain import Condition, District, PropertyKind
 from collateral_engine.findings import valuation_findings
 from collateral_engine.flags import ReasonCode
 from collateral_engine.hedonic import (
@@ -43,7 +43,8 @@ def saburtalo_features(condition: Condition = Condition.NEWLY_RENOVATED) -> Prop
 
 @pytest.fixture(scope="module")
 def hedonic(market: MarketData, policy: ValuationPolicy):
-    return fit_hedonic_model(market.sold_before(VALUATION_DATE), VALUATION_DATE, policy.hedonic)
+    flats = market.of_kind(PropertyKind.FLAT)
+    return fit_hedonic_model(flats.sold_before(VALUATION_DATE), VALUATION_DATE, policy.hedonic)
 
 
 @pytest.mark.parametrize(
@@ -68,7 +69,11 @@ def test_hedonic_prices_vake_above_samgori(hedonic) -> None:
 
 def test_hedonic_refuses_to_fit_on_too_few_sales(market: MarketData, policy) -> None:
     with pytest.raises(InsufficientMarketDataError):
-        fit_hedonic_model(market.sold_before(date(2023, 11, 1)), VALUATION_DATE, policy.hedonic)
+        fit_hedonic_model(
+            market.of_kind(PropertyKind.FLAT).sold_before(date(2023, 11, 1)),
+            VALUATION_DATE,
+            policy.hedonic,
+        )
 
 
 def test_selection_uses_only_sales_before_valuation_date(market: MarketData, policy) -> None:

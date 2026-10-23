@@ -3,11 +3,11 @@ from pydantic import TypeAdapter, ValidationError
 
 from collateral_engine.cadastral import (
     InvalidCadastralCodeError,
-    TbilisiApartmentCadastralCode,
+    TbilisiCadastralCode,
     parse_cadastral_code,
 )
 
-TBILISI_APARTMENT_CODE = TypeAdapter(TbilisiApartmentCadastralCode)
+TBILISI_CODE = TypeAdapter(TbilisiCadastralCode)
 
 
 def test_parse_splits_flat_code_into_parcel_building_and_unit() -> None:
@@ -43,17 +43,11 @@ def test_parse_rejects_text_that_is_not_a_registry_code(code: str) -> None:
         parse_cadastral_code(code)
 
 
-def test_tbilisi_apartment_code_accepts_flat_in_tbilisi() -> None:
-    assert TBILISI_APARTMENT_CODE.validate_python(" 01.14.14.011.008.01.527 ") == (
-        "01.14.14.011.008.01.527"
-    )
+@pytest.mark.parametrize("code", ["01.14.14.011.008.01.527", "01.15.02.058.021"])
+def test_tbilisi_code_accepts_flat_and_parcel_codes(code: str) -> None:
+    assert TBILISI_CODE.validate_python(f" {code} ") == code
 
 
-def test_tbilisi_apartment_code_rejects_other_region() -> None:
+def test_tbilisi_code_rejects_other_region() -> None:
     with pytest.raises(ValidationError, match="Tbilisi only"):
-        TBILISI_APARTMENT_CODE.validate_python("02.05.11.555.001.01.501")
-
-
-def test_tbilisi_apartment_code_rejects_land_parcel() -> None:
-    with pytest.raises(ValidationError, match="flats only"):
-        TBILISI_APARTMENT_CODE.validate_python("01.15.02.058.021")
+        TBILISI_CODE.validate_python("02.05.11.555.001.01.501")

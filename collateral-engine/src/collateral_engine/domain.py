@@ -7,7 +7,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from collateral_engine.cadastral import TbilisiApartmentCadastralCode
+from collateral_engine.cadastral import TbilisiCadastralCode, parse_cadastral_code
 
 
 class District(StrEnum):
@@ -35,6 +35,11 @@ class Condition(StrEnum):
     UNDER_RENOVATION = "under_renovation"
     OLD_RENOVATED = "old_renovated"
     NEWLY_RENOVATED = "newly_renovated"
+
+
+class PropertyKind(StrEnum):
+    FLAT = "flat"
+    HOUSE = "house"
 
 
 class BuildingStatus(StrEnum):
@@ -69,7 +74,22 @@ Latitude = Annotated[float, Field(ge=41.60, le=41.87, description="WGS 84, insid
 Longitude = Annotated[float, Field(ge=44.62, le=45.05, description="WGS 84, inside Tbilisi")]
 MoneyAmount = Annotated[Decimal, Field(gt=0, max_digits=14, decimal_places=2)]
 AreaSquareMetres = Annotated[Decimal, Field(ge=15, le=1000, decimal_places=2)]
+LandAreaSquareMetres = Annotated[Decimal, Field(ge=20, le=100000, decimal_places=2)]
 FloorNumber = Annotated[int, Field(ge=1, le=70)]
+
+
+def check_property_kind(
+    kind: PropertyKind, cadastral_code: str, land_area_m2: Decimal | None, floor: int
+) -> None:
+    """A flat has a unit in its cadastral code and no land; a house stands on its own plot.
+
+    For a house, floor is 1 and building_floors holds its number of storeys.
+    """
+    has_unit = parse_cadastral_code(cadastral_code).is_apartment_unit
+    if kind is PropertyKind.FLAT and (not has_unit or land_area_m2 is not None):
+        raise ValueError("a flat needs a cadastral code with building and unit, and no land area")
+    if kind is PropertyKind.HOUSE and (has_unit or land_area_m2 is None or floor != 1):
+        raise ValueError("a house needs a parcel cadastral code, its land area and floor 1")
 
 
 class OffPlanDetails(BaseModel):
@@ -84,11 +104,13 @@ class OffPlanDetails(BaseModel):
 
 
 class SubjectProperty(BaseModel):
-    """The flat offered as collateral, as described in the loan application."""
+    """The flat or house offered as collateral, as described in the loan application."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    cadastral_code: TbilisiApartmentCadastralCode
+    cadastral_code: TbilisiCadastralCode
+    property_kind: PropertyKind = PropertyKind.FLAT
+    land_area_m2: LandAreaSquareMetres | None = None
     district: District
     latitude: Latitude
     longitude: Longitude
@@ -104,7 +126,10 @@ class SubjectProperty(BaseModel):
     def _check_floor_within_building(self) -> Self:
         if self.floor > self.building_floors:
             raise ValueError("floor is above the top floor of the building")
+        check_property_kind(self.property_kind, self.cadastral_code, self.land_area_m2, self.floor)
         is_under_construction = self.building_status is BuildingStatus.UNDER_CONSTRUCTION
+        if is_under_construction and self.property_kind is PropertyKind.HOUSE:
+            raise ValueError("off-plan valuation covers flats in apartment buildings only")
         if is_under_construction != (self.off_plan is not None):
             raise ValueError(
                 "off_plan details are required exactly for buildings under construction"

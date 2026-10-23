@@ -24,6 +24,7 @@ class DistrictReference(BaseModel):
     name_ka: str
     name_en: str
     geostat_apartment_gel_per_m2: Decimal
+    geostat_house_gel_per_m2: Decimal
     centroid_latitude: Latitude
     centroid_longitude: Longitude
 

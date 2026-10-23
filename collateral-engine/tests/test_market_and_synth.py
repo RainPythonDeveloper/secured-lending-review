@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from collateral_engine.domain import District
+from collateral_engine.domain import District, PropertyKind
 from collateral_engine.market import (
     MARKET_COLUMNS,
     MarketData,
@@ -28,7 +28,8 @@ def test_generate_sales_covers_every_district() -> None:
 
 
 def test_generated_prices_follow_geostat_district_order(market: MarketData) -> None:
-    median_price = market.sales.groupby("district")["price_per_m2_usd"].median()
+    flats = market.of_kind(PropertyKind.FLAT).sales
+    median_price = flats.groupby("district")["price_per_m2_usd"].median()
 
     assert median_price[District.MTATSMINDA] > median_price[District.VAKE]
     assert median_price[District.VAKE] > median_price[District.SAMGORI]
@@ -41,7 +42,7 @@ def test_market_round_trips_through_csv(tmp_path: Path) -> None:
 
     loaded = load_market_data(path)
 
-    assert len(loaded) == SMALL_SALE_COUNT
+    assert len(loaded) == len(sales)
     assert loaded.sales["sale_date"].is_monotonic_increasing
 
 

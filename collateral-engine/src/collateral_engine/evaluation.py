@@ -20,7 +20,7 @@ import pandas as pd
 from pydantic import BaseModel, ConfigDict
 
 from collateral_engine.comparables import InsufficientComparablesError, PropertyFeatures
-from collateral_engine.domain import District
+from collateral_engine.domain import District, PropertyKind
 from collateral_engine.hedonic import AVERAGE_DAYS_PER_MONTH, HedonicModel, fit_hedonic_model
 from collateral_engine.market import MarketData, load_market_data
 from collateral_engine.nbg_rules import ValuationLimits, load_nbg_rules, rule_version_in_force
@@ -73,6 +73,7 @@ class BacktestMetrics(BaseModel):
     median_range_width: float
     coefficient_of_dispersion: float
     price_related_differential: float
+    ratio_slope_on_estimate: float
     median_absolute_percentage_error_by_district: dict[District, float]
 
 
@@ -83,10 +84,12 @@ def run_backtest(
     limits: ValuationLimits,
     test_months: int = DEFAULT_TEST_MONTHS,
     max_test_sales: int = DEFAULT_MAX_TEST_SALES,
+    property_kind: PropertyKind = PropertyKind.FLAT,
 ) -> BacktestRun:
     window_days = round(test_months * AVERAGE_DAYS_PER_MONTH)
     test_window_start = test_window_end - timedelta(days=window_days)
-    calibration = calibrate_interval(market, test_window_start, policy, limits)
+    market = market.of_kind(property_kind)
+    calibration = calibrate_interval(market, test_window_start, policy, limits, property_kind)
     hedonic = fit_hedonic_model(
         market.sold_before(test_window_start), test_window_start, policy.hedonic
     )
@@ -141,6 +144,16 @@ def price_related_differential(estimates: np.ndarray, actuals: np.ndarray) -> fl
     return float(np.mean(estimates / actuals) / (estimates.sum() / actuals.sum()))
 
 
+def ratio_slope_on_estimate(estimates: np.ndarray, actuals: np.ndarray) -> float:
+    """Slope of ln(estimate / price) on ln(estimate); negative means regressive valuation.
+
+    Noise in sale prices alone pushes PRD above 1, more so for houses. Regressing on the estimate
+    rather than on the price separates that noise from a real bias of the model.
+    """
+    slope, _ = np.polyfit(np.log(estimates), np.log(estimates / actuals), 1)
+    return float(slope)
+
+
 def summarise(run: BacktestRun, policy: ValuationPolicy) -> BacktestMetrics:
     estimates = np.array([case.estimate_usd for case in run.cases])
     actuals = np.array([case.actual_usd for case in run.cases])
@@ -163,6 +176,7 @@ def summarise(run: BacktestRun, policy: ValuationPolicy) -> BacktestMetrics:
         median_range_width=round(float(np.median(widths)), 4),
         coefficient_of_dispersion=round(coefficient_of_dispersion(estimates / actuals), 2),
         price_related_differential=round(price_related_differential(estimates, actuals), 4),
+        ratio_slope_on_estimate=round(ratio_slope_on_estimate(estimates, actuals), 4),
         median_absolute_percentage_error_by_district=_error_by_district(run.cases, absolute_errors),
     )
 
@@ -190,9 +204,14 @@ def main() -> None:
     limits = rule_version_in_force(
         load_nbg_rules(DEFAULT_NBG_RULES_PATH), test_window_end
     ).valuation
-    metrics = summarise(run_backtest(market, test_window_end, policy, limits), policy)
+    metrics_by_kind = {
+        kind.value: summarise(
+            run_backtest(market, test_window_end, policy, limits, property_kind=kind), policy
+        ).model_dump(mode="json")
+        for kind in PropertyKind
+    }
     arguments.out.parent.mkdir(parents=True, exist_ok=True)
-    arguments.out.write_text(json.dumps(metrics.model_dump(mode="json"), indent=2) + "\n")
+    arguments.out.write_text(json.dumps(metrics_by_kind, indent=2) + "\n")
     logger.info("Backtest metrics written to %s", arguments.out)
 
 

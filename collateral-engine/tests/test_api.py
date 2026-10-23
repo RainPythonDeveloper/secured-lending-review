@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 
-from builders import USD_RATE, make_appraisal, make_request, scene_photo
+from builders import USD_RATE, make_appraisal, make_house, make_request, scene_photo
 from collateral_engine.api import PROBLEM_JSON, create_app
 from collateral_engine.domain import Currency
 from collateral_engine.nbg_rates import OfficialRateUnavailableError
@@ -55,6 +55,25 @@ def test_create_valuation_returns_report_with_ltv(client: TestClient) -> None:
     assert response.status_code == 201
     assert body["ltv"]["ltv_limit"] == "0.9"
     assert len(body["photos"]) == 1
+
+
+def test_create_valuation_values_a_house_with_land(client: TestClient) -> None:
+    response = post_valuation(client, make_request(subject=make_house()).model_dump_json())
+
+    body = response.json()
+    assert response.status_code == 201
+    assert body["subject"]["property_kind"] == "house"
+    assert body["valuation"]["comparables"][0]["land_area_m2"] is not None
+
+
+def test_house_without_land_area_is_rejected_as_problem_json(client: TestClient) -> None:
+    request = json.loads(make_request(subject=make_house()).model_dump_json())
+    request["subject"]["land_area_m2"] = None
+
+    response = post_valuation(client, json.dumps(request))
+
+    assert response.status_code == 400
+    assert response.headers["content-type"].startswith(PROBLEM_JSON)
 
 
 def test_create_valuation_accepts_request_without_photos(client: TestClient) -> None:

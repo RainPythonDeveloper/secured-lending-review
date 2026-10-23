@@ -57,13 +57,10 @@ def parse_cadastral_code(code: str) -> CadastralCodeParts:
     )
 
 
-def _require_tbilisi_apartment(code: str) -> str:
-    parts = parse_cadastral_code(code)
-    if not parts.is_in_tbilisi:
+def _require_tbilisi(code: str) -> str:
+    if not parse_cadastral_code(code).is_in_tbilisi:
         raise ValueError("the model covers Tbilisi only (cadastral region 01)")
-    if not parts.is_apartment_unit:
-        raise ValueError("the model values flats only; the code has no building and unit segments")
     return code.strip()
 
 
-TbilisiApartmentCadastralCode = Annotated[str, AfterValidator(_require_tbilisi_apartment)]
+TbilisiCadastralCode = Annotated[str, AfterValidator(_require_tbilisi)]

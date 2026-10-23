@@ -1,4 +1,4 @@
-"""Officer console: second opinion on a Tbilisi flat offered as loan collateral.
+"""Officer console: second opinion on a Tbilisi flat or house offered as loan collateral.
 
 streamlit run app/streamlit_app.py
 """
@@ -35,6 +35,7 @@ from collateral_engine.domain import (
     LicensedAppraisal,
     LoanRequest,
     OffPlanDetails,
+    PropertyKind,
     SubjectProperty,
     ValuationRequest,
 )
@@ -44,6 +45,7 @@ from collateral_engine.i18n import (
     BUILDING_STATUS_NAMES,
     CONDITION_NAMES,
     CONSTRUCTION_STAGE_NAMES,
+    PROPERTY_KIND_NAMES,
     Bilingual,
     Language,
     report_finding_text,
@@ -65,6 +67,8 @@ st.set_page_config(page_title="Collateral second opinion", page_icon="🏠", lay
 MANUAL_RATE_SOURCE = "Entered by the loan officer"
 PHOTO_TYPES = ["jpg", "jpeg", "png", "webp"]
 UI_BACKTEST_SALES = 300
+# Shown in the land field while a flat is entered; a flat itself has no land area.
+DEFAULT_LAND_AREA_M2 = 500.0
 LANGUAGE_LABELS = {Language.GEORGIAN: "ქართული", Language.ENGLISH: "English"}
 DEMO_CASES_BY_ID = {case.application_id: case for case in DEMO_CASES}
 DISTRICT_NAMES: dict[District, Bilingual] = {
@@ -88,12 +92,19 @@ def get_rates_client() -> NbgRatesClient:
 
 
 @st.cache_resource(show_spinner=False)
-def get_backtest_metrics() -> BacktestMetrics:
+def get_backtest_metrics(property_kind: PropertyKind) -> BacktestMetrics:
     engine = get_engine()
     market, policy = engine.market, engine.config.policy
     test_window_end = market.last_sale_date + timedelta(days=1)
     limits = rule_version_in_force(engine.config.nbg_rules, test_window_end).valuation
-    run = run_backtest(market, test_window_end, policy, limits, max_test_sales=UI_BACKTEST_SALES)
+    run = run_backtest(
+        market,
+        test_window_end,
+        policy,
+        limits,
+        max_test_sales=UI_BACKTEST_SALES,
+        property_kind=property_kind,
+    )
     return summarise(run, policy)
 
 
@@ -121,6 +132,8 @@ def case_fields(case: DemoCase) -> dict[str, object]:
     return {
         "application_id": case.application_id,
         "cadastral_code": subject.cadastral_code,
+        "property_kind": subject.property_kind,
+        "land_area_m2": float(subject.land_area_m2 or DEFAULT_LAND_AREA_M2),
         "district": subject.district,
         "latitude": subject.latitude,
         "longitude": subject.longitude,
@@ -236,6 +249,14 @@ def render_application_form() -> None:
     with st.form("application"):
         st.subheader(text("application_section"))
         st.text_input(text("application_id"), key="field_application_id")
+        st.radio(
+            text("property_kind"),
+            list(PropertyKind),
+            format_func=lambda kind: bilingual(PROPERTY_KIND_NAMES[kind]),
+            key="field_property_kind",
+            horizontal=True,
+            help=text("house_hint"),
+        )
         st.text_input(text("cadastral_code"), key="field_cadastral_code")
         st.selectbox(
             text("district"),
@@ -250,7 +271,7 @@ def render_application_form() -> None:
         longitude_column.number_input(
             text("longitude"), key="field_longitude", format="%.5f", step=0.001
         )
-        render_flat_fields()
+        render_property_fields()
         render_off_plan_fields()
         render_loan_fields()
         st.file_uploader(
@@ -265,9 +286,13 @@ def render_application_form() -> None:
         )
 
 
-def render_flat_fields() -> None:
-    st.number_input(
+def render_property_fields() -> None:
+    area_column, land_column = st.columns(2)
+    area_column.number_input(
         text("total_area"), key="field_total_area_m2", min_value=15.0, max_value=1000.0, step=0.5
+    )
+    land_column.number_input(
+        text("land_area"), key="field_land_area_m2", min_value=20.0, max_value=100000.0, step=10.0
     )
     rooms_column, floor_column, floors_column = st.columns(3)
     rooms_column.number_input(text("rooms"), key="field_rooms", min_value=1, max_value=12, step=1)
@@ -333,14 +358,18 @@ def field(name: str) -> object:
 def build_request() -> ValuationRequest:
     """Raises ValidationError or InvalidOperation when the officer's input is not valid."""
     valuation_date = st.session_state["valuation_date"]
+    is_house = field("property_kind") is PropertyKind.HOUSE
     subject = SubjectProperty(
         cadastral_code=field("cadastral_code"),
+        property_kind=field("property_kind"),
+        land_area_m2=Decimal(str(field("land_area_m2"))) if is_house else None,
         district=field("district"),
         latitude=field("latitude"),
         longitude=field("longitude"),
         total_area_m2=Decimal(str(field("total_area_m2"))),
         rooms=field("rooms"),
-        floor=field("floor"),
+        # A house is entered at ground level; its storeys go into building_floors.
+        floor=1 if is_house else field("floor"),
         building_floors=field("building_floors"),
         building_status=field("building_status"),
         declared_condition=field("declared_condition"),
@@ -425,9 +454,12 @@ def render_valuation_tab() -> None:
             report, st.session_state.get("photo_bytes", {}), current_language
         )
     if report.valuation is not None:
-        report_view.render_comparables(report.valuation, current_language)
+        report_view.render_comparables(
+            report.valuation, report.subject.property_kind, current_language
+        )
     render_decision_form(report)
-    report_view.render_provenance(report, get_engine().calibration, current_language)
+    calibration = get_engine().calibrations[report.subject.property_kind]
+    report_view.render_provenance(report, calibration, current_language)
 
 
 def render_decision_form(report: ValuationReport) -> None:
@@ -461,8 +493,15 @@ def render_decision_form(report: ValuationReport) -> None:
 
 def render_quality_tab() -> None:
     st.caption(text("quality_intro"))
+    property_kind = st.radio(
+        text("property_kind"),
+        list(PropertyKind),
+        format_func=lambda kind: bilingual(PROPERTY_KIND_NAMES[kind]),
+        key="quality_property_kind",
+        horizontal=True,
+    )
     with st.spinner(text("quality_running")):
-        metrics = get_backtest_metrics()
+        metrics = get_backtest_metrics(property_kind)
     columns = st.columns(6)
     columns[0].metric(text("mdape"), f"{metrics.median_absolute_percentage_error:.1%}")
     columns[1].metric(text("within_10"), f"{metrics.share_within_10_percent:.0%}")

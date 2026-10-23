@@ -58,6 +58,7 @@ class ComparableRow(_Report):
     longitude: float
     distance_km: float
     total_area_m2: float
+    land_area_m2: float | None = None
     floor: int
     building_floors: int
     building_status: BuildingStatus

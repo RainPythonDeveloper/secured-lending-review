@@ -7,6 +7,7 @@ import pandas as pd
 import pydeck as pdk
 import streamlit as st
 
+from collateral_engine.domain import PropertyKind
 from collateral_engine.flags import Recommendation, Severity
 from collateral_engine.hedonic import AdjustmentGroup
 from collateral_engine.i18n import (
@@ -55,7 +56,10 @@ ADJUSTMENT_COLUMNS = {
     AdjustmentGroup.BUILDING_STATUS: "column_building",
     AdjustmentGroup.FLOOR: "column_floor",
     AdjustmentGroup.SIZE: "column_size",
+    AdjustmentGroup.LAND: "column_land",
 }
+# Flats have no land, so the land columns are shown for houses only.
+HOUSE_ONLY_COLUMNS = ("column_land", "column_land_area")
 
 STYLES = """
 <style>
@@ -304,7 +308,9 @@ def _photo_caption(photo: PhotoFinding, language: Language) -> str:
     return " · ".join(lines)
 
 
-def render_comparables(valuation: MarketValuation, language: Language) -> None:
+def render_comparables(
+    valuation: MarketValuation, property_kind: PropertyKind, language: Language
+) -> None:
     st.markdown(f"**{label('comparables_title', language)}**")
     st.caption(label("comparables_caption", language))
     rows = [
@@ -313,6 +319,7 @@ def render_comparables(valuation: MarketValuation, language: Language) -> None:
             label("column_distance", language): row.distance_km,
             label("column_date", language): row.sale_date,
             label("column_area", language): row.total_area_m2,
+            label("column_land_area", language): row.land_area_m2,
             label("column_condition", language): CONDITION_NAMES[row.condition][language],
             label("column_price", language): float(row.price_per_m2_usd),
             **{
@@ -332,7 +339,10 @@ def render_comparables(valuation: MarketValuation, language: Language) -> None:
     percent_columns[label("column_gross", language)] = st.column_config.NumberColumn(
         format="%.1f%%"
     )
-    st.dataframe(pd.DataFrame(rows), hide_index=True, column_config=percent_columns)
+    grid = pd.DataFrame(rows)
+    if property_kind is PropertyKind.FLAT:
+        grid = grid.drop(columns=[label(column, language) for column in HOUSE_ONLY_COLUMNS])
+    st.dataframe(grid, hide_index=True, column_config=percent_columns)
     limits = valuation.valuation_limits
     st.caption(
         label(

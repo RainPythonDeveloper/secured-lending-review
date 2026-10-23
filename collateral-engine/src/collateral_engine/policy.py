@@ -7,7 +7,7 @@ from typing import Annotated, Literal, Self
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from collateral_engine.domain import Condition, ConstructionStage
+from collateral_engine.domain import Condition, ConstructionStage, PropertyKind
 from collateral_engine.flags import ReasonCode, Severity
 
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
@@ -83,6 +83,7 @@ class OffPlanPolicy(_Config):
 class ValuationPolicy(_Config):
     version: str
     comparables: ComparablesPolicy
+    house_comparables: ComparablesPolicy
     hedonic: HedonicPolicy
     interval: IntervalPolicy
     review: ReviewPolicy
@@ -90,6 +91,9 @@ class ValuationPolicy(_Config):
     photos: PhotoPolicy
     off_plan: OffPlanPolicy
     flag_severity: dict[ReasonCode, Severity]
+
+    def comparables_for(self, kind: PropertyKind) -> ComparablesPolicy:
+        return self.house_comparables if kind == PropertyKind.HOUSE else self.comparables
 
     @model_validator(mode="after")
     def _check_every_reason_has_severity(self) -> Self:

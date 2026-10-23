@@ -12,18 +12,28 @@ from pathlib import Path
 from typing import Annotated, Self
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
-from collateral_engine.cadastral import TbilisiApartmentCadastralCode
+from collateral_engine.cadastral import TbilisiCadastralCode
 from collateral_engine.domain import (
     AreaSquareMetres,
     BuildingStatus,
     Condition,
     District,
     FloorNumber,
+    LandAreaSquareMetres,
     Latitude,
     Longitude,
     MoneyAmount,
+    PropertyKind,
+    check_property_kind,
 )
 from collateral_engine.reference import metro_distance_km
 
@@ -38,7 +48,9 @@ class ComparableSale(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     sale_id: Annotated[str, Field(pattern=r"^[A-Za-z0-9-]{1,64}$")]
-    cadastral_code: TbilisiApartmentCadastralCode
+    cadastral_code: TbilisiCadastralCode
+    property_kind: PropertyKind
+    land_area_m2: LandAreaSquareMetres | None
     district: District
     latitude: Latitude
     longitude: Longitude
@@ -55,7 +67,14 @@ class ComparableSale(BaseModel):
     def _check_floor_within_building(self) -> Self:
         if self.floor > self.building_floors:
             raise ValueError("floor is above the top floor of the building")
+        check_property_kind(self.property_kind, self.cadastral_code, self.land_area_m2, self.floor)
         return self
+
+    @field_validator("land_area_m2", mode="before")
+    @classmethod
+    def _empty_land_is_none(cls, value: object) -> object:
+        # Flats have an empty land column in the CSV.
+        return None if value == "" else value
 
 
 MARKET_COLUMNS = tuple(ComparableSale.model_fields)
@@ -74,6 +93,7 @@ class MarketData:
             raise MarketDataError("there are no comparable sales")
         frame["sale_date"] = pd.to_datetime(frame["sale_date"])
         frame["total_area_m2"] = frame["total_area_m2"].astype(float)
+        frame["land_area_m2"] = pd.to_numeric(frame["land_area_m2"], errors="coerce").astype(float)
         frame["price_per_m2_usd"] = frame["price_usd"].astype(float) / frame["total_area_m2"]
         frame["metro_distance_km"] = metro_distance_km(
             frame["latitude"].to_numpy(), frame["longitude"].to_numpy()
@@ -86,6 +106,9 @@ class MarketData:
     @property
     def last_sale_date(self) -> date:
         return self.sales["sale_date"].max().date()
+
+    def of_kind(self, kind: PropertyKind) -> Self:
+        return type(self)(self.sales[self.sales["property_kind"] == kind])
 
     def sold_before(self, cutoff: date) -> Self:
         return type(self)(self.sales[self.sales["sale_date"] < pd.Timestamp(cutoff)])

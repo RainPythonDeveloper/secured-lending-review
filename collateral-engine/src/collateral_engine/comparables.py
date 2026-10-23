@@ -8,7 +8,13 @@ from typing import Self
 import numpy as np
 import pandas as pd
 
-from collateral_engine.domain import BuildingStatus, Condition, District, SubjectProperty
+from collateral_engine.domain import (
+    BuildingStatus,
+    Condition,
+    District,
+    PropertyKind,
+    SubjectProperty,
+)
 from collateral_engine.geo import haversine_km
 from collateral_engine.hedonic import AVERAGE_DAYS_PER_MONTH
 from collateral_engine.market import MarketData
@@ -29,12 +35,14 @@ class InsufficientComparablesError(Exception):
 
 @dataclass(frozen=True)
 class PropertyFeatures:
-    """What the valuation uses about a flat; the condition is the one the evidence supports."""
+    """What the valuation uses about a property; the condition is the one the evidence supports."""
 
     district: District
     latitude: float
     longitude: float
     total_area_m2: float
+    property_kind: PropertyKind
+    land_area_m2: float | None
     floor: int
     building_floors: int
     building_status: BuildingStatus
@@ -47,6 +55,8 @@ class PropertyFeatures:
             latitude=subject.latitude,
             longitude=subject.longitude,
             total_area_m2=float(subject.total_area_m2),
+            property_kind=subject.property_kind,
+            land_area_m2=float(subject.land_area_m2) if subject.land_area_m2 else None,
             floor=subject.floor,
             building_floors=subject.building_floors,
             building_status=subject.building_status,
@@ -60,6 +70,8 @@ class PropertyFeatures:
             latitude=sale["latitude"],
             longitude=sale["longitude"],
             total_area_m2=sale["total_area_m2"],
+            property_kind=PropertyKind(sale["property_kind"]),
+            land_area_m2=None if pd.isna(sale["land_area_m2"]) else sale["land_area_m2"],
             floor=sale["floor"],
             building_floors=sale["building_floors"],
             building_status=sale["building_status"],
@@ -74,6 +86,8 @@ class PropertyFeatures:
             "latitude": self.latitude,
             "longitude": self.longitude,
             "total_area_m2": self.total_area_m2,
+            "property_kind": self.property_kind,
+            "land_area_m2": np.nan if self.land_area_m2 is None else self.land_area_m2,
             "floor": self.floor,
             "building_floors": self.building_floors,
             "building_status": self.building_status,
@@ -157,6 +171,7 @@ def _eligible_candidates(
         & (area_ratio >= 1 / policy.max_area_ratio)
         & (area_ratio <= policy.max_area_ratio)
         & (sales["sale_id"] != excluded_sale_id)
+        & (sales["property_kind"] == subject.property_kind)
     )
     eligible = sales[is_eligible]
     distances = haversine_km(
@@ -180,6 +195,9 @@ def _closest_matches(
         + within_radius["age_days"] / max_age_days
         + np.abs(np.log(within_radius["total_area_m2"] / subject.total_area_m2))
     )
+    if subject.land_area_m2 is not None:
+        # A house is compared with houses on plots of similar size, as an appraiser would.
+        dissimilarity += np.abs(np.log(within_radius["land_area_m2"] / subject.land_area_m2))
     return within_radius.assign(dissimilarity=dissimilarity).nsmallest(
         policy.max_count, "dissimilarity"
     )

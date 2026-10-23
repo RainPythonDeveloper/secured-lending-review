@@ -22,6 +22,7 @@ from collateral_engine.comparables import (
     PropertyFeatures,
     select_comparables,
 )
+from collateral_engine.domain import PropertyKind
 from collateral_engine.hedonic import (
     AVERAGE_DAYS_PER_MONTH,
     HedonicModel,
@@ -64,12 +65,13 @@ def estimate_by_comparables(
     limits: ValuationLimits,
     excluded_sale_id: str | None = None,
 ) -> ComparablesEstimate:
+    comparables_policy = policy.comparables_for(subject.property_kind)
     admission = AdmissionRule(
         screen=adjustment_screen(subject, valuation_date, hedonic, limits),
-        required_count=max(policy.comparables.min_count, limits.min_comparables),
+        required_count=max(comparables_policy.min_count, limits.min_comparables),
     )
     selection = select_comparables(
-        subject, market, valuation_date, policy.comparables, admission, excluded_sale_id
+        subject, market, valuation_date, comparables_policy, admission, excluded_sale_id
     )
     rows = adjust_comparables(subject, selection, valuation_date, hedonic)
     price_per_m2 = weighted_median(
@@ -154,6 +156,7 @@ def _comparable_row(
         longitude=sale["longitude"],
         distance_km=round(float(sale["distance_km"]), 3),
         total_area_m2=sale["total_area_m2"],
+        land_area_m2=None if pd.isna(sale["land_area_m2"]) else float(sale["land_area_m2"]),
         floor=sale["floor"],
         building_floors=sale["building_floors"],
         building_status=sale["building_status"],
@@ -193,11 +196,16 @@ def conformal_half_width(absolute_log_errors: np.ndarray, coverage: float) -> fl
 
 
 def calibrate_interval(
-    market: MarketData, window_end: date, policy: ValuationPolicy, limits: ValuationLimits
+    market: MarketData,
+    window_end: date,
+    policy: ValuationPolicy,
+    limits: ValuationLimits,
+    property_kind: PropertyKind = PropertyKind.FLAT,
 ) -> IntervalCalibration:
     """Values recent sales with earlier sales only, and measures how far off the model was."""
     window_days = round(policy.interval.calibration_months * AVERAGE_DAYS_PER_MONTH)
     window_start = window_end - timedelta(days=window_days)
+    market = market.of_kind(property_kind)
     hedonic = fit_hedonic_model(market.sold_before(window_start), window_start, policy.hedonic)
     calibration_sales = market.sold_between(window_start, window_end).sales.tail(
         policy.interval.max_calibration_sales
@@ -246,7 +254,8 @@ def value_property(
     limits: ValuationLimits,
 ) -> MarketValuation:
     """Raises InsufficientComparablesError when the market around the flat is too thin."""
-    history = market.sold_before(valuation_date)
+    # A flat is valued from flats and a house from houses, each with its own hedonic rates.
+    history = market.sold_before(valuation_date).of_kind(subject.property_kind)
     hedonic = fit_hedonic_model(history, valuation_date, policy.hedonic)
     estimate = estimate_by_comparables(subject, history, valuation_date, hedonic, policy, limits)
     hedonic_price_per_m2 = float(

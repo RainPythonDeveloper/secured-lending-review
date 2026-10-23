@@ -18,6 +18,7 @@ from collateral_engine.domain import (
     ExchangeRate,
     LicensedAppraisal,
     LoanRequest,
+    PropertyKind,
     SubjectProperty,
     ValuationRequest,
 )
@@ -46,6 +47,20 @@ SABURTALO_FLAT = {
     "building_status": BuildingStatus.NEW_BUILDING,
     "declared_condition": Condition.NEWLY_RENOVATED,
 }
+DIDUBE_HOUSE = {
+    "cadastral_code": "01.15.09.214.033",
+    "property_kind": PropertyKind.HOUSE,
+    "land_area_m2": Decimal("520"),
+    "district": District.DIDUBE,
+    "latitude": 41.7515,
+    "longitude": 44.7770,
+    "total_area_m2": Decimal("185"),
+    "rooms": 5,
+    "floor": 1,
+    "building_floors": 2,
+    "building_status": BuildingStatus.OLD_BUILDING,
+    "declared_condition": Condition.OLD_RENOVATED,
+}
 OUTSKIRTS_LOCATION = {"latitude": 41.845, "longitude": 44.835}
 
 
@@ -61,6 +76,10 @@ def admit_any(required_count: int) -> AdmissionRule:
 
 def make_subject(**overrides: object) -> SubjectProperty:
     return SubjectProperty(**{**SABURTALO_FLAT, **overrides})
+
+
+def make_house(**overrides: object) -> SubjectProperty:
+    return SubjectProperty(**{**DIDUBE_HOUSE, **overrides})
 
 
 def make_request(

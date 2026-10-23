@@ -1,4 +1,4 @@
-"""Invented loan applications for the officer console demo. No real person, flat or valuer."""
+"""Invented loan applications for the officer console demo. No real person, property or valuer."""
 
 from dataclasses import dataclass
 from datetime import date
@@ -14,6 +14,7 @@ from collateral_engine.domain import (
     LicensedAppraisal,
     LoanRequest,
     OffPlanDetails,
+    PropertyKind,
     SubjectProperty,
 )
 from collateral_engine.i18n import Bilingual, Language
@@ -147,6 +148,33 @@ DEMO_CASES = (
             amount=Decimal("150000"), currency=Currency.GEL, application_date=DEMO_VALUATION_DATE
         ),
         appraisal=None,
+    ),
+    DemoCase(
+        application_id="DEMO-DID-005",
+        title={
+            Language.GEORGIAN: "დიდუბე: კერძო სახლი მიწის ნაკვეთით",
+            Language.ENGLISH: "Didube: private house with its land plot",
+        },
+        subject=SubjectProperty(
+            cadastral_code="01.15.09.214.033",
+            property_kind=PropertyKind.HOUSE,
+            land_area_m2=Decimal("520"),
+            district=District.DIDUBE,
+            latitude=41.7515,
+            longitude=44.7770,
+            total_area_m2=Decimal("185"),
+            rooms=5,
+            floor=1,
+            building_floors=2,
+            building_status=BuildingStatus.OLD_BUILDING,
+            declared_condition=Condition.OLD_RENOVATED,
+        ),
+        loan=LoanRequest(
+            amount=Decimal("450000"), currency=Currency.GEL, application_date=DEMO_VALUATION_DATE
+        ),
+        appraisal=LicensedAppraisal(
+            market_value=Decimal("280000"), currency=Currency.USD, appraisal_date=date(2026, 10, 16)
+        ),
     ),
 )
 

@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from collateral_engine.audit import AuditLog
+from collateral_engine.domain import PropertyKind
 from collateral_engine.engine import CollateralEngine, EngineConfig, EngineStores
 from collateral_engine.evidence import EvidenceStore
 from collateral_engine.market import MarketData
@@ -63,6 +64,15 @@ def calibration(
     return calibrate_interval(market, market.last_sale_date + timedelta(days=1), policy, limits)
 
 
+@pytest.fixture(scope="session")
+def house_calibration(
+    market: MarketData, policy: ValuationPolicy, limits: ValuationLimits
+) -> IntervalCalibration:
+    return calibrate_interval(
+        market, market.last_sale_date + timedelta(days=1), policy, limits, PropertyKind.HOUSE
+    )
+
+
 @pytest.fixture
 def stores(tmp_path: Path) -> EngineStores:
     database = tmp_path / "audit.db"
@@ -80,11 +90,13 @@ def make_engine(
     condition_rules: ConditionRules,
     nbg_rules: NbgRules,
     calibration: IntervalCalibration,
+    house_calibration: IntervalCalibration,
     stores: EngineStores,
 ) -> Callable[[ConditionClassifier | None], CollateralEngine]:
     config = EngineConfig(policy, condition_rules, nbg_rules, "synthetic test sales")
 
     def build(classifier: ConditionClassifier | None = None) -> CollateralEngine:
-        return CollateralEngine(market, config, stores, classifier, calibration)
+        calibrations = {PropertyKind.FLAT: calibration, PropertyKind.HOUSE: house_calibration}
+        return CollateralEngine(market, config, stores, classifier, calibrations)
 
     return build

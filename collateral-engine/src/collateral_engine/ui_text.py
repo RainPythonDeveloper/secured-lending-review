@@ -7,9 +7,10 @@ KA, EN = Language.GEORGIAN, Language.ENGLISH
 UI_TEXT: dict[str, Bilingual] = {
     "app_title": {KA: "გირაოს შეფასება: მეორე აზრი", EN: "Collateral second opinion"},
     "app_subtitle": {
-        KA: "თბილისის ბინები სესხის უზრუნველყოფად · სებ-ის LTV შემოწმება · "
+        KA: "თბილისის ბინები და კერძო სახლები სესხის უზრუნველყოფად · სებ-ის LTV შემოწმება · "
         "გადაწყვეტილებას იღებს საკრედიტო ოფიცერი",
-        EN: "Tbilisi flats offered as loan collateral · NBG LTV check · the loan officer decides",
+        EN: "Tbilisi flats and houses offered as loan collateral · NBG LTV check · "
+        "the loan officer decides",
     },
     "synthetic_notice": {
         KA: "ყველა მონაცემი სინთეტიკურია: არც ერთი რეალური პირი, ბინა, შემფასებელი ან გარიგება.",
@@ -23,6 +24,14 @@ UI_TEXT: dict[str, Bilingual] = {
     "district": {KA: "რაიონი", EN: "District"},
     "latitude": {KA: "განედი", EN: "Latitude"},
     "longitude": {KA: "გრძედი", EN: "Longitude"},
+    "property_kind": {KA: "ობიექტის ტიპი", EN: "Property type"},
+    "house_hint": {
+        KA: "კერძო სახლისთვის: კადასტრული კოდი ნაკვეთის კოდია, სართული 1-ია, სართულიანობა კი "
+        "სახლის სართულების რაოდენობაა.",
+        EN: "For a house: the cadastral code is the parcel code, the floor is 1 and Floors is "
+        "the number of storeys.",
+    },
+    "land_area": {KA: "მიწის ნაკვეთის ფართობი, მ² (სახლი)", EN: "Land plot area, m² (house)"},
     "total_area": {KA: "საერთო ფართი, მ²", EN: "Total area, m²"},
     "rooms": {KA: "ოთახები", EN: "Rooms"},
     "floor": {KA: "სართული", EN: "Floor"},
@@ -51,13 +60,13 @@ UI_TEXT: dict[str, Bilingual] = {
     "appraised_value": {KA: "შეფასებული საბაზრო ღირებულება", EN: "Appraised market value"},
     "appraisal_currency": {KA: "შეფასების ვალუტა", EN: "Appraisal currency"},
     "photos": {
-        KA: "ბინის ფოტოები — მინიმუმ {count}, სხვადასხვა ოთახი",
-        EN: "Photos of the flat — at least {count}, different rooms",
+        KA: "ობიექტის ფოტოები — მინიმუმ {count}, სხვადასხვა ოთახი",
+        EN: "Photos of the property — at least {count}, different rooms",
     },
     "photos_help": {
-        KA: "JPEG, PNG ან WEBP. გადაიღეთ თავად ბინა: კედლები, იატაკი, სამზარეულო, აბაზანა. "
+        KA: "JPEG, PNG ან WEBP. გადაიღეთ თავად ობიექტი: კედლები, იატაკი, სამზარეულო, აბაზანა. "
         "კადრში ადამიანები არ უნდა იყვნენ.",
-        EN: "JPEG, PNG or WEBP. Photograph the flat itself: walls, floors, kitchen, bathroom. "
+        EN: "JPEG, PNG or WEBP. Photograph the property itself: walls, floors, kitchen, bathroom. "
         "No people in the frame.",
     },
     "photos_count": {KA: "ფოტოები", EN: "Photos"},
@@ -71,7 +80,7 @@ UI_TEXT: dict[str, Bilingual] = {
         EN: "NBG rate unavailable ({error}). Enter it manually.",
     },
     "assess": {KA: "გირაოს შეფასება", EN: "Assess the collateral"},
-    "assessing": {KA: "მიმდინარეობს ბინის შეფასება…", EN: "Valuing the flat…"},
+    "assessing": {KA: "მიმდინარეობს ობიექტის შეფასება…", EN: "Valuing the property…"},
     "invalid_input": {KA: "შეამოწმეთ განაცხადი: {error}", EN: "Check the application: {error}"},
     "invalid_number": {
         KA: "თანხა და კურსი უნდა იყოს რიცხვი, მაგალითად 220000 ან 2.5976.",
@@ -100,7 +109,10 @@ UI_TEXT: dict[str, Bilingual] = {
     },
     "model_estimate": {KA: "მოდელი", EN: "Model"},
     "appraisal": {KA: "შემფასებელი", EN: "Appraiser"},
-    "map_title": {KA: "ბინა, ანალოგიური გაყიდვები და მეტრო", EN: "Flat, comparable sales, metro"},
+    "map_title": {
+        KA: "ობიექტი, ანალოგიური გაყიდვები და მეტრო",
+        EN: "Property, comparable sales, metro",
+    },
     "condition_title": {KA: "მდგომარეობა ფოტოების მიხედვით", EN: "Condition from photos"},
     "declared": {KA: "დეკლარირებული", EN: "Declared"},
     "observed": {KA: "ფოტოებზე ჩანს", EN: "Seen in photos"},
@@ -115,9 +127,9 @@ UI_TEXT: dict[str, Bilingual] = {
         EN: "Adjustment grid (comparable sales)",
     },
     "comparables_caption": {
-        KA: "თითოეული გაყიდვის 1 მ²-ის ფასი კორექტირდება ამ ბინისთვის; ნაკლები კორექტირების "
+        KA: "თითოეული გაყიდვის 1 მ²-ის ფასი კორექტირდება ამ ობიექტისთვის; ნაკლები კორექტირების "
         "მქონე გაყიდვებს მეტი წონა აქვს.",
-        EN: "Each sale's price per m² is adjusted to this flat; sales that need fewer "
+        EN: "Each sale's price per m² is adjusted to this property; sales that need fewer "
         "adjustments weigh more.",
     },
     "column_sale": {KA: "გაყიდვა", EN: "Sale"},
@@ -132,6 +144,8 @@ UI_TEXT: dict[str, Bilingual] = {
     "column_building": {KA: "შენობა", EN: "Building"},
     "column_floor": {KA: "სართული", EN: "Floor"},
     "column_size": {KA: "ზომა", EN: "Size"},
+    "column_land": {KA: "ნაკვეთი", EN: "Land"},
+    "column_land_area": {KA: "ნაკვეთი, მ²", EN: "Land, m²"},
     "column_adjusted": {KA: "კორექტ. 1 მ², USD", EN: "Adjusted per m², USD"},
     "column_weight": {KA: "წონა", EN: "Weight"},
     "column_gross": {KA: "ჯამური კორექტ.", EN: "Gross adjustment"},
@@ -227,12 +241,18 @@ UI_TEXT: dict[str, Bilingual] = {
         "საპილოტე ტესტის შემდეგ.\n"
         "- განცხადებების ფასი გარიგების ფასს არ უდრის; რეალურ მონაცემებზე საჭიროა კალიბრაცია.\n"
         "- ფოტოებიდან მდგომარეობის დადგენა არ არის შემოწმებული მონიშნულ ფოტოებზე.\n"
-        "- მოდელი აფასებს მხოლოდ თბილისის ბინებს.",
+        "- მოდელი აფასებს თბილისის ბინებსა და კერძო სახლებს; მიწის ნაკვეთი შენობის გარეშე მხოლოდ "
+        "შემფასებლის ანგარიშის შემოწმებას გადის, რადგან მიწის ფასების ოფიციალური სტატისტიკა "
+        "არ არსებობს.\n"
+        "- სახლების ფასების საყრდენია Geostat-ის ახალი სახლების შეთავაზების ფასები "
+        "(2026 წლის I კვარტალი).",
         EN: "- Sales are synthetic; real accuracy is known only after a pilot on public registry "
         "data.\n"
         "- Asking prices differ from transaction prices; calibrate on real deals.\n"
         "- The condition reading from photos has not been measured on labelled photos yet.\n"
-        "- The model values flats in Tbilisi only.",
+        "- The model values flats and private houses in Tbilisi; land without a building gets the "
+        "valuer report check only, because there is no official land price series.\n"
+        "- House prices are anchored to Geostat offer prices for new houses (Q1 2026).",
     },
     "audit_verify": {KA: "ჰეშ-ჯაჭვის შემოწმება", EN: "Verify the hash chain"},
     "audit_intact": {

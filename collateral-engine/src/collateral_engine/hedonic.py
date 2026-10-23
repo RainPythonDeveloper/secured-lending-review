@@ -32,6 +32,7 @@ class AdjustmentGroup(StrEnum):
     BUILDING_STATUS = "building_status"
     FLOOR = "floor"
     SIZE = "size"
+    LAND = "land"
 
 
 def _feature_layout() -> tuple[tuple[str, AdjustmentGroup | None], ...]:
@@ -51,6 +52,7 @@ def _feature_layout() -> tuple[tuple[str, AdjustmentGroup | None], ...]:
         ("first_floor", AdjustmentGroup.FLOOR),
         ("top_floor", AdjustmentGroup.FLOOR),
         ("log_area_m2", AdjustmentGroup.SIZE),
+        ("log_land_area_m2", AdjustmentGroup.LAND),
         ("metro_distance_km", AdjustmentGroup.LOCATION),
         ("sale_age_months", AdjustmentGroup.TIME),
     ]
@@ -90,6 +92,8 @@ def encode_features(
         (floors == 1).astype(float),
         ((floors == building_floors) & (building_floors > 1)).astype(float),
         np.log(frame["total_area_m2"].to_numpy(float)),
+        # Flats have no land; log(1) = 0 keeps the feature neutral for them.
+        np.log(frame["land_area_m2"].fillna(1.0).to_numpy(float)),
         np.minimum(frame["metro_distance_km"].to_numpy(float), metro_distance_cap_km),
         sale_age_days / AVERAGE_DAYS_PER_MONTH,
     ]
