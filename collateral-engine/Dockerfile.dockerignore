@@ -1,0 +1,11 @@
+*
+!collateral-engine/pyproject.toml
+!collateral-engine/README.md
+!collateral-engine/src
+!collateral-engine/app
+!collateral-engine/config
+!collateral-engine/tests
+!collateral-engine/.streamlit
+!income-engine/config/nbg_rules.yaml
+**/__pycache__
+**/.pytest_cache

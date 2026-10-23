@@ -1,0 +1,63 @@
+# Bank valuation policy for the second-opinion model.
+# These are bank-configurable settings, not NBG rules. NBG LTV limits are read from
+# income-engine/config/nbg_rules.yaml, the single place where NBG rule values live.
+version: "2026-10"
+
+comparables:
+  max_age_months: 18
+  search_radius_km: 1.5
+  # Used once when fewer than min_count sales lie within search_radius_km; flagged in the report.
+  widened_radius_km: 3.0
+  # A comparable may be at most this many times larger or smaller than the subject.
+  max_area_ratio: 1.6
+  min_count: 5
+  max_count: 8
+
+hedonic:
+  ridge_penalty: 0.001
+  # Beyond walking distance the metro adds little, so longer distances are capped.
+  metro_distance_cap_km: 3.0
+
+interval:
+  coverage: 0.80
+  calibration_months: 6
+  max_calibration_sales: 400
+
+review:
+  # |ln(comparables estimate / hedonic estimate)| above this sends the valuation to review.
+  max_model_disagreement: 0.15
+
+fx_stress:
+  # Tbilisi flats are priced in USD; a stronger lari lowers their value in GEL.
+  gel_appreciation: "0.20"
+
+photos:
+  max_photos: 12
+  max_bytes: 15000000
+  min_width_px: 640
+  min_height_px: 480
+  min_mean_brightness: 40
+  max_mean_brightness: 225
+  # Variance of the Laplacian on a 512 px wide greyscale copy.
+  min_sharpness: 40.0
+  near_duplicate_max_hamming: 6
+
+flag_severity:
+  INSUFFICIENT_COMPARABLES: physical_inspection
+  COMPARABLES_WIDENED_RADIUS: info
+  ADJUSTMENT_JUSTIFICATION_REQUIRED: review
+  MODEL_DISAGREEMENT: review
+  APPRAISAL_ABOVE_RANGE: review
+  APPRAISAL_BELOW_RANGE: info
+  CONDITION_PARTLY_CONFIRMED: info
+  CONDITION_CONTRADICTED: physical_inspection
+  CONDITION_INCONCLUSIVE: review
+  CONDITION_NOT_VERIFIED: review
+  TOO_FEW_PHOTOS: review
+  PHOTO_QUALITY_ISSUES: info
+  PHOTOS_WITH_PEOPLE_EXCLUDED: info
+  NEAR_DUPLICATE_PHOTOS: info
+  PHOTO_SEEN_IN_OTHER_APPLICATION: physical_inspection
+  VISION_UNAVAILABLE: info
+  LTV_ABOVE_LIMIT: review
+  LTV_ABOVE_LIMIT_UNDER_FX_STRESS: info

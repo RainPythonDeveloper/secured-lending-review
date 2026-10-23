@@ -1,0 +1,10 @@
+[theme]
+primaryColor = "#2f7d4f"
+base = "light"
+
+[server]
+headless = true
+maxUploadSize = 15
+# The engine is cached across reruns, so its package must not be hot-reloaded: a reload would
+# mix old and new classes. Changes under app/ still reload; restart the console after src/ changes.
+folderWatchBlacklist = ["src"]
