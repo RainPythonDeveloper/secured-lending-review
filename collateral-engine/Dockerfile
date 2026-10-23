@@ -10,7 +10,8 @@ RUN pip install --no-cache-dir -e ".[dev]"
 COPY income-engine/config/nbg_rules.yaml /income-engine/config/nbg_rules.yaml
 COPY collateral-engine/ ./
 # Synthetic sales are generated in the image, so every replica values against the same market.
-RUN python -m collateral_engine.synth && python -m pytest -q
+RUN python -m collateral_engine.synth && python -m collateral_engine.vehicles.synth \
+    && python -m pytest -q
 RUN useradd -m collateral && chown -R collateral /collateral-engine
 USER collateral
 EXPOSE 8100 8501

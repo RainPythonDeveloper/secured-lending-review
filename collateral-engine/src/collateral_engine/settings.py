@@ -44,6 +44,7 @@ class Settings(BaseModel):
 
     config_dir: Path
     market_data_path: Path
+    vehicle_market_data_path: Path
     market_data_source: str
     nbg_rules_path: Path
     audit_db_path: Path
@@ -77,6 +78,9 @@ def load_settings(environment: Mapping[str, str] = os.environ) -> Settings:
             config_dir=read("COLLATERAL_CONFIG_DIR", DEFAULT_CONFIG_DIR),
             market_data_path=read(
                 "COLLATERAL_MARKET_DATA_PATH", SERVICE_ROOT / "data" / "comparables.csv"
+            ),
+            vehicle_market_data_path=read(
+                "COLLATERAL_VEHICLE_MARKET_DATA_PATH", SERVICE_ROOT / "data" / "vehicle_sales.csv"
             ),
             market_data_source=read("COLLATERAL_MARKET_DATA_SOURCE", SYNTHETIC_MARKET_DATA_SOURCE),
             nbg_rules_path=read("NBG_RULES_PATH", DEFAULT_NBG_RULES_PATH),

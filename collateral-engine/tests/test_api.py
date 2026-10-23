@@ -5,7 +5,14 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 
-from builders import USD_RATE, make_appraisal, make_house, make_request, scene_photo
+from builders import (
+    USD_RATE,
+    make_appraisal,
+    make_house,
+    make_request,
+    make_vehicle_request,
+    scene_photo,
+)
 from collateral_engine.api import PROBLEM_JSON, create_app
 from collateral_engine.domain import Currency
 from collateral_engine.nbg_rates import OfficialRateUnavailableError
@@ -22,8 +29,8 @@ class StubRatesClient:
 
 
 @pytest.fixture
-def client(make_engine) -> TestClient:
-    return TestClient(create_app(make_engine(), StubRatesClient()))
+def client(make_engine, make_vehicle_engine) -> TestClient:
+    return TestClient(create_app(make_engine(), make_vehicle_engine(), StubRatesClient()))
 
 
 def post_valuation(client: TestClient, request_json: str, photos: list[bytes] = ()):
@@ -161,11 +168,47 @@ def test_usd_rate_comes_from_nbg_client(client: TestClient) -> None:
     }
 
 
-def test_unavailable_nbg_rate_is_bad_gateway(make_engine) -> None:
+def test_unavailable_nbg_rate_is_bad_gateway(make_engine, make_vehicle_engine) -> None:
     failing = StubRatesClient(OfficialRateUnavailableError("NBG has no rate for 2027-05-01 yet"))
-    client = TestClient(create_app(make_engine(), failing))
+    client = TestClient(create_app(make_engine(), make_vehicle_engine(), failing))
 
     response = client.get("/v1/exchange-rates/usd", params={"rate_date": "2027-05-01"})
 
     assert response.status_code == 502
     assert response.json()["code"] == "RATE_UNAVAILABLE"
+
+
+def test_health_counts_vehicle_sales(client: TestClient) -> None:
+    assert client.get("/health").json()["vehicle_sales"] > 0
+
+
+def test_create_vehicle_valuation_returns_report_with_bank_ltv(client: TestClient) -> None:
+    response = client.post(
+        "/v1/vehicle-valuations", data={"request": make_vehicle_request().model_dump_json()}
+    )
+
+    body = response.json()
+    assert response.status_code == 201
+    assert body["ltv"]["ltv_limit"] == "0.70"
+    assert body["valuation"]["projected_value_at_maturity_usd"] is not None
+
+
+def test_vehicle_request_with_invalid_vin_is_problem_json(client: TestClient) -> None:
+    request = json.loads(make_vehicle_request().model_dump_json())
+    request["vehicle"]["vin"] = "NOT-A-VIN"
+
+    response = client.post("/v1/vehicle-valuations", data={"request": json.dumps(request)})
+
+    assert response.status_code == 400
+    assert response.headers["content-type"].startswith(PROBLEM_JSON)
+
+
+def test_officer_decision_on_vehicle_valuation_is_recorded(client: TestClient) -> None:
+    report = client.post(
+        "/v1/vehicle-valuations", data={"request": make_vehicle_request().model_dump_json()}
+    ).json()
+    decision = {"officer_id": "officer-1", "decision": "PHYSICAL_INSPECTION", "reason": "check VIN"}
+
+    response = client.post(f"/v1/valuations/{report['valuation_id']}/decision", json=decision)
+
+    assert response.status_code == 201

@@ -12,6 +12,8 @@ from collateral_engine.i18n import Language
 from collateral_engine.market import write_market_data
 from collateral_engine.synth import generate_sales
 from collateral_engine.ui_text import UI_TEXT
+from collateral_engine.vehicles.market import write_vehicle_market_data
+from collateral_engine.vehicles.synth import generate_vehicle_sales
 
 APP_PATH = Path(__file__).parents[1] / "app" / "streamlit_app.py"
 STREAMLIT_CONFIG_PATH = Path(__file__).parents[1] / ".streamlit" / "config.toml"
@@ -25,9 +27,14 @@ def console_environment(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Pa
     directory = tmp_path_factory.mktemp("console")
     market_path = directory / "comparables.csv"
     write_market_data(generate_sales(CONSOLE_SALE_COUNT, seed=CONSOLE_SEED), market_path)
+    vehicle_market_path = directory / "vehicle_sales.csv"
+    write_vehicle_market_data(
+        generate_vehicle_sales(CONSOLE_SALE_COUNT, seed=CONSOLE_SEED), vehicle_market_path
+    )
     st.cache_resource.clear()
     with pytest.MonkeyPatch.context() as patch:
         patch.setenv("COLLATERAL_MARKET_DATA_PATH", str(market_path))
+        patch.setenv("COLLATERAL_VEHICLE_MARKET_DATA_PATH", str(vehicle_market_path))
         patch.setenv("COLLATERAL_AUDIT_DB_PATH", str(directory / "audit.db"))
         patch.setenv("COLLATERAL_EVIDENCE_DIR", str(directory / "evidence"))
         patch.setenv("COLLATERAL_VISION_ENABLED", "false")
@@ -153,3 +160,31 @@ def test_quality_tab_backtests_houses(console: AppTest) -> None:
     console.radio(key="quality_property_kind").set_value(PropertyKind.HOUSE).run()
 
     assert not console.exception
+
+
+def test_vehicle_demo_is_valued_with_bank_ltv(console: AppTest) -> None:
+    console.button(key="assess_vehicle").click().run()
+
+    report = console.session_state["vehicle_report"]
+    assert not console.exception
+    assert report.valuation is not None
+    assert report.ltv is not None
+
+
+def test_vehicle_not_cleared_through_customs_needs_inspection(console: AppTest) -> None:
+    console.selectbox(key="vehicle_demo_case").set_value("DEMO-CAR-003").run()
+
+    console.button(key="assess_vehicle").click().run()
+
+    report = console.session_state["vehicle_report"]
+    assert report.recommendation is Recommendation.PHYSICAL_INSPECTION
+
+
+def test_invalid_vin_is_reported_not_crashed(console: AppTest) -> None:
+    console.text_input(key="vehicle_field_vin").set_value("SHORT")
+
+    console.button(key="assess_vehicle").click().run()
+
+    assert not console.exception
+    assert "vehicle_report" not in console.session_state
+    assert console.error

@@ -8,7 +8,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from collateral_engine.domain import Condition, ConstructionStage, PropertyKind
-from collateral_engine.flags import ReasonCode, Severity
+from collateral_engine.flags import REAL_ESTATE_REASON_CODES, ReasonCode, Severity
 
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_DIR = SERVICE_ROOT / "config"
@@ -97,7 +97,7 @@ class ValuationPolicy(_Config):
 
     @model_validator(mode="after")
     def _check_every_reason_has_severity(self) -> Self:
-        missing = set(ReasonCode) - set(self.flag_severity)
+        missing = REAL_ESTATE_REASON_CODES - set(self.flag_severity)
         if missing:
             raise ValueError(f"flag_severity lacks {sorted(missing)}")
         return self

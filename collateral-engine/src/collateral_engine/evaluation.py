@@ -31,6 +31,9 @@ from collateral_engine.valuation import (
     calibrate_interval,
     estimate_by_comparables,
 )
+from collateral_engine.vehicles.evaluation import run_vehicle_backtest, summarise_vehicle_backtest
+from collateral_engine.vehicles.market import load_vehicle_market_data
+from collateral_engine.vehicles.policy import load_vehicle_policy
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +198,9 @@ def _error_by_district(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Out-of-time backtest of the valuation model")
     parser.add_argument("--market", type=Path, default=SERVICE_ROOT / "data" / "comparables.csv")
+    parser.add_argument(
+        "--vehicle-market", type=Path, default=SERVICE_ROOT / "data" / "vehicle_sales.csv"
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_METRICS_PATH)
     arguments = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
@@ -210,6 +216,14 @@ def main() -> None:
         ).model_dump(mode="json")
         for kind in PropertyKind
     }
+    vehicle_market = load_vehicle_market_data(arguments.vehicle_market)
+    vehicle_policy = load_vehicle_policy()
+    vehicle_run = run_vehicle_backtest(
+        vehicle_market, vehicle_market.last_sale_date + timedelta(days=1), vehicle_policy
+    )
+    metrics_by_kind["vehicle"] = summarise_vehicle_backtest(vehicle_run, vehicle_policy).model_dump(
+        mode="json"
+    )
     arguments.out.parent.mkdir(parents=True, exist_ok=True)
     arguments.out.write_text(json.dumps(metrics_by_kind, indent=2) + "\n")
     logger.info("Backtest metrics written to %s", arguments.out)

@@ -12,8 +12,11 @@ from collateral_engine.i18n import (
     BUILDING_STATUS_NAMES,
     CLAIM_STATUS_NAMES,
     CONDITION_NAMES,
+    FUEL_TYPE_NAMES,
     REASON_TEMPLATES,
     RECOMMENDATION_NAMES,
+    STEERING_SIDE_NAMES,
+    VEHICLE_ADJUSTMENT_NAMES,
     Language,
     reason_text,
 )
@@ -24,6 +27,8 @@ from collateral_engine.policy import (
     ValuationPolicy,
 )
 from collateral_engine.settings import SettingsError, VisionProvider, load_settings
+from collateral_engine.vehicles.domain import FuelType, SteeringSide
+from collateral_engine.vehicles.report import VehicleAdjustmentGroup
 
 
 @pytest.mark.parametrize(
@@ -34,6 +39,9 @@ from collateral_engine.settings import SettingsError, VisionProvider, load_setti
         (CLAIM_STATUS_NAMES, ClaimStatus),
         (RECOMMENDATION_NAMES, Recommendation),
         (REASON_TEMPLATES, ReasonCode),
+        (FUEL_TYPE_NAMES, FuelType),
+        (STEERING_SIDE_NAMES, SteeringSide),
+        (VEHICLE_ADJUSTMENT_NAMES, VehicleAdjustmentGroup),
     ],
 )
 def test_every_value_has_georgian_and_english_text(names: dict, members) -> None:

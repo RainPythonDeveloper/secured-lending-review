@@ -30,6 +30,7 @@ from collateral_engine.report import (
 )
 from collateral_engine.ui_text import UI_TEXT
 from collateral_engine.valuation import IntervalCalibration
+from collateral_engine.vehicles.report import VehicleLtvCheck, VehicleValuationReport
 from collateral_engine.vision import VisionFailure
 
 RECOMMENDATION_COLOURS = {
@@ -93,7 +94,9 @@ def money(amount: Decimal, currency: str) -> str:
     return f"{amount:,.0f} {currency}"
 
 
-def render_recommendation(report: ValuationReport, language: Language) -> None:
+def render_recommendation(
+    report: ValuationReport | VehicleValuationReport, language: Language
+) -> None:
     colour = RECOMMENDATION_COLOURS[report.recommendation]
     reasons = (
         "".join(
@@ -370,7 +373,7 @@ def render_ltv_and_appraisal(report: ValuationReport, language: Language) -> Non
     columns[2].metric(
         label("max_loan", language), money(ltv.max_loan_amount, ltv.loan_currency.value)
     )
-    _render_stressed_ltv(columns[3], ltv, language)
+    render_stressed_ltv(columns[3], ltv, language)
     basis = LENDING_VALUE_BASIS_NAMES[ltv.lending_value_basis][language]
     st.caption(
         f"{label('basis', language)}: {basis} · "
@@ -380,7 +383,9 @@ def render_ltv_and_appraisal(report: ValuationReport, language: Language) -> Non
         _render_appraisal(report.appraisal, language)
 
 
-def _render_stressed_ltv(column: object, ltv: LtvCheck, language: Language) -> None:
+def render_stressed_ltv(
+    column: object, ltv: LtvCheck | VehicleLtvCheck, language: Language
+) -> None:
     if ltv.stressed_ltv_ratio is None or ltv.gel_appreciation_stress is None:
         return
     column.metric(

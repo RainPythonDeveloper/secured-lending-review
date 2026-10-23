@@ -137,8 +137,8 @@ def test_every_issue_has_georgian_and_english_text() -> None:
     assert report_finding_text(finding, Language.ENGLISH)
 
 
-def test_api_checks_report_with_rules_in_force(make_engine) -> None:
-    client = TestClient(create_app(make_engine(), rates_client=None))
+def test_api_checks_report_with_rules_in_force(make_engine, make_vehicle_engine) -> None:
+    client = TestClient(create_app(make_engine(), make_vehicle_engine(), rates_client=None))
 
     response = client.post(
         "/v1/valuer-reports/check", json=DEMO_FACTORY_REPORT.model_dump(mode="json")

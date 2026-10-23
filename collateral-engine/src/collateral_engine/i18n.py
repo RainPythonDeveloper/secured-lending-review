@@ -13,6 +13,8 @@ from collateral_engine.domain import (
 from collateral_engine.flags import Flag, ReasonCode, Recommendation, Severity
 from collateral_engine.report import AppraisalPosition, LendingValueBasis
 from collateral_engine.report_check import ReportFinding, ReportIssue
+from collateral_engine.vehicles.domain import FuelType, SteeringSide
+from collateral_engine.vehicles.report import VehicleAdjustmentGroup
 
 
 class Language(StrEnum):
@@ -278,6 +280,79 @@ REASON_TEMPLATES: dict[ReasonCode, Bilingual] = {
         Language.ENGLISH: "If the lari strengthens by {stress}%, LTV rises to {ltv}%, "
         "above the {limit}% limit.",
     },
+    ReasonCode.VEHICLE_TOO_FEW_PHOTOS: {
+        Language.GEORGIAN: "ატვირთულია {count} ფოტო {required}-დან; საჭიროა ავტომობილის წინა, "
+        "უკანა და ორივე გვერდითი ხედი, ოდომეტრი და VIN ფირფიტა.",
+        Language.ENGLISH: "{count} of {required} required photos uploaded; ask for the front, "
+        "the rear, both sides, the odometer and the VIN plate.",
+    },
+    ReasonCode.VEHICLE_INSUFFICIENT_COMPARABLES: {
+        Language.GEORGIAN: "ამ მარკისა და მოდელის მხოლოდ {found} შესადარებელი გაყიდვაა; "
+        "საჭიროა ავტომობილის დათვალიერება შემფასებლის მიერ.",
+        Language.ENGLISH: "Only {found} comparable sales of this make and model; a valuer has "
+        "to inspect the vehicle.",
+    },
+    ReasonCode.VEHICLE_NOT_CUSTOMS_CLEARED: {
+        Language.GEORGIAN: "ავტომობილი განბაჟებული არ არის: განბაჟებამდე მისი რეგისტრაცია და "
+        "გირავნობით დატვირთვა შეუძლებელია.",
+        Language.ENGLISH: "The vehicle is not cleared through customs: it cannot be registered "
+        "or pledged until it is.",
+    },
+    ReasonCode.VEHICLE_ACCIDENT_HISTORY: {
+        Language.GEORGIAN: "დეკლარირებულია ავარიის ისტორია; გადაამოწმეთ შეკეთება და ისტორია "
+        "VIN კოდით.",
+        Language.ENGLISH: "Accident history declared; check the repair and the history by VIN.",
+    },
+    ReasonCode.VEHICLE_RIGHT_HAND_DRIVE: {
+        Language.GEORGIAN: "მარჯვენასაჭიანი ავტომობილი საქართველოში ნაკლებად ლიკვიდურია და "
+        "ფასდაკლებით იყიდება.",
+        Language.ENGLISH: "A right-hand drive vehicle is less liquid in Georgia and sells at a "
+        "discount.",
+    },
+    ReasonCode.VEHICLE_TOO_OLD_AT_MATURITY: {
+        Language.GEORGIAN: "სესხის დასრულებისას ავტომობილი {age} წლის იქნება, რაც ბანკის "
+        "პოლიტიკის {max_age} წელს აღემატება.",
+        Language.ENGLISH: "The vehicle will be {age} years old when the loan ends, beyond the "
+        "bank's {max_age} years.",
+    },
+    ReasonCode.VEHICLE_LTV_ABOVE_BANK_LIMIT: {
+        Language.GEORGIAN: "LTV {ltv}% აჭარბებს ბანკის პოლიტიკის {limit}%-იან ლიმიტს; "
+        "სესხის მაქსიმალური ოდენობაა {max_loan} {currency}.",
+        Language.ENGLISH: "LTV {ltv}% exceeds the bank's limit of {limit}%; "
+        "the maximum loan is {max_loan} {currency}.",
+    },
+    ReasonCode.VEHICLE_LTV_ABOVE_BANK_LIMIT_UNDER_FX_STRESS: {
+        Language.GEORGIAN: "ლარის {stress}%-ით გამყარებისას LTV {ltv}%-მდე გაიზრდება "
+        "და ბანკის {limit}%-იან ლიმიტს გადააჭარბებს.",
+        Language.ENGLISH: "If the lari strengthens by {stress}%, LTV rises to {ltv}%, "
+        "above the bank's {limit}% limit.",
+    },
+}
+
+FUEL_TYPE_NAMES: dict[FuelType, Bilingual] = {
+    FuelType.PETROL: {Language.GEORGIAN: "ბენზინი", Language.ENGLISH: "Petrol"},
+    FuelType.DIESEL: {Language.GEORGIAN: "დიზელი", Language.ENGLISH: "Diesel"},
+    FuelType.HYBRID: {Language.GEORGIAN: "ჰიბრიდი", Language.ENGLISH: "Hybrid"},
+    FuelType.PETROL_GAS: {Language.GEORGIAN: "ბენზინი და გაზი", Language.ENGLISH: "Petrol and gas"},
+    FuelType.ELECTRIC: {Language.GEORGIAN: "ელექტრო", Language.ENGLISH: "Electric"},
+}
+
+STEERING_SIDE_NAMES: dict[SteeringSide, Bilingual] = {
+    SteeringSide.LEFT: {Language.GEORGIAN: "მარცხენა საჭე", Language.ENGLISH: "Left-hand drive"},
+    SteeringSide.RIGHT: {
+        Language.GEORGIAN: "მარჯვენა საჭე",
+        Language.ENGLISH: "Right-hand drive",
+    },
+}
+
+VEHICLE_ADJUSTMENT_NAMES: dict[VehicleAdjustmentGroup, Bilingual] = {
+    VehicleAdjustmentGroup.AGE: {Language.GEORGIAN: "ასაკი", Language.ENGLISH: "Age"},
+    VehicleAdjustmentGroup.MILEAGE: {Language.GEORGIAN: "გარბენი", Language.ENGLISH: "Mileage"},
+    VehicleAdjustmentGroup.ACCIDENT: {Language.GEORGIAN: "ავარია", Language.ENGLISH: "Accident"},
+    VehicleAdjustmentGroup.STEERING: {Language.GEORGIAN: "საჭე", Language.ENGLISH: "Steering"},
+    VehicleAdjustmentGroup.CUSTOMS: {Language.GEORGIAN: "განბაჟება", Language.ENGLISH: "Customs"},
+    VehicleAdjustmentGroup.FUEL: {Language.GEORGIAN: "საწვავი", Language.ENGLISH: "Fuel"},
+    VehicleAdjustmentGroup.TIME: {Language.GEORGIAN: "დრო", Language.ENGLISH: "Time"},
 }
 
 

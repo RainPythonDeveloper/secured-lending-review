@@ -24,7 +24,12 @@ from collateral_engine.audit import (
     UnknownValuationError,
     record_officer_decision,
 )
-from collateral_engine.bootstrap import build_engine, build_nbg_rates_client
+from collateral_engine.bootstrap import (
+    build_engine,
+    build_nbg_rates_client,
+    build_stores,
+    build_vehicle_engine,
+)
 from collateral_engine.domain import Currency, ExchangeRate, ValuationRequest
 from collateral_engine.engine import CollateralEngine, TooManyPhotosError
 from collateral_engine.nbg_rates import NbgRatesClient, OfficialRateUnavailableError
@@ -34,6 +39,9 @@ from collateral_engine.reference import DistrictReference, load_districts
 from collateral_engine.report import ValuationReport
 from collateral_engine.report_check import ReportFinding, ValuerReport, check_valuer_report
 from collateral_engine.settings import load_settings
+from collateral_engine.vehicles.domain import VehicleValuationRequest
+from collateral_engine.vehicles.engine import VehicleEngine
+from collateral_engine.vehicles.report import VehicleValuationReport
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +60,7 @@ class HealthStatus(BaseModel):
     status: str
     model_version: str
     comparable_sales: int
+    vehicle_sales: int
 
 
 class DecisionBody(BaseModel):
@@ -89,21 +98,30 @@ def problem_response(status: HTTPStatus, code: str, detail: str) -> JSONResponse
     return JSONResponse(problem.model_dump(), status_code=status.value, media_type=PROBLEM_JSON)
 
 
-def create_app(engine: CollateralEngine, rates_client: NbgRatesClient) -> FastAPI:
+def create_app(
+    engine: CollateralEngine, vehicle_engine: VehicleEngine, rates_client: NbgRatesClient
+) -> FastAPI:
     app = FastAPI(
         title="Collateral second opinion",
         version=MODEL_VERSION,
-        description="Valuation of Tbilisi flats offered as collateral, condition check from "
-        "photos and the NBG LTV check. Demo build on synthetic comparable sales.",
+        description="Valuation of Tbilisi flats and houses and of vehicles offered as collateral, "
+        "condition check from photos and the LTV check. Demo build on synthetic sales.",
     )
     _register_error_handlers(app)
+    _register_health(app, engine, vehicle_engine)
     _register_routes(app, engine, rates_client)
+    _register_vehicle_routes(app, vehicle_engine)
     return app
 
 
 def create_app_from_environment() -> FastAPI:
     settings = load_settings()
-    return create_app(build_engine(settings), build_nbg_rates_client(settings))
+    stores = build_stores(settings)
+    return create_app(
+        build_engine(settings, stores),
+        build_vehicle_engine(settings, stores),
+        build_nbg_rates_client(settings),
+    )
 
 
 def _register_error_handlers(app: FastAPI) -> None:
@@ -133,12 +151,18 @@ def _first_error(errors: list) -> str:
     return f"{location}: {first.get('msg', 'invalid value')}"
 
 
-def _register_routes(app: FastAPI, engine: CollateralEngine, rates_client: NbgRatesClient) -> None:
+def _register_health(app: FastAPI, engine: CollateralEngine, vehicle_engine: VehicleEngine) -> None:
     @app.get("/health")
     def health() -> HealthStatus:
         return HealthStatus(
-            status="ok", model_version=MODEL_VERSION, comparable_sales=len(engine.market)
+            status="ok",
+            model_version=MODEL_VERSION,
+            comparable_sales=len(engine.market),
+            vehicle_sales=len(vehicle_engine.market),
         )
+
+
+def _register_routes(app: FastAPI, engine: CollateralEngine, rates_client: NbgRatesClient) -> None:
 
     @app.get("/v1/reference/districts")
     def districts() -> list[DistrictReference]:
@@ -196,9 +220,28 @@ def _register_routes(app: FastAPI, engine: CollateralEngine, rates_client: NbgRa
         return AuditVerification(is_intact=is_intact, records_checked=records_checked)
 
 
+def _register_vehicle_routes(app: FastAPI, vehicle_engine: VehicleEngine) -> None:
+    @app.post("/v1/vehicle-valuations", status_code=HTTPStatus.CREATED)
+    def create_vehicle_valuation(
+        request: Annotated[str, Form(description="VehicleValuationRequest as JSON")],
+        photos: Annotated[list[UploadFile], File()] = [],  # noqa: B006 - FastAPI form default
+    ) -> VehicleValuationReport:
+        valuation_request = _parse_request(request, VehicleValuationRequest)
+        max_bytes = vehicle_engine.config.policy.photos.max_bytes
+        uploads = [_read_upload(photo, max_bytes) for photo in photos]
+        try:
+            return vehicle_engine.assess(valuation_request, uploads)
+        except TooManyPhotosError as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "TOO_MANY_PHOTOS", str(error)) from error
+
+
 def _parse_valuation_request(raw_request: str) -> ValuationRequest:
+    return _parse_request(raw_request, ValuationRequest)
+
+
+def _parse_request[Model: BaseModel](raw_request: str, request_model: type[Model]) -> Model:
     try:
-        return ValuationRequest.model_validate_json(raw_request)
+        return request_model.model_validate_json(raw_request)
     except ValidationError as error:
         raise ApiError(
             HTTPStatus.BAD_REQUEST, "FORMAT_ERROR", _first_error(error.errors())

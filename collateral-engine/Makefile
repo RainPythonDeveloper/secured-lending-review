@@ -14,6 +14,7 @@ install:
 
 data:
 	$(PYTHON) -m collateral_engine.synth
+	$(PYTHON) -m collateral_engine.vehicles.synth
 
 check:
 	$(PYTHON) -m ruff format --check .

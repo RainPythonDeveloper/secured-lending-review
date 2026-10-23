@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from collateral_engine.flags import Recommendation
 from collateral_engine.report import ValuationReport
+from collateral_engine.vehicles.report import VehicleValuationReport
 
 GENESIS_HASH = "0" * 64
 
@@ -133,7 +134,7 @@ class AuditLog:
         raise UnknownValuationError(f"valuation {valuation_id} is not in the audit log")
 
 
-def record_valuation(audit_log: AuditLog, report: ValuationReport) -> str:
+def record_valuation(audit_log: AuditLog, report: ValuationReport | VehicleValuationReport) -> str:
     report_json = report.model_dump_json()
     return audit_log.append(
         {

@@ -22,6 +22,13 @@ from collateral_engine.domain import (
     SubjectProperty,
     ValuationRequest,
 )
+from collateral_engine.vehicles.domain import (
+    FuelType,
+    SteeringSide,
+    VehicleLoanRequest,
+    VehicleSubject,
+    VehicleValuationRequest,
+)
 from collateral_engine.vision import (
     PhotoAssessment,
     PhotoClassification,
@@ -190,3 +197,39 @@ def fake_anthropic_client(messages: FakeAnthropicMessages) -> SimpleNamespace:
 def fake_message(text: str | None, stop_reason: str = "end_turn") -> SimpleNamespace:
     content = [] if text is None else [SimpleNamespace(type="text", text=text)]
     return SimpleNamespace(stop_reason=stop_reason, content=content)
+
+
+PRIUS = {
+    "vin": "JTDKARFU0J3000001",
+    "plate_number": "DM-001-AA",
+    "make": "Toyota",
+    "model": "Prius",
+    "production_year": 2018,
+    "mileage_km": 120000,
+    "engine_volume_cm3": 1800,
+    "fuel": FuelType.HYBRID,
+    "steering": SteeringSide.LEFT,
+    "is_customs_cleared": True,
+    "has_accident_history": False,
+}
+
+
+def make_vehicle(**overrides: object) -> VehicleSubject:
+    return VehicleSubject(**{**PRIUS, **overrides})
+
+
+def make_vehicle_request(
+    vehicle: VehicleSubject | None = None,
+    loan_amount: str = "15000",
+    loan_currency: Currency = Currency.GEL,
+    term_months: int = 48,
+) -> VehicleValuationRequest:
+    return VehicleValuationRequest(
+        application_id="TEST-CAR-001",
+        valuation_date=VALUATION_DATE,
+        vehicle=vehicle or make_vehicle(),
+        loan=VehicleLoanRequest(
+            amount=Decimal(loan_amount), currency=loan_currency, term_months=term_months
+        ),
+        usd_rate=USD_RATE,
+    )

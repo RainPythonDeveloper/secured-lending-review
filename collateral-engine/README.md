@@ -3,8 +3,8 @@
 **NBG AI & Open Banking Hackathon 2026 · Track 1: AI in Finance · AI1: Credit Risk & Lending**
 
 A loan officer in Tbilisi receives a licensed valuer's report on the flat or private house offered as
-collateral. This service gives an independent second opinion. It values the property from comparable
-sales with a
+collateral, or an application for a car loan. This service gives an independent second opinion. It
+values the property or vehicle from comparable sales with a
 calibrated range, reads the declared condition from interior photos, flags an appraisal outside the
 market range, and computes the NBG loan-to-value check. The officer decides, and every assessment and
 decision goes to a tamper-evident audit log.
@@ -34,6 +34,15 @@ accuracy. Coverage is below target because prices drift between the calibration 
 reported but not gated: the 14% noise in synthetic house prices alone puts it near 1.03 even for
 unbiased estimates, so regressivity is gated on the slope against the estimate instead.
 
+Vehicles, same out-of-time design on synthetic sales of 14 models:
+
+| Metric | Vehicles | Gate |
+|---|---|---|
+| Sales tested | 398 of 400 | ≥ 90% valued |
+| Median absolute error | 7.7% | ≤ 10% |
+| Within ±10% / ±20% | 62% / 94% | |
+| Range coverage | 80.2% | target 80% ± 8 points |
+
 ## Georgian and NBG specifics
 
 | Topic | How the service handles it |
@@ -45,6 +54,7 @@ unbiased estimates, so regressivity is gated on the slope against the estimate i
 | Property identity | NAPR cadastral code, Tbilisi (region `01`) only. A flat's code has building and unit segments (`01.14.14.011.008.01.527`); a house's code is the parcel code (`01.15.09.214.033`). |
 | Market prices | Synthetic sales anchored to Geostat's Q1 2026 price per m² of new flats and of new private houses in each of the ten Tbilisi districts (offer prices from myhome.ge and ss.ge). House prices grow 5.5% a year, the Geostat Q2 2026 figure. |
 | Private houses | House area, land plot area and number of storeys. Comparables are houses only, searched within 3 km (5 km if too few) and 24 months, and ranked by plot size as well; land is a separate adjustment in the grid. Houses under construction are rejected. |
+| Vehicles | NBG Order 84/04 covers real estate only and NBG sets no LTV limit for vehicle loans, so the limit (70%), the maximum age at the end of the loan (12 years) and the photo set (front, rear, both sides, odometer, VIN plate) are bank policy in `config/vehicle_policy.yaml`. Comparables are earlier sales of the same make and model; the report projects the value to the end of the loan. Georgian risks are flagged: no customs clearance (the vehicle cannot be registered or pledged), accident history (many imports come from US auctions), right-hand drive, and a gas conversion is priced. VIN (ISO 3779) and the Georgian plate format are validated. There is no official used-car price series, so the synthetic market rests on stated demo assumptions. |
 | Land without a building | Not valued by the model: Georgia has no official land price series and NAPR publishes no transaction prices. A valuer's report on land goes through the 84/04 report check. |
 | Flats under construction | Developer, construction stage, completion date and NAPR registration of the purchase agreement; comparables are other unfinished buildings (the 84/04 limits rule out larger status adjustments); the lending value is cut by a bank-policy factor per stage (70% foundation to 95% finishing); overdue or distant completion and an unregistered agreement are flagged. |
 | Condition | The seven classes of Georgian listings: black, white and green frame (შავი, თეთრი, მწვანე კარკასი), needs renovation, under renovation, old renovation, newly renovated. |
@@ -55,11 +65,12 @@ unbiased estimates, so regressivity is gated on the slope against the estimate i
 
 ```bash
 make install        # Python 3.12 virtual environment with pinned dependencies
-make data           # 6,000 flat and 1,200 house synthetic sales -> data/comparables.csv
+make data           # 6,000 flat and 1,200 house sales -> data/comparables.csv,
+                    # 8,000 vehicle sales -> data/vehicle_sales.csv (all synthetic)
 make app            # officer console on http://localhost:8502 (restart it after editing src/)
 make api            # REST API on http://localhost:8100/docs
-make check          # ruff format --check, ruff check, pytest (322 tests, about 25 s)
-make evaluate       # backtest of flats and houses -> reports/metrics.json
+make check          # ruff format --check, ruff check, pytest (389 tests, about 25 s)
+make evaluate       # backtest of flats, houses and vehicles -> reports/metrics.json
 ```
 
 From the repository root: `docker compose up --build collateral-engine-api collateral-console`.
@@ -136,6 +147,22 @@ every invalid row.
 | `building_status` | text | `new_building`, `old_building`, `under_construction` |
 | `condition` | text | one of the seven condition classes |
 
+Vehicle sales follow `VehicleSale` in `src/collateral_engine/vehicles/market.py` and are read from
+`COLLATERAL_VEHICLE_MARKET_DATA_PATH`:
+
+| Column | Type | Rule |
+|---|---|---|
+| `sale_id` | text | letters, digits, `-` |
+| `make`, `model` | text | matched without regard to case |
+| `production_year` | integer | 1990–2030 |
+| `mileage_km` | integer | 0–1,000,000 |
+| `engine_volume_cm3` | integer | 0 exactly for an electric vehicle |
+| `fuel` | text | `petrol`, `diesel`, `hybrid`, `petrol_gas`, `electric` |
+| `steering` | text | `left`, `right` |
+| `is_customs_cleared`, `has_accident_history` | boolean | |
+| `sale_date` | date | ISO 8601 |
+| `price_usd` | decimal | sale price, USD |
+
 ## API
 
 | Method | Path | Purpose |
@@ -145,6 +172,7 @@ every invalid row.
 | GET | `/v1/exchange-rates/usd?rate_date=` | NBG official USD rate |
 | POST | `/v1/valuations` | Multipart: `request` (ValuationRequest JSON) and `photos`; returns the report |
 | POST | `/v1/valuer-reports/check` | Checks a licensed valuer's report (any real estate, including factories) against NBG Order 84/04; each finding names its article |
+| POST | `/v1/vehicle-valuations` | Multipart: `request` (VehicleValuationRequest JSON) and `photos`; returns the vehicle report with the bank LTV and the value at the end of the loan |
 | POST | `/v1/valuations/{valuation_id}/decision` | Officer decision; 422 `REASON_REQUIRED` against the recommendation without a reason |
 | GET | `/v1/audit/verify` | Checks the hash chain |
 
@@ -181,6 +209,7 @@ empty value such as `NVIDIA_API_KEY=` means "not set".
 |---|---|
 | `COLLATERAL_CONFIG_DIR` | `config/` |
 | `COLLATERAL_MARKET_DATA_PATH` | `data/comparables.csv` |
+| `COLLATERAL_VEHICLE_MARKET_DATA_PATH` | `data/vehicle_sales.csv` |
 | `COLLATERAL_MARKET_DATA_SOURCE` | text naming the synthetic generator |
 | `NBG_RULES_PATH` | `../income-engine/config/nbg_rules.yaml` |
 | `COLLATERAL_AUDIT_DB_PATH` | `audit.db` |
@@ -210,6 +239,8 @@ unassessed.
 - The cadastral code format is inferred from registry extracts; verify it against the NAPR rule.
 - Flats and private houses in Tbilisi only. Land and commercial property get the valuer report
   check, not a model valuation.
+- Vehicle photos are checked for quality and reuse only; the odometer and VIN plate are not read
+  from them yet, and the declared mileage and accident history are not verified.
 - Geostat's house prices are offer prices of new houses. Per the IMF technical assistance report
   on the Georgian RPPI (April 2025), Geostat's house model takes floor area and plot area as
   separate characteristics, so the price per m² is per m² of the house, as in this model. Listings

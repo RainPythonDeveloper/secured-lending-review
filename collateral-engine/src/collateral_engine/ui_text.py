@@ -264,4 +264,57 @@ UI_TEXT: dict[str, Bilingual] = {
         EN: "Chain broken: a record was changed or deleted.",
     },
     "audit_empty": {KA: "ჩანაწერები ჯერ არ არის.", EN: "No records yet."},
+    "tab_vehicle": {KA: "ავტომობილი", EN: "Vehicle"},
+    "vehicle_intro": {
+        KA: "ავტომობილი სესხის უზრუნველყოფად. სებ-ის №84/04 ბრძანება მხოლოდ უძრავ ქონებას "
+        "ეხება და სებ ავტოსესხზე LTV ლიმიტს არ ადგენს, ამიტომ ლიმიტი და ვადა ბანკის "
+        "პოლიტიკიდანაა.",
+        EN: "A vehicle offered as loan collateral. NBG Order 84/04 covers real estate only and "
+        "NBG sets no LTV limit for vehicle loans, so the limit and term come from bank policy.",
+    },
+    "vehicle_demo_case": {KA: "სადემონსტრაციო განაცხადი", EN: "Demo application"},
+    "vin": {KA: "VIN კოდი", EN: "VIN"},
+    "plate_number": {KA: "სახელმწიფო ნომერი", EN: "Registration plate"},
+    "make": {KA: "მარკა", EN: "Make"},
+    "model": {KA: "მოდელი", EN: "Model"},
+    "production_year": {KA: "გამოშვების წელი", EN: "Production year"},
+    "mileage": {KA: "გარბენი, კმ", EN: "Mileage, km"},
+    "engine_volume": {KA: "ძრავის მოცულობა, სმ³", EN: "Engine volume, cm³"},
+    "fuel": {KA: "საწვავი", EN: "Fuel"},
+    "steering": {KA: "საჭე", EN: "Steering"},
+    "customs_cleared": {KA: "განბაჟებულია", EN: "Cleared through customs"},
+    "accident_history": {KA: "ავარიის ისტორია", EN: "Accident history"},
+    "loan_term": {KA: "სესხის ვადა, თვე", EN: "Loan term, months"},
+    "vehicle_photos": {
+        KA: "ავტომობილის ფოტოები — მინიმუმ {count}: წინა, უკანა, ორივე გვერდი, ოდომეტრი, VIN",
+        EN: "Vehicle photos — at least {count}: front, rear, both sides, odometer, VIN plate",
+    },
+    "assess_vehicle": {KA: "ავტომობილის შეფასება", EN: "Value the vehicle"},
+    "vehicle_start_hint": {
+        KA: "აირჩიეთ განაცხადი ან შეავსეთ ფორმა და დააჭირეთ „ავტომობილის შეფასებას“.",
+        EN: "Pick an application or fill in the form and press 'Value the vehicle'.",
+    },
+    "vehicle_value": {KA: "საბაზრო ღირებულება", EN: "Market value"},
+    "projected_value": {
+        KA: "ღირებულება სესხის ბოლოს ({months} თვე)",
+        EN: "Value at the end of the loan ({months} months)",
+    },
+    "annual_depreciation": {KA: "წლიური ცვეთა", EN: "Depreciation per year"},
+    "age_at_maturity": {KA: "ასაკი სესხის ბოლოს", EN: "Age when the loan ends"},
+    "years": {KA: "{count} წელი", EN: "{count} years"},
+    "bank_ltv_title": {KA: "LTV ბანკის პოლიტიკით", EN: "LTV under bank policy"},
+    "vehicle_comparables_caption": {
+        KA: "იმავე მარკისა და მოდელის გაყიდვები; ფასი კორექტირდება ამ ავტომობილისთვის, "
+        "ნაკლები კორექტირების მქონე გაყიდვებს მეტი წონა აქვს.",
+        EN: "Sales of the same make and model, each adjusted to this vehicle; sales that need "
+        "fewer adjustments weigh more.",
+    },
+    "column_year": {KA: "წელი", EN: "Year"},
+    "column_mileage": {KA: "გარბენი, კმ", EN: "Mileage, km"},
+    "column_price_usd": {KA: "ფასი, USD", EN: "Price, USD"},
+    "column_adjusted_usd": {KA: "კორექტ. ფასი, USD", EN: "Adjusted price, USD"},
+    "vehicle_photo_count": {
+        KA: "ფოტოები: {count} / {required}",
+        EN: "Photos: {count} of {required}",
+    },
 }

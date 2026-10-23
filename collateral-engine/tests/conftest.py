@@ -25,6 +25,14 @@ from collateral_engine.policy import (
 from collateral_engine.settings import DEFAULT_NBG_RULES_PATH
 from collateral_engine.synth import generate_sales
 from collateral_engine.valuation import IntervalCalibration, calibrate_interval
+from collateral_engine.vehicles.engine import VehicleEngine, VehicleEngineConfig
+from collateral_engine.vehicles.market import VehicleMarketData
+from collateral_engine.vehicles.policy import VehiclePolicy, load_vehicle_policy
+from collateral_engine.vehicles.synth import generate_vehicle_sales
+from collateral_engine.vehicles.valuation import (
+    VehicleIntervalCalibration,
+    calibrate_vehicle_interval,
+)
 from collateral_engine.vision import ConditionClassifier
 
 TEST_SEED = 7
@@ -98,5 +106,43 @@ def make_engine(
     def build(classifier: ConditionClassifier | None = None) -> CollateralEngine:
         calibrations = {PropertyKind.FLAT: calibration, PropertyKind.HOUSE: house_calibration}
         return CollateralEngine(market, config, stores, classifier, calibrations)
+
+    return build
+
+
+VEHICLE_TEST_SALE_COUNT = 4000
+
+
+@pytest.fixture(scope="session")
+def vehicle_market() -> VehicleMarketData:
+    return VehicleMarketData.from_sales(
+        generate_vehicle_sales(VEHICLE_TEST_SALE_COUNT, seed=TEST_SEED)
+    )
+
+
+@pytest.fixture(scope="session")
+def vehicle_policy() -> VehiclePolicy:
+    return load_vehicle_policy()
+
+
+@pytest.fixture(scope="session")
+def vehicle_calibration(
+    vehicle_market: VehicleMarketData, vehicle_policy: VehiclePolicy
+) -> VehicleIntervalCalibration:
+    window_end = vehicle_market.last_sale_date + timedelta(days=1)
+    return calibrate_vehicle_interval(vehicle_market, window_end, vehicle_policy)
+
+
+@pytest.fixture
+def make_vehicle_engine(
+    vehicle_market: VehicleMarketData,
+    vehicle_policy: VehiclePolicy,
+    vehicle_calibration: VehicleIntervalCalibration,
+    stores: EngineStores,
+) -> Callable[[], VehicleEngine]:
+    config = VehicleEngineConfig(vehicle_policy, "synthetic test vehicle sales")
+
+    def build() -> VehicleEngine:
+        return VehicleEngine(vehicle_market, config, stores, vehicle_calibration)
 
     return build

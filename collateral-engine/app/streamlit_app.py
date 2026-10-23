@@ -17,7 +17,12 @@ from collateral_engine.audit import (
     ReasonRequiredError,
     record_officer_decision,
 )
-from collateral_engine.bootstrap import build_engine, build_nbg_rates_client
+from collateral_engine.bootstrap import (
+    build_engine,
+    build_nbg_rates_client,
+    build_stores,
+    build_vehicle_engine,
+)
 from collateral_engine.demo_cases import (
     DEMO_CASES,
     DEMO_FACTORY_REPORT,
@@ -39,7 +44,7 @@ from collateral_engine.domain import (
     SubjectProperty,
     ValuationRequest,
 )
-from collateral_engine.engine import CollateralEngine
+from collateral_engine.engine import CollateralEngine, EngineStores
 from collateral_engine.evaluation import BacktestMetrics, run_backtest, summarise
 from collateral_engine.i18n import (
     BUILDING_STATUS_NAMES,
@@ -61,6 +66,8 @@ from collateral_engine.reference import load_districts
 from collateral_engine.report import ValuationReport
 from collateral_engine.report_check import ValuerReport, check_valuer_report
 from collateral_engine.settings import load_settings
+from collateral_engine.vehicles.engine import VehicleEngine
+from vehicle_tab import render_vehicle_tab
 
 st.set_page_config(page_title="Collateral second opinion", page_icon="🏠", layout="wide")
 
@@ -82,8 +89,18 @@ DECISION_KEYS = {
 
 
 @st.cache_resource(show_spinner=False)
+def get_stores() -> EngineStores:
+    return build_stores(load_settings())
+
+
+@st.cache_resource(show_spinner=False)
 def get_engine() -> CollateralEngine:
-    return build_engine(load_settings())
+    return build_engine(load_settings(), get_stores())
+
+
+@st.cache_resource(show_spinner=False)
+def get_vehicle_engine() -> VehicleEngine:
+    return build_vehicle_engine(load_settings(), get_stores())
 
 
 @st.cache_resource(show_spinner=False)
@@ -591,11 +608,21 @@ def main() -> None:
     initialise_session()
     render_header()
     render_sidebar()
-    valuation_tab, report_tab, quality_tab, audit_tab = st.tabs(
-        [text("tab_valuation"), text("tab_report_check"), text("tab_quality"), text("tab_audit")]
+    valuation_tab, vehicle_tab, report_tab, quality_tab, audit_tab = st.tabs(
+        [
+            text("tab_valuation"),
+            text("tab_vehicle"),
+            text("tab_report_check"),
+            text("tab_quality"),
+            text("tab_audit"),
+        ]
     )
     with valuation_tab:
         render_valuation_tab()
+    with vehicle_tab:
+        render_vehicle_tab(
+            get_vehicle_engine(), st.session_state["valuation_date"], current_rate, language()
+        )
     with report_tab:
         render_report_check_tab()
     with quality_tab:
