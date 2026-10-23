@@ -22,15 +22,42 @@ VALID_ANSWER = {
 }
 
 
+# What the hosted endpoint returns when its shared workers are saturated.
+OVERLOADED = {
+    "error": {
+        "message": "ResourceExhausted: Worker local total request limit reached (16/16)",
+        "code": 503,
+    }
+}
+
+
 def completion(content: str | None, finish_reason: str = "stop") -> dict:
     return {"choices": [{"message": {"content": content}, "finish_reason": finish_reason}]}
 
 
-def classify_with(answer: httpx.MockTransport):
+def classify_with(answer: httpx.MockTransport, waits_s: list[float] | None = None):
+    recorded_waits_s = waits_s if waits_s is not None else []
     classifier = NvidiaConditionClassifier(
-        httpx.Client(transport=answer), TEST_API_KEY, url=CHAT_URL, timeout_s=1.0
+        httpx.Client(transport=answer),
+        TEST_API_KEY,
+        url=CHAT_URL,
+        timeout_s=1.0,
+        sleep=recorded_waits_s.append,
+        jitter=lambda: 0.0,
     )
     return classifier.classify(b"jpeg-bytes", "image/jpeg")
+
+
+def answering_in_turn(statuses: list[int], calls: list[httpx.Request]) -> httpx.MockTransport:
+    """Answers each request with the next status; 200 carries a valid assessment."""
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        status = statuses[min(len(calls), len(statuses)) - 1]
+        body = completion(json.dumps(VALID_ANSWER)) if status == 200 else OVERLOADED
+        return httpx.Response(status, json=body)
+
+    return httpx.MockTransport(answer)
 
 
 def answering(body: dict, status: int = 200) -> httpx.MockTransport:
@@ -127,3 +154,39 @@ def test_api_key_is_not_logged(caplog: pytest.LogCaptureFixture) -> None:
 
 def test_extract_returns_none_without_object() -> None:
     assert extract_json_object("<think>{draft}</think> no answer") is None
+
+
+def test_overloaded_service_is_retried_until_it_answers() -> None:
+    calls: list[httpx.Request] = []
+
+    classification = classify_with(answering_in_turn([503, 503, 200], calls))
+
+    assert classification.assessment is not None
+    assert len(calls) == 3
+
+
+def test_retries_stop_after_three_attempts() -> None:
+    calls: list[httpx.Request] = []
+
+    classification = classify_with(answering_in_turn([503], calls))
+
+    assert classification.failure is VisionFailure.UNAVAILABLE
+    assert len(calls) == 3
+
+
+@pytest.mark.parametrize("status", [400, 401, 403])
+def test_rejected_request_is_not_retried(status: int) -> None:
+    calls: list[httpx.Request] = []
+
+    classify_with(answering_in_turn([status], calls))
+
+    assert len(calls) == 1
+
+
+def test_each_retry_waits_longer() -> None:
+    waits_s: list[float] = []
+
+    classify_with(answering_in_turn([429], []), waits_s)
+
+    assert len(waits_s) == 2
+    assert waits_s[1] > waits_s[0] > 0

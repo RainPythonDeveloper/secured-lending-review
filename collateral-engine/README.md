@@ -225,7 +225,9 @@ empty value such as `NVIDIA_API_KEY=` means "not set".
 
 The NVIDIA endpoint has no strict JSON-schema mode: the schema is in the prompt, thinking is turned
 off (`chat_template_kwargs.enable_thinking: false`), temperature is 0, and the answer is validated
-against the same schema as Claude's. The Claude request uses server-side refusal fallback (`fallbacks: "default"`), so a declined
+against the same schema as Claude's. The free hosted endpoint often answers 503 "ResourceExhausted" when
+its shared workers are busy; such answers (and 429, 5xx) are retried up to three times with
+exponential backoff and jitter, while a timeout or a rejected key leaves the photo unassessed. The Claude request uses server-side refusal fallback (`fallbacks: "default"`), so a declined
 request is retried on another model inside the same call; a final refusal leaves the photo
 unassessed.
 

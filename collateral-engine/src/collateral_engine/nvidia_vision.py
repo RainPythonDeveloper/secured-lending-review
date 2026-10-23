@@ -7,7 +7,10 @@ counts as not assessed. The API key is sent in a header only and never logged.
 
 import base64
 import logging
+import random
 import re
+import time
+from collections.abc import Callable
 
 import httpx
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -31,6 +34,14 @@ NVIDIA_MAX_TOKENS = 2048
 # Zero temperature: the same photo should get the same class on every run.
 NVIDIA_TEMPERATURE = 0.0
 TRUNCATED_FINISH_REASON = "length"
+# The free hosted endpoint answers 503 "ResourceExhausted" when its shared workers are saturated;
+# such refusals pass within seconds, so they are retried. A timeout is not: it already took
+# timeout_s. Rejections such as 401 never succeed on retry.
+RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+MAX_ATTEMPTS = 3
+RETRY_BASE_DELAY_S = 2.0
+# Share of the delay added at random, so that parallel requests do not retry in step.
+RETRY_JITTER_SHARE = 0.5
 _THINKING_BLOCK = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 JSON_ANSWER_INSTRUCTION = (
@@ -61,6 +72,12 @@ class _ChatCompletion(BaseModel):
     choices: list[_ChatChoice]
 
 
+class _RetryableStatusError(Exception):
+    def __init__(self, status_code: int) -> None:
+        super().__init__(f"status {status_code}")
+        self.status_code = status_code
+
+
 class NvidiaConditionClassifier:
     def __init__(
         self,
@@ -69,14 +86,49 @@ class NvidiaConditionClassifier:
         model: str = DEFAULT_NVIDIA_VISION_MODEL,
         url: str = DEFAULT_NVIDIA_CHAT_URL,
         timeout_s: float = 60.0,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self._http_client = http_client
         self._api_key = api_key
         self._model = model
         self._url = url
         self._timeout_s = timeout_s
+        self._sleep = sleep
+        self._jitter = jitter
 
     def classify(self, image: bytes, media_type: str) -> PhotoClassification:
+        payload = self._payload(image, media_type)
+        for attempt in range(1, MAX_ATTEMPTS):
+            try:
+                return self._classify_once(payload)
+            except _RetryableStatusError as error:
+                self._wait_before_retry(attempt, error.status_code)
+        try:
+            return self._classify_once(payload)
+        except _RetryableStatusError as error:
+            logger.error(
+                "NVIDIA vision unavailable: status %s after %s attempts",
+                error.status_code,
+                MAX_ATTEMPTS,
+            )
+            return PhotoClassification(None, VisionFailure.UNAVAILABLE)
+
+    def _wait_before_retry(self, attempt: int, status_code: int) -> None:
+        delay_s = (
+            RETRY_BASE_DELAY_S * 2 ** (attempt - 1) * (1 + RETRY_JITTER_SHARE * self._jitter())
+        )
+        logger.warning(
+            "NVIDIA vision busy (status %s), attempt %s of %s; retrying in %.1f s",
+            status_code,
+            attempt,
+            MAX_ATTEMPTS,
+            delay_s,
+        )
+        self._sleep(delay_s)
+
+    def _classify_once(self, payload: dict[str, object]) -> PhotoClassification:
+        """Raises _RetryableStatusError when the endpoint is busy."""
         try:
             response = self._http_client.post(
                 self._url,
@@ -84,7 +136,7 @@ class NvidiaConditionClassifier:
                     "Authorization": f"Bearer {self._api_key}",
                     "Accept": "application/json",
                 },
-                json=self._payload(image, media_type),
+                json=payload,
                 timeout=self._timeout_s,
             )
             response.raise_for_status()
@@ -93,7 +145,10 @@ class NvidiaConditionClassifier:
             logger.warning("NVIDIA vision request timed out after %s s", self._timeout_s)
             return PhotoClassification(None, VisionFailure.UNAVAILABLE)
         except httpx.HTTPStatusError as error:
-            logger.error("NVIDIA vision request rejected: status %s", error.response.status_code)
+            status_code = error.response.status_code
+            if status_code in RETRYABLE_STATUS_CODES:
+                raise _RetryableStatusError(status_code) from error
+            logger.error("NVIDIA vision request rejected: status %s", status_code)
             return PhotoClassification(None, VisionFailure.UNAVAILABLE)
         except httpx.HTTPError as error:
             logger.warning("NVIDIA vision service unreachable: %s", type(error).__name__)
