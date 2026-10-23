@@ -1,30 +1,53 @@
-# NBG responsible-lending limits for natural persons (retail).
-# Source: nbg.gov.ge "PTI and LTV Requirements"; 2027 threshold change announced by the
-# NBG Financial Stability Committee (reported 30 Sep 2026).
-# VERIFY every value with NBG before production use. Each version has an effective date,
-# so the engine always applies the rules in force on the application date.
+# NBG rules for lending to natural persons (retail) and for valuing real estate collateral.
+# Sources: nbg.gov.ge "PTI and LTV Requirements"; NBG Financial Stability Committee decision published
+# 26 Feb 2025 (temporary LTV easing); 2027 PTI threshold change announced by the Committee (reported
+# 30 Sep 2026); NBG Order 84/04 (14 May 2018), Real Estate Valuation Instruction for Commercial Banks.
+# VERIFY every value with NBG before production use. Each version has an effective date, so the engines
+# always apply the rules in force on the application or valuation date.
+#
+# ltv.gel: loans in GEL secured by real estate. ltv.fx: foreign-currency loans.
+# ltv.fx_income_from_abroad: foreign-currency mortgages of borrowers with income from abroad.
+# valuation: NBG Order 84/04 Art. 4(5): at least three comparables; a single adjustment within +/-15%,
+# the gross adjustment within +/-25%, or up to +/-35% when the report justifies it.
 versions:
-  - id: "2026-10"
+  - id: "2022-01"
     effective_from: "2022-01-01"
     pti:
       income_threshold_gel: 1500          # monthly net income
       below: {hedged: 0.25, unhedged: 0.20}   # hedged = loan in GEL, or in the borrower's income currency
       above: {hedged: 0.50, unhedged: 0.30}
-    ltv: {gel: 0.85, fx: 0.70}
+    ltv: {gel: 0.85, fx: 0.70, fx_income_from_abroad: 0.70}
+    valuation: &valuation_84_04
+      min_comparables: 3
+      max_single_adjustment: 0.15
+      max_gross_adjustment: 0.25
+      max_gross_adjustment_justified: 0.35
+  # Temporary easing; the decision gives no end date and its effective date is taken from the
+  # publication date. VERIFY both against NBG act 281/04.
+  - id: "2025-02"
+    effective_from: "2025-02-26"
+    pti:
+      income_threshold_gel: 1500
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: &ltv_2025_easing {gel: 0.90, fx: 0.70, fx_income_from_abroad: 0.80}
+    valuation: *valuation_84_04
   - id: "2027-02"
     effective_from: "2027-02-01"
     pti:
       income_threshold_gel: 2000
       below: {hedged: 0.25, unhedged: 0.20}
       above: {hedged: 0.50, unhedged: 0.30}
-    ltv: {gel: 0.85, fx: 0.70}
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
   - id: "2027-09"
     effective_from: "2027-09-01"
     pti:
       income_threshold_gel: 2500
       below: {hedged: 0.25, unhedged: 0.20}
       above: {hedged: 0.50, unhedged: 0.30}
-    ltv: {gel: 0.85, fx: 0.70}
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
 
 # Internal policy (bank-configurable, not NBG rules)
 policy:

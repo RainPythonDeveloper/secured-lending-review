@@ -38,9 +38,15 @@ def test_debt_above_limit_gives_zero():
 
 
 def test_ltv_caps_amount():
-    c = chk(10000, coll=10000, amount=9000)
-    assert c["ltv_pass"][0] == False  # noqa: E712  (90% > 85%)
-    assert c["max_amount"][0] <= 8500 + 1e-6
+    # GEL LTV limit is 90% since the NBG easing of Feb 2025 (was 85%).
+    c = chk(10000, coll=10000, amount=9500)
+    assert c["ltv_pass"][0] == False  # noqa: E712  (95% > 90%)
+    assert c["max_amount"][0] <= 9000 + 1e-6
+
+
+def test_gel_ltv_was_85_percent_before_the_2025_easing():
+    c = chk(10000, coll=10000, amount=9000, as_of="2025-02-25")
+    assert c["ltv_limit"][0] == 0.85 and not c["ltv_pass"][0]
 
 
 def test_fx_ltv_stricter():
