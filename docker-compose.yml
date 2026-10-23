@@ -35,5 +35,25 @@ services:
     command: ["streamlit", "run", "app/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
     ports: ["8501:8501"]
 
+  # Built from the repository root so the image carries income-engine/config/nbg_rules.yaml.
+  collateral-engine-api:
+    build: {context: ., dockerfile: collateral-engine/Dockerfile}
+    # Callers are not authenticated, so publish on localhost only.
+    ports: ["127.0.0.1:8100:8100"]
+    environment: &collateral-environment
+      COLLATERAL_AUDIT_DB_PATH: /var/collateral/audit.db
+      COLLATERAL_EVIDENCE_DIR: /var/collateral/evidence
+      COLLATERAL_VISION_ENABLED: ${COLLATERAL_VISION_ENABLED:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes: ["collateral:/var/collateral"]
+
+  collateral-console:
+    build: {context: ., dockerfile: collateral-engine/Dockerfile}
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports: ["127.0.0.1:8502:8501"]
+    environment: *collateral-environment
+    volumes: ["collateral:/var/collateral"]
+
 volumes:
   audit:
+  collateral:

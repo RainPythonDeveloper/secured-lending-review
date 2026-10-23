@@ -18,6 +18,21 @@ jobs:
       - run: python -m ite.synth --out data && python -m ite.train && python -m ite.report
       - run: python -m pytest -q
 
+  collateral-engine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: collateral-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: ruff format --check .
+      - run: ruff check .
+      - run: pytest
+
   server:
     runs-on: ubuntu-latest
     defaults:
