@@ -40,6 +40,10 @@ def _bilingual(names: Bilingual) -> str:
     return f"{names[Language.GEORGIAN]} / {names[Language.ENGLISH]}"
 
 
+def vehicle_case_label(application_id: str) -> str:
+    return f"{application_id} · {_bilingual(VEHICLE_CASES_BY_ID[application_id].title)}"
+
+
 def _field(name: str) -> object:
     return st.session_state[f"{FIELD_PREFIX}{name}"]
 
@@ -90,7 +94,7 @@ def render_vehicle_tab(
     st.selectbox(
         label("vehicle_demo_case", language),
         list(VEHICLE_CASES_BY_ID),
-        format_func=lambda case_id: f"{case_id} · {VEHICLE_CASES_BY_ID[case_id].title[language]}",
+        format_func=vehicle_case_label,
         key="vehicle_demo_case",
         on_change=load_vehicle_demo_case,
     )

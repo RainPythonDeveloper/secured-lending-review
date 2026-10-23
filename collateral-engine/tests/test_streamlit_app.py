@@ -188,3 +188,13 @@ def test_invalid_vin_is_reported_not_crashed(console: AppTest) -> None:
     assert not console.exception
     assert "vehicle_report" not in console.session_state
     assert console.error
+
+
+def test_vehicle_demo_labels_do_not_change_with_language(console: AppTest) -> None:
+    # The browser sends back the label of the chosen option; a label that changed with the
+    # language came back as the value: "KeyError: 'DEMO-CAR-001 · Toyota Prius: ...'".
+    georgian_labels = console.selectbox(key="vehicle_demo_case").options
+
+    console.radio(key="language").set_value(Language.ENGLISH).run()
+
+    assert console.selectbox(key="vehicle_demo_case").options == georgian_labels
