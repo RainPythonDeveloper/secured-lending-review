@@ -42,6 +42,16 @@ photos:
   min_sharpness: 40.0
   near_duplicate_max_hamming: 6
 
+off_plan:
+  # Bank policy, not an NBG rule: share of the market value lent against a flat in a building
+  # that is not completed yet, by construction stage (completion risk).
+  lending_factor_by_stage:
+    foundation: "0.70"
+    structural_frame: "0.80"
+    walls_and_roof: "0.90"
+    finishing: "0.95"
+  max_months_to_completion: 24
+
 flag_severity:
   INSUFFICIENT_COMPARABLES: physical_inspection
   COMPARABLES_WIDENED_RADIUS: info
@@ -59,5 +69,9 @@ flag_severity:
   NEAR_DUPLICATE_PHOTOS: info
   PHOTO_SEEN_IN_OTHER_APPLICATION: physical_inspection
   VISION_UNAVAILABLE: info
+  OFF_PLAN_COMPLETION_OVERDUE: review
+  OFF_PLAN_AGREEMENT_NOT_REGISTERED: review
+  OFF_PLAN_LONG_COMPLETION: info
+  OFF_PLAN_STAGE_DISCOUNT: info
   LTV_ABOVE_LIMIT: review
   LTV_ABOVE_LIMIT_UNDER_FX_STRESS: info

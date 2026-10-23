@@ -125,3 +125,13 @@ def test_valuer_report_tab_lists_breaches_of_84_04(console: AppTest) -> None:
 
     assert not console.exception
     assert any("84/04" in message.value for message in console.error)
+
+
+def test_off_plan_demo_shows_stage_discount(console: AppTest) -> None:
+    console.selectbox(key="demo_case").set_value("DEMO-SAB-004").run()
+
+    assess(console)
+
+    report = console.session_state["report"]
+    assert not console.exception
+    assert report.ltv is not None and report.ltv.completion_risk_factor is not None

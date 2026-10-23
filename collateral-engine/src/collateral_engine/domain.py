@@ -43,6 +43,13 @@ class BuildingStatus(StrEnum):
     UNDER_CONSTRUCTION = "under_construction"
 
 
+class ConstructionStage(StrEnum):
+    FOUNDATION = "foundation"
+    STRUCTURAL_FRAME = "structural_frame"
+    WALLS_AND_ROOF = "walls_and_roof"
+    FINISHING = "finishing"
+
+
 class Currency(StrEnum):
     """ISO 4217 codes the model handles: Tbilisi flats trade in USD, loans are mostly in GEL."""
 
@@ -65,6 +72,17 @@ AreaSquareMetres = Annotated[Decimal, Field(ge=15, le=1000, decimal_places=2)]
 FloorNumber = Annotated[int, Field(ge=1, le=70)]
 
 
+class OffPlanDetails(BaseModel):
+    """A flat bought before the building is completed (sale on the developer's plan)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    developer_name: Annotated[str, Field(min_length=1, max_length=200)]
+    construction_stage: ConstructionStage
+    expected_completion_date: date
+    purchase_agreement_registered: bool
+
+
 class SubjectProperty(BaseModel):
     """The flat offered as collateral, as described in the loan application."""
 
@@ -80,11 +98,17 @@ class SubjectProperty(BaseModel):
     building_floors: FloorNumber
     building_status: BuildingStatus
     declared_condition: Condition
+    off_plan: OffPlanDetails | None = None
 
     @model_validator(mode="after")
     def _check_floor_within_building(self) -> Self:
         if self.floor > self.building_floors:
             raise ValueError("floor is above the top floor of the building")
+        is_under_construction = self.building_status is BuildingStatus.UNDER_CONSTRUCTION
+        if is_under_construction != (self.off_plan is not None):
+            raise ValueError(
+                "off_plan details are required exactly for buildings under construction"
+            )
         return self
 
 

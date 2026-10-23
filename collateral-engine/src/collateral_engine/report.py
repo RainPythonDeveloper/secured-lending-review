@@ -126,6 +126,7 @@ class LtvCheck(_Report):
     loan_currency: Currency
     lending_value_usd: Decimal
     lending_value_basis: LendingValueBasis
+    completion_risk_factor: Decimal | None = None
     lending_value_in_loan_currency: Decimal
     ltv_limit: Decimal
     ltv_ratio: Decimal

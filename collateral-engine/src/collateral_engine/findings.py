@@ -1,7 +1,9 @@
 """Turns the parts of an assessment into reason codes; severities come from the policy file."""
 
+from datetime import date
+
 from collateral_engine.comparables import InsufficientComparablesError
-from collateral_engine.domain import ClaimStatus
+from collateral_engine.domain import ClaimStatus, SubjectProperty
 from collateral_engine.flags import Flag, ReasonCode
 from collateral_engine.policy import ValuationPolicy
 from collateral_engine.report import (
@@ -118,6 +120,35 @@ def appraisal_findings(appraisal: AppraisalCheck | None) -> list[FlagSpec]:
         else ReasonCode.APPRAISAL_BELOW_RANGE
     )
     return [(reason, {"percent": _percent(appraisal.deviation_from_estimate)})]
+
+
+def off_plan_findings(
+    subject: SubjectProperty, valuation_date: date, policy: ValuationPolicy
+) -> list[FlagSpec]:
+    off_plan = subject.off_plan
+    if off_plan is None:
+        return []
+    completion = off_plan.expected_completion_date
+    months_left = (
+        (completion.year - valuation_date.year) * 12 + completion.month - valuation_date.month
+    )
+    factor = policy.off_plan.lending_factor_by_stage[off_plan.construction_stage]
+    findings: list[FlagSpec] = [
+        (
+            ReasonCode.OFF_PLAN_STAGE_DISCOUNT,
+            {"discount": _percent(float(1 - factor)), "stage": off_plan.construction_stage.value},
+        )
+    ]
+    if completion < valuation_date:
+        findings.append((ReasonCode.OFF_PLAN_COMPLETION_OVERDUE, {"date": completion.isoformat()}))
+    elif months_left > policy.off_plan.max_months_to_completion:
+        limit = str(policy.off_plan.max_months_to_completion)
+        findings.append(
+            (ReasonCode.OFF_PLAN_LONG_COMPLETION, {"months": str(months_left), "limit": limit})
+        )
+    if not off_plan.purchase_agreement_registered:
+        findings.append((ReasonCode.OFF_PLAN_AGREEMENT_NOT_REGISTERED, {}))
+    return findings
 
 
 def ltv_findings(ltv: LtvCheck | None) -> list[FlagSpec]:

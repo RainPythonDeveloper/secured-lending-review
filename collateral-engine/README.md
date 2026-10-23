@@ -39,6 +39,7 @@ windows; `tests/test_evaluation.py` fails the build if any metric leaves its gat
 | Currency | Tbilisi flats trade in USD, and loans are mostly in GEL. The value is converted at the NBG rate, and the report shows the LTV if the lari strengthens by 20%. Money is `Decimal` and travels as a decimal string. |
 | Property identity | NAPR cadastral code (`01.14.14.011.008.01.527`). Only Tbilisi (region `01`) flats with building and unit segments are accepted. |
 | Market prices | Synthetic sales anchored to Geostat's Q1 2026 average price per m² in each of the ten Tbilisi districts. |
+| Flats under construction | Developer, construction stage, completion date and NAPR registration of the purchase agreement; comparables are other unfinished buildings (the 84/04 limits rule out larger status adjustments); the lending value is cut by a bank-policy factor per stage (70% foundation to 95% finishing); overdue or distant completion and an unregistered agreement are flagged. |
 | Condition | The seven classes of Georgian listings: black, white and green frame (შავი, თეთრი, მწვანე კარკასი), needs renovation, under renovation, old renovation, newly renovated. |
 | Location | The ten Tbilisi districts and the distance to the nearest of 23 metro stations (OpenStreetMap). |
 | Language | Every reason, status and label is in Georgian and English. |
@@ -50,7 +51,7 @@ make install        # Python 3.12 virtual environment with pinned dependencies
 make data           # 6,000 synthetic comparable sales -> data/comparables.csv
 make app            # officer console on http://localhost:8502 (restart it after editing src/)
 make api            # REST API on http://localhost:8100/docs
-make check          # ruff format --check, ruff check, pytest (280 tests, about 20 s)
+make check          # ruff format --check, ruff check, pytest (295 tests, about 20 s)
 make evaluate       # backtest -> reports/metrics.json
 ```
 

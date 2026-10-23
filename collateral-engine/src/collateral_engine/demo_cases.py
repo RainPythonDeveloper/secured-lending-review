@@ -7,11 +7,13 @@ from decimal import Decimal
 from collateral_engine.domain import (
     BuildingStatus,
     Condition,
+    ConstructionStage,
     Currency,
     District,
     ExchangeRate,
     LicensedAppraisal,
     LoanRequest,
+    OffPlanDetails,
     SubjectProperty,
 )
 from collateral_engine.i18n import Bilingual, Language
@@ -114,6 +116,35 @@ DEMO_CASES = (
         ),
         loan=LoanRequest(
             amount=Decimal("90000"), currency=Currency.GEL, application_date=DEMO_VALUATION_DATE
+        ),
+        appraisal=None,
+    ),
+    DemoCase(
+        application_id="DEMO-SAB-004",
+        title={
+            Language.GEORGIAN: "საბურთალო: ბინა მშენებარე სახლში",
+            Language.ENGLISH: "Saburtalo: flat in a building under construction",
+        },
+        subject=SubjectProperty(
+            cadastral_code="01.19.07.031.022.01.534",
+            district=District.SABURTALO,
+            latitude=41.7262,
+            longitude=44.7505,
+            total_area_m2=Decimal("70"),
+            rooms=2,
+            floor=9,
+            building_floors=18,
+            building_status=BuildingStatus.UNDER_CONSTRUCTION,
+            declared_condition=Condition.WHITE_FRAME,
+            off_plan=OffPlanDetails(
+                developer_name="Demo Development LLC (invented)",
+                construction_stage=ConstructionStage.STRUCTURAL_FRAME,
+                expected_completion_date=date(2027, 12, 31),
+                purchase_agreement_registered=False,
+            ),
+        ),
+        loan=LoanRequest(
+            amount=Decimal("150000"), currency=Currency.GEL, application_date=DEMO_VALUATION_DATE
         ),
         appraisal=None,
     ),

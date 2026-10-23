@@ -7,7 +7,7 @@ from typing import Annotated, Literal, Self
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from collateral_engine.domain import Condition
+from collateral_engine.domain import Condition, ConstructionStage
 from collateral_engine.flags import ReasonCode, Severity
 
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
@@ -68,6 +68,18 @@ class PhotoPolicy(_Config):
     near_duplicate_max_hamming: Annotated[int, Field(ge=0, le=64)]
 
 
+class OffPlanPolicy(_Config):
+    lending_factor_by_stage: dict[ConstructionStage, Annotated[Decimal, Field(gt=0, le=1)]]
+    max_months_to_completion: Annotated[int, Field(ge=1, le=120)]
+
+    @model_validator(mode="after")
+    def _check_every_stage_has_factor(self) -> Self:
+        missing = set(ConstructionStage) - set(self.lending_factor_by_stage)
+        if missing:
+            raise ValueError(f"lending_factor_by_stage lacks {sorted(missing)}")
+        return self
+
+
 class ValuationPolicy(_Config):
     version: str
     comparables: ComparablesPolicy
@@ -76,6 +88,7 @@ class ValuationPolicy(_Config):
     review: ReviewPolicy
     fx_stress: FxStressPolicy
     photos: PhotoPolicy
+    off_plan: OffPlanPolicy
     flag_severity: dict[ReasonCode, Severity]
 
     @model_validator(mode="after")

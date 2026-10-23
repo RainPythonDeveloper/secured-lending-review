@@ -3,7 +3,7 @@ no free-form model text is shown as a reason. Have a native speaker review the G
 
 from enum import StrEnum
 
-from collateral_engine.domain import BuildingStatus, ClaimStatus, Condition
+from collateral_engine.domain import BuildingStatus, ClaimStatus, Condition, ConstructionStage
 from collateral_engine.flags import Flag, ReasonCode, Recommendation, Severity
 from collateral_engine.report import AppraisalPosition, LendingValueBasis
 from collateral_engine.report_check import ReportFinding, ReportIssue
@@ -50,6 +50,22 @@ BUILDING_STATUS_NAMES: dict[BuildingStatus, Bilingual] = {
     BuildingStatus.UNDER_CONSTRUCTION: {
         Language.GEORGIAN: "მშენებარე",
         Language.ENGLISH: "Under construction",
+    },
+}
+
+CONSTRUCTION_STAGE_NAMES: dict[ConstructionStage, Bilingual] = {
+    ConstructionStage.FOUNDATION: {Language.GEORGIAN: "საძირკველი", Language.ENGLISH: "Foundation"},
+    ConstructionStage.STRUCTURAL_FRAME: {
+        Language.GEORGIAN: "კონსტრუქციული კარკასი",
+        Language.ENGLISH: "Structural frame",
+    },
+    ConstructionStage.WALLS_AND_ROOF: {
+        Language.GEORGIAN: "კედლები და სახურავი",
+        Language.ENGLISH: "Walls and roof closed",
+    },
+    ConstructionStage.FINISHING: {
+        Language.GEORGIAN: "მოპირკეთების სამუშაოები",
+        Language.ENGLISH: "Finishing works",
     },
 }
 
@@ -214,6 +230,30 @@ REASON_TEMPLATES: dict[ReasonCode, Bilingual] = {
         Language.GEORGIAN: "{count} ფოტოს ავტომატური ანალიზი ვერ მოხერხდა.",
         Language.ENGLISH: "{count} photo(s) could not be assessed by the vision model.",
     },
+    ReasonCode.OFF_PLAN_STAGE_DISCOUNT: {
+        Language.GEORGIAN: "დაკრედიტების ღირებულება შემცირებულია {discount}%-ით მშენებლობის "
+        "ეტაპის („{stage}“) გამო — დაუსრულებლობის რისკი.",
+        Language.ENGLISH: "Lending value reduced by {discount}% for the construction stage "
+        "'{stage}': completion risk.",
+    },
+    ReasonCode.OFF_PLAN_COMPLETION_OVERDUE: {
+        Language.GEORGIAN: "დეველოპერის მიერ დაპირებული დასრულების თარიღი ({date}) გასულია; "
+        "გადაამოწმეთ მშენებლობა ადგილზე.",
+        Language.ENGLISH: "The developer's completion date ({date}) has passed; check the "
+        "construction on site.",
+    },
+    ReasonCode.OFF_PLAN_LONG_COMPLETION: {
+        Language.GEORGIAN: "დასრულებამდე {months} თვეა, რაც ბანკის პოლიტიკის {limit} თვეს "
+        "აღემატება.",
+        Language.ENGLISH: "Completion is {months} months away, beyond the bank's {limit}-month "
+        "horizon.",
+    },
+    ReasonCode.OFF_PLAN_AGREEMENT_NOT_REGISTERED: {
+        Language.GEORGIAN: "ნასყიდობის ხელშეკრულება საჯარო რეესტრში რეგისტრირებული არ არის; "
+        "მყიდველის უფლება არ არის აღრიცხული.",
+        Language.ENGLISH: "The purchase agreement is not registered in the public registry "
+        "(NAPR); the buyer's right is not recorded.",
+    },
     ReasonCode.LTV_ABOVE_LIMIT: {
         Language.GEORGIAN: "LTV {ltv}% აჭარბებს სებ-ის {limit}%-იან ლიმიტს; "
         "სესხის მაქსიმალური ოდენობაა {max_loan} {currency}.",
@@ -234,6 +274,8 @@ def reason_text(flag: Flag, language: Language) -> str:
     for key in ("declared", "observed"):
         if params.get(key):
             params[key] = CONDITION_NAMES[Condition(params[key])][language]
+    if params.get("stage"):
+        params["stage"] = CONSTRUCTION_STAGE_NAMES[ConstructionStage(params["stage"])][language]
     return REASON_TEMPLATES[flag.code][language].format(**params)
 
 

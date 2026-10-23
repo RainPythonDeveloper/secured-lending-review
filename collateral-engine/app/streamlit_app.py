@@ -28,11 +28,13 @@ from collateral_engine.demo_cases import (
 from collateral_engine.domain import (
     BuildingStatus,
     Condition,
+    ConstructionStage,
     Currency,
     District,
     ExchangeRate,
     LicensedAppraisal,
     LoanRequest,
+    OffPlanDetails,
     SubjectProperty,
     ValuationRequest,
 )
@@ -41,6 +43,7 @@ from collateral_engine.evaluation import BacktestMetrics, run_backtest, summaris
 from collateral_engine.i18n import (
     BUILDING_STATUS_NAMES,
     CONDITION_NAMES,
+    CONSTRUCTION_STAGE_NAMES,
     Bilingual,
     Language,
     report_finding_text,
@@ -127,12 +130,28 @@ def case_fields(case: DemoCase) -> dict[str, object]:
         "building_floors": subject.building_floors,
         "building_status": subject.building_status,
         "declared_condition": subject.declared_condition,
+        **off_plan_fields(subject.off_plan),
         "loan_amount": str(case.loan.amount),
         "loan_currency": case.loan.currency,
         "income_from_abroad": case.loan.income_from_abroad,
         "has_appraisal": appraisal is not None,
         "appraised_value": str(appraisal.market_value) if appraisal else "",
         "appraisal_currency": appraisal.currency if appraisal else Currency.USD,
+    }
+
+
+def off_plan_fields(off_plan: OffPlanDetails | None) -> dict[str, object]:
+    return {
+        "developer_name": off_plan.developer_name if off_plan else "",
+        "construction_stage": off_plan.construction_stage
+        if off_plan
+        else ConstructionStage.STRUCTURAL_FRAME,
+        "expected_completion_date": off_plan.expected_completion_date
+        if off_plan
+        else DEMO_VALUATION_DATE,
+        "purchase_agreement_registered": off_plan.purchase_agreement_registered
+        if off_plan
+        else False,
     }
 
 
@@ -232,6 +251,7 @@ def render_application_form() -> None:
             text("longitude"), key="field_longitude", format="%.5f", step=0.001
         )
         render_flat_fields()
+        render_off_plan_fields()
         render_loan_fields()
         st.file_uploader(
             text("photos", count=get_engine().config.condition_rules.min_photos),
@@ -269,6 +289,31 @@ def render_flat_fields() -> None:
     )
 
 
+def render_off_plan_fields() -> None:
+    with st.expander(text("off_plan_section")):
+        st.caption(text("off_plan_hint"))
+        st.text_input(text("developer_name"), key="field_developer_name")
+        st.selectbox(
+            text("construction_stage"),
+            list(ConstructionStage),
+            format_func=lambda stage: bilingual(CONSTRUCTION_STAGE_NAMES[stage]),
+            key="field_construction_stage",
+        )
+        st.date_input(text("expected_completion_date"), key="field_expected_completion_date")
+        st.checkbox(text("agreement_registered"), key="field_purchase_agreement_registered")
+
+
+def build_off_plan() -> OffPlanDetails | None:
+    if field("building_status") is not BuildingStatus.UNDER_CONSTRUCTION:
+        return None
+    return OffPlanDetails(
+        developer_name=field("developer_name"),
+        construction_stage=field("construction_stage"),
+        expected_completion_date=field("expected_completion_date"),
+        purchase_agreement_registered=field("purchase_agreement_registered"),
+    )
+
+
 def render_loan_fields() -> None:
     st.subheader(text("loan_section"))
     st.text_input(text("loan_amount"), key="field_loan_amount")
@@ -299,6 +344,7 @@ def build_request() -> ValuationRequest:
         building_floors=field("building_floors"),
         building_status=field("building_status"),
         declared_condition=field("declared_condition"),
+        off_plan=build_off_plan(),
     )
     return ValuationRequest(
         application_id=field("application_id"),

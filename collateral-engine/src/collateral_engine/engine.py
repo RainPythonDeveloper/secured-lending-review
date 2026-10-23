@@ -9,25 +9,26 @@ import logging
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, timedelta
 
 from collateral_engine import MODEL_VERSION
 from collateral_engine.appraisal import check_appraisal
 from collateral_engine.audit import AuditLog, record_valuation
 from collateral_engine.comparables import InsufficientComparablesError, PropertyFeatures
 from collateral_engine.condition import verify_condition
-from collateral_engine.domain import Condition, ValuationRequest
+from collateral_engine.domain import Condition, SubjectProperty, ValuationRequest
 from collateral_engine.evidence import EvidenceStore
 from collateral_engine.findings import (
     appraisal_findings,
     condition_findings,
     ltv_findings,
+    off_plan_findings,
     photo_findings,
     to_flags,
     valuation_findings,
 )
 from collateral_engine.flags import Flag, recommend
-from collateral_engine.ltv import check_ltv, lending_value_usd
+from collateral_engine.ltv import check_ltv, completion_risk_factor, lending_value_usd
 from collateral_engine.market import MarketData
 from collateral_engine.nbg_rules import NbgRules, rule_version_in_force
 from collateral_engine.photo_registry import PhotoRegistry
@@ -108,6 +109,8 @@ class _AssessmentParts:
     shortage: InsufficientComparablesError | None
     appraisal: AppraisalCheck | None
     ltv: LtvCheck | None
+    request_subject: SubjectProperty
+    valuation_date: date
 
 
 class CollateralEngine:
@@ -159,7 +162,16 @@ class CollateralEngine:
         valuation, shortage = self._value(request, condition.valued_condition)
         appraisal = self._check_appraisal(request, valuation)
         ltv = self._check_ltv(request, valuation, appraisal)
-        parts = _AssessmentParts(examined, condition, valuation, shortage, appraisal, ltv)
+        parts = _AssessmentParts(
+            examined,
+            condition,
+            valuation,
+            shortage,
+            appraisal,
+            ltv,
+            request.subject,
+            request.valuation_date,
+        )
         report = self._build_report(request, parts)
         record_valuation(self._stores.audit_log, report)
         self._register_photos(request.application_id, examined)
@@ -224,6 +236,7 @@ class CollateralEngine:
             request.usd_rate,
             self._config.nbg_rules,
             self._config.policy.fx_stress,
+            completion_risk_factor(request.subject, self._config.policy),
         )
 
     def _build_report(self, request: ValuationRequest, parts: _AssessmentParts) -> ValuationReport:
@@ -258,6 +271,7 @@ class CollateralEngine:
         findings += condition_findings(parts.condition)
         findings += valuation_findings(parts.valuation, parts.shortage, policy)
         findings += appraisal_findings(parts.appraisal)
+        findings += off_plan_findings(parts.request_subject, parts.valuation_date, policy)
         findings += ltv_findings(parts.ltv)
         return to_flags(findings, policy)
 

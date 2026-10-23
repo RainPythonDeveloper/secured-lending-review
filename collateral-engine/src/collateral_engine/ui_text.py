@@ -30,6 +30,18 @@ UI_TEXT: dict[str, Bilingual] = {
     "building_status": {KA: "შენობა", EN: "Building"},
     "declared_condition": {KA: "დეკლარირებული მდგომარეობა", EN: "Declared condition"},
     "loan_section": {KA: "სესხი", EN: "Loan"},
+    "off_plan_section": {KA: "მშენებარე სახლი", EN: "Building under construction"},
+    "off_plan_hint": {
+        KA: "ივსება, თუ შენობის სტატუსია „მშენებარე“.",
+        EN: "Fill in when the building status is 'Under construction'.",
+    },
+    "developer_name": {KA: "დეველოპერი", EN: "Developer"},
+    "construction_stage": {KA: "მშენებლობის ეტაპი", EN: "Construction stage"},
+    "expected_completion_date": {KA: "დასრულების თარიღი", EN: "Expected completion"},
+    "agreement_registered": {
+        KA: "ნასყიდობის ხელშეკრულება რეგისტრირებულია საჯარო რეესტრში",
+        EN: "Purchase agreement registered in the public registry (NAPR)",
+    },
     "loan_amount": {KA: "სესხის თანხა", EN: "Loan amount"},
     "loan_currency": {KA: "სესხის ვალუტა", EN: "Loan currency"},
     "has_appraisal": {

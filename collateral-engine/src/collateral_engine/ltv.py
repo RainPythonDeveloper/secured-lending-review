@@ -1,14 +1,15 @@
 """The NBG loan-to-value check; the limits come from the dated NBG rules file (nbg_rules.py)."""
 
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal
 
-from collateral_engine.domain import Currency, ExchangeRate, LoanRequest
+from collateral_engine.domain import Currency, ExchangeRate, LoanRequest, SubjectProperty
 from collateral_engine.money import convert_amount, round_down_to_minor_unit
 from collateral_engine.nbg_rules import NbgRules, NbgRuleVersion, rule_version_in_force
-from collateral_engine.policy import FxStressPolicy
+from collateral_engine.policy import FxStressPolicy, ValuationPolicy
 from collateral_engine.report import LendingValueBasis, LtvCheck, MarketValuation
 
 RATIO_PRECISION = Decimal("0.0001")
+WHOLE_USD = Decimal("1")
 
 
 def ltv_limit_for(version: NbgRuleVersion, loan: LoanRequest) -> Decimal:
@@ -17,6 +18,13 @@ def ltv_limit_for(version: NbgRuleVersion, loan: LoanRequest) -> Decimal:
     if loan.income_from_abroad:
         return version.ltv.fx_income_from_abroad
     return version.ltv.fx
+
+
+def completion_risk_factor(subject: SubjectProperty, policy: ValuationPolicy) -> Decimal | None:
+    """Bank policy share of the value lent on a flat in an unfinished building."""
+    if subject.off_plan is None:
+        return None
+    return policy.off_plan.lending_factor_by_stage[subject.off_plan.construction_stage]
 
 
 def lending_value_usd(
@@ -36,8 +44,11 @@ def check_ltv(
     usd_rate: ExchangeRate,
     rules: NbgRules,
     fx_stress: FxStressPolicy,
+    completion_risk_factor: Decimal | None = None,
 ) -> LtvCheck:
     value_usd, basis = lending_value
+    if completion_risk_factor is not None:
+        value_usd = (value_usd * completion_risk_factor).quantize(WHOLE_USD, rounding=ROUND_DOWN)
     version = rule_version_in_force(rules, loan.application_date)
     limit = ltv_limit_for(version, loan)
     value_in_loan_currency = convert_amount(value_usd, Currency.USD, loan.currency, usd_rate)
@@ -49,6 +60,7 @@ def check_ltv(
         loan_currency=loan.currency,
         lending_value_usd=value_usd,
         lending_value_basis=basis,
+        completion_risk_factor=completion_risk_factor,
         lending_value_in_loan_currency=value_in_loan_currency,
         ltv_limit=limit,
         ltv_ratio=(loan.amount / value_in_loan_currency).quantize(RATIO_PRECISION),
