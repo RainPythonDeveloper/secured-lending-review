@@ -210,8 +210,11 @@ unassessed.
 - The cadastral code format is inferred from registry extracts; verify it against the NAPR rule.
 - Flats and private houses in Tbilisi only. Land and commercial property get the valuer report
   check, not a model valuation.
-- Geostat's house prices are offer prices of new houses; the release does not say whether the
-  price per m² is of the house or includes the plot. Confirm with Geostat before production.
+- Geostat's house prices are offer prices of new houses. Per the IMF technical assistance report
+  on the Georgian RPPI (April 2025), Geostat's house model takes floor area and plot area as
+  separate characteristics, so the price per m² is per m² of the house, as in this model. Listings
+  may give the plot area without the building footprint, while NAPR includes it; align the two
+  before using real sales.
 - The API does not authenticate callers; run it on localhost or a private network.
 - Have a native speaker review the Georgian texts.
 

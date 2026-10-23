@@ -3,9 +3,10 @@
 # geostat_apartment_gel_per_m2: average price of a square metre in newly built multi-storey
 # residential buildings, Q1 2026, published by Geostat (National Statistics Office of Georgia,
 # residential property price statistics; figures as reported by 1tv.ge and cbw.ge in 2026).
-# geostat_house_gel_per_m2: the same for detached houses (Q1 2026, as reported in the press; the
-# Q2 2026 release shows them only as a chart). Both are median offer prices scraped from
-# myhome.ge and ss.ge, new construction only.
+# geostat_house_gel_per_m2: the same for detached houses, per m² of house floor area; Geostat
+# models the plot as a separate characteristic (IMF RPPI technical assistance report, April 2025).
+# Q1 2026 as reported in the press; the Q2 2026 release shows them only as a chart.
+# Both are median offer prices scraped from myhome.ge and ss.ge, new construction only.
 #
 # centroid_*: approximate points inside each district. They place synthetic sales on the map and
 # are not official boundaries.
