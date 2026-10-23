@@ -3,10 +3,11 @@
 **NBG AI & Open Banking Hackathon 2026 · Track 1: AI in Finance · AI1: Credit Risk & Lending**
 
 Collateral valuation in Georgia is manual, infrequent and inconsistent between banks. This project
-gives the loan officer an independent second opinion on a Tbilisi flat offered as collateral:
-comparable sales with a calibrated range, the declared condition read from interior photos, a check
-of the licensed valuer's figure against the market range, and the NBG LTV limit at the official NBG
-exchange rate. Versioned rules, not the language model, set every status. The officer decides; every
+gives the loan officer an independent second opinion on a Tbilisi flat or private house offered as
+collateral: comparable sales with a calibrated range, the declared condition read from interior
+photos, a check of the licensed valuer's figure against the market range, and the NBG LTV limit at
+the official NBG exchange rate. A valuer's report on any real estate, factories included, is checked
+against NBG Order 84/04, and vehicles are valued against the bank's own LTV policy. Versioned rules, not the language model, set every status. The officer decides; every
 step is written to a tamper-evident audit log. Income from consented Open Banking data (PTI) comes
 from the income engine and shares the same dated NBG rules file.
 
@@ -16,7 +17,7 @@ from the income engine and shares the same dated NBG rules file.
 
 | Path | What | Stack |
 |---|---|---|
-| `collateral-engine/` | Collateral valuation from comparable sales, condition from photos, appraisal check, NBG LTV, audit log, officer console | Python, FastAPI, Streamlit |
+| `collateral-engine/` | Valuation of flats, houses and vehicles from comparable sales, condition from photos, appraisal and valuer-report checks, NBG and bank LTV, audit log, officer console | Python, FastAPI, Streamlit |
 | `server/` | Open Banking AIS gateway to the TBC mock sandbox (consents with OAuth/PKCE, accounts, balances, transactions); also serves organizer dataset personas through the same endpoints, marked by `X-Data-Source` | NestJS, TypeScript |
 | `income-engine/` | Income estimation from transactions, NBG PTI/LTV rules, explainable risk model, audit log, officer console | Python, FastAPI, Streamlit |
 | `data/` | Organizer-provided synthetic dataset: 100 customers, 6 months of transactions | XLSX |
