@@ -4,16 +4,17 @@
 
 ## 1. Проект
 
-Virtual Field Visit — AI-агент проводит «выезд на место» по видеозвонку. Он собирает доказательства по заявлениям заёмщика о профессии и доходе, а решение принимает кредитный специалист. Хакатон NBG AI & Open Banking 2026, трек AI in Finance, problem space AI1 Credit Risk & Lending. Стратегия лежит в `docs/research/00_STRATEGY.md`.
+Collateral second opinion — независимая оценка квартиры в Тбилиси, которую заёмщик предлагает в залог: сопоставимые продажи с откалиброванным диапазоном, состояние по фото, сверка с отчётом лицензированного оценщика и проверка LTV по правилам NBG. Решение принимает кредитный специалист. Хакатон NBG AI & Open Banking 2026, трек AI in Finance, problem space AI1 Credit Risk & Lending. `docs/research/00_STRATEGY.md` описывает прежнее направление (Virtual Field Visit).
 
 | Путь | Что это | Проверки |
 |---|---|---|
+| `collateral-engine/` | Оценка залога, состояние по фото, LTV, аудит, консоль специалиста (Python 3.12) | `make install` при первом запуске, затем `make check` |
 | `server/` | Шлюз к TBC Open Banking (AIS), NestJS | `npm run lint && npm test && npm run test:e2e && npm run build` |
 | `income-engine/` | Оценка дохода, правила NBG, аудит, консоль специалиста (Python 3.12) | `make all` при первом запуске, затем `PYTHONPATH=src python -m pytest -q` |
 | `data/` | Синтетический датасет организаторов (100 клиентов) | — |
 | `docs/research/` | Исследования и стратегия. Только локально, в git не попадает | — |
 
-Новые сервисы, например `video-agent/`, `judge/`, `borrower-web/`, создаются в корне по шаблону из §6 и §7 и добавляются в `docker-compose.yml`, CI и `README.md`.
+Новые сервисы создаются в корне по шаблону из §6 и §7 и добавляются в `docker-compose.yml`, CI и `README.md`.
 
 ## 2. Порядок работы
 
