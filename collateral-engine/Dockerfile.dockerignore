@@ -6,6 +6,7 @@
 !collateral-engine/config
 !collateral-engine/tests
 !collateral-engine/.streamlit
+!data/open-banking-synthetic-100-customers.xlsx
 !income-engine/pyproject.toml
 !income-engine/README.md
 !income-engine/src

@@ -36,7 +36,10 @@ services:
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ITE_API_KEY: ${ITE_API_KEY:-}
+      # The loan pipeline reads customer accounts through the Open Banking gateway.
+      OPEN_BANKING_GATEWAY_URL: http://open-banking-gateway:3000
     volumes: ["collateral:/var/collateral"]
+    depends_on: [open-banking-gateway]
 
   platform-console:
     build: {context: ., dockerfile: collateral-engine/Dockerfile}
@@ -44,6 +47,7 @@ services:
     ports: ["127.0.0.1:8502:8501"]
     environment: *platform-environment
     volumes: ["collateral:/var/collateral"]
+    depends_on: [open-banking-gateway]
 
 volumes:
   collateral:

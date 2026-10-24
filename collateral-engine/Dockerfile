@@ -13,6 +13,8 @@ COPY collateral-engine/pyproject.toml collateral-engine/README.md ./
 COPY collateral-engine/src ./src
 RUN pip install --no-cache-dir -e ".[dev]"
 COPY collateral-engine/ ./
+# The organizer dataset backs the loan pipeline when the Open Banking gateway is unreachable.
+COPY data/open-banking-synthetic-100-customers.xlsx /data/
 # Synthetic data and the income models are built in the image, so every replica serves the same
 # markets and the same versioned model; the image is not built if a test fails.
 RUN python -m collateral_engine.synth && python -m collateral_engine.vehicles.synth
