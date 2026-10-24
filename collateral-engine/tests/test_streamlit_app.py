@@ -14,8 +14,11 @@ from collateral_engine.synth import generate_sales
 from collateral_engine.ui_text import UI_TEXT
 from collateral_engine.vehicles.market import write_vehicle_market_data
 from collateral_engine.vehicles.synth import generate_vehicle_sales
+from language import LANGUAGE_WIDGET_KEY
 
-APP_PATH = Path(__file__).parents[1] / "app" / "streamlit_app.py"
+# The collateral console runs as a page of the platform, which draws the language selector.
+PLATFORM_PATH = Path(__file__).parents[1] / "app" / "platform_app.py"
+COLLATERAL_PAGE = "streamlit_app.py"
 STREAMLIT_CONFIG_PATH = Path(__file__).parents[1] / ".streamlit" / "config.toml"
 APP_TIMEOUT_S = 180
 CONSOLE_SALE_COUNT = 4000
@@ -44,8 +47,9 @@ def console_environment(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Pa
 
 @pytest.fixture
 def console(console_environment: Path) -> AppTest:
-    app = AppTest.from_file(str(APP_PATH), default_timeout=APP_TIMEOUT_S)
+    app = AppTest.from_file(str(PLATFORM_PATH), default_timeout=APP_TIMEOUT_S)
     app.run()
+    app.switch_page(COLLATERAL_PAGE).run()
     return app
 
 
@@ -70,7 +74,7 @@ def test_console_opens_in_georgian_with_synthetic_notice(console: AppTest) -> No
 
 
 def test_console_switches_to_english(console: AppTest) -> None:
-    console.radio(key="language").set_value(Language.ENGLISH).run()
+    console.radio(key=LANGUAGE_WIDGET_KEY).set_value(Language.ENGLISH).run()
 
     assert console.title[0].value == UI_TEXT["app_title"][Language.ENGLISH]
 
@@ -195,6 +199,6 @@ def test_vehicle_demo_labels_do_not_change_with_language(console: AppTest) -> No
     # language came back as the value: "KeyError: 'DEMO-CAR-001 · Toyota Prius: ...'".
     georgian_labels = console.selectbox(key="vehicle_demo_case").options
 
-    console.radio(key="language").set_value(Language.ENGLISH).run()
+    console.radio(key=LANGUAGE_WIDGET_KEY).set_value(Language.ENGLISH).run()
 
     assert console.selectbox(key="vehicle_demo_case").options == georgian_labels

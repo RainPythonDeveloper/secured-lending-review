@@ -17,12 +17,6 @@ from collateral_engine.audit import (
     ReasonRequiredError,
     record_officer_decision,
 )
-from collateral_engine.bootstrap import (
-    build_engine,
-    build_nbg_rates_client,
-    build_stores,
-    build_vehicle_engine,
-)
 from collateral_engine.demo_cases import (
     DEMO_CASES,
     DEMO_FACTORY_REPORT,
@@ -44,7 +38,6 @@ from collateral_engine.domain import (
     SubjectProperty,
     ValuationRequest,
 )
-from collateral_engine.engine import CollateralEngine, EngineStores
 from collateral_engine.evaluation import BacktestMetrics, run_backtest, summarise
 from collateral_engine.i18n import (
     BUILDING_STATUS_NAMES,
@@ -57,7 +50,6 @@ from collateral_engine.i18n import (
 )
 from collateral_engine.nbg_rates import (
     NBG_RATE_SOURCE,
-    NbgRatesClient,
     OfficialRateUnavailableError,
 )
 from collateral_engine.nbg_rules import rule_version_in_force
@@ -65,8 +57,8 @@ from collateral_engine.photos import PhotoUpload
 from collateral_engine.reference import load_districts
 from collateral_engine.report import ValuationReport
 from collateral_engine.report_check import ValuerReport, check_valuer_report
-from collateral_engine.settings import load_settings
-from collateral_engine.vehicles.engine import VehicleEngine
+from language import current_language
+from resources import get_engine, get_rates_client, get_vehicle_engine
 from vehicle_tab import render_vehicle_tab
 
 st.set_page_config(page_title="Collateral second opinion", page_icon="🏠", layout="wide")
@@ -76,7 +68,6 @@ PHOTO_TYPES = ["jpg", "jpeg", "png", "webp"]
 UI_BACKTEST_SALES = 300
 # Shown in the land field while a flat is entered; a flat itself has no land area.
 DEFAULT_LAND_AREA_M2 = 500.0
-LANGUAGE_LABELS = {Language.GEORGIAN: "ქართული", Language.ENGLISH: "English"}
 DEMO_CASES_BY_ID = {case.application_id: case for case in DEMO_CASES}
 DISTRICT_NAMES: dict[District, Bilingual] = {
     district.code: {Language.GEORGIAN: district.name_ka, Language.ENGLISH: district.name_en}
@@ -86,26 +77,6 @@ DECISION_KEYS = {
     OfficerDecisionKind.ACCEPT_VALUATION: "decision_accept",
     OfficerDecisionKind.PHYSICAL_INSPECTION: "decision_inspect",
 }
-
-
-@st.cache_resource(show_spinner=False)
-def get_stores() -> EngineStores:
-    return build_stores(load_settings())
-
-
-@st.cache_resource(show_spinner=False)
-def get_engine() -> CollateralEngine:
-    return build_engine(load_settings(), get_stores())
-
-
-@st.cache_resource(show_spinner=False)
-def get_vehicle_engine() -> VehicleEngine:
-    return build_vehicle_engine(load_settings(), get_stores())
-
-
-@st.cache_resource(show_spinner=False)
-def get_rates_client() -> NbgRatesClient:
-    return build_nbg_rates_client(load_settings())
 
 
 @st.cache_resource(show_spinner=False)
@@ -137,7 +108,7 @@ def demo_case_label(application_id: str) -> str:
 
 
 def language() -> Language:
-    return st.session_state.get("language", Language.GEORGIAN)
+    return current_language()
 
 
 def text(key: str, **params: object) -> str:
@@ -231,13 +202,6 @@ def current_rate() -> ExchangeRate:
 
 def render_sidebar() -> None:
     with st.sidebar:
-        st.radio(
-            report_view.label("language", language()),
-            list(Language),
-            format_func=LANGUAGE_LABELS.get,
-            key="language",
-            horizontal=True,
-        )
         st.selectbox(
             text("demo_case"),
             list(DEMO_CASES_BY_ID),
