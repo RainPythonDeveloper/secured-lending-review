@@ -48,6 +48,8 @@ Vehicles, same out-of-time design on synthetic sales of 14 models:
 | Topic | How the service handles it |
 |---|---|
 | NBG LTV limits | Read from `income-engine/config/nbg_rules.yaml`, the same dated file that holds the PTI limits. Since the NBG easing published on 26 Feb 2025: 90% for GEL loans secured by real estate (85% before), 70% for foreign-currency loans, 80% for foreign-currency mortgages of borrowers with income from abroad. The version in force on the application date applies. |
+| NBG PTI limits | Same dated rules file: for income below 1,500 GEL 25% (hedged) and 20% (unhedged), above it 50% and 30%. Existing obligations from the credit report count towards the payment. |
+| Maturity and FX lending | Longest term: 4 years for unsecured consumer loans (the pipeline applies it to car loans too), 20 years for mortgages, 10 years for FX mortgages. A loan below 750,000 GEL (from 1 Aug 2025) or 1,000,000 GEL (from 1 Jul 2026) must be in GEL when the income is in GEL. These values come from secondary sources and are marked VERIFY in the rules file. |
 | NBG valuation rules (Order 84/04) | At least 3 comparables; each adjustment within ±15% and the gross adjustment within ±25% (Art. 4(5)). Sales beyond the limits are not used; if too few remain, sales up to ±35% gross are used and the report asks for a written justification; if still too few, a valuer has to inspect. The limits are in the same dated rules file. |
 | Exchange rate | Official NBG rate from the nbg.gov.ge public API. The API answers an unpublished date with the latest rate, so the date of every answer is checked. |
 | Currency | Tbilisi flats trade in USD, and loans are mostly in GEL. The value is converted at the NBG rate, and the report shows the LTV if the lari strengthens by 20%. Money is `Decimal` and travels as a decimal string. |
@@ -70,43 +72,97 @@ make data           # 6,000 flat and 1,200 house sales -> data/comparables.csv,
                     # synthetic borrowers and trained models in ../income-engine (about 2 min)
 make app            # platform console on http://localhost:8502 (restart it after editing src/)
 make api            # platform API on http://localhost:8100/docs
-make check          # ruff, then the tests of both engines (458 tests, about 45 s)
+make check          # ruff, then the tests of both engines (549 tests, about 45 s)
 make evaluate       # backtest of flats, houses and vehicles -> reports/metrics.json
 ```
 
 From the repository root: `docker compose up --build platform-api platform-console`. The image is
 built from the repository root so it carries the income engine and the shared NBG rules file.
 
-### One platform
+### Loan application pipeline
 
-The console opens on an **Overview** for first-time visitors: what the platform does, one
-application in four steps, quality on synthetic data and the responsible-AI guarantees. The
-**Application** page assesses a full application: three setup cards (borrower, collateral, assess),
-a verdict with a one-line explanation, and bars that show the request, the PTI and LTV limits and
-the offer on one scale. The **Collateral** and **Income** modules keep their detailed consoles. One
-language selector serves every page. The
-income engine (`income-engine/`, package `ite`) is installed into this environment and called in
-process through `collateral_engine.income`, which validates its output into pydantic models. A full
-application (`collateral_engine.full_application`) takes the income application and one collateral
-for the same GEL loan:
+The console has two pages: an **Overview** for first-time visitors and the **Loan application**,
+which runs the checks a loan officer does by hand before a loan is issued, as one pipeline:
+applicant, loan, automated checks, officer's decision. One language selector serves both pages.
 
-| Step | Source |
+There are two kinds of applicant:
+
+| Path | Where the data comes from |
 |---|---|
-| Highest amount within the NBG PTI limit | income engine, on the conservative P25 income |
-| Highest amount within the LTV limit | collateral engine: NBG for real estate, bank policy for vehicles |
-| Offer | the request cut to the lower of the two; the report names the binding limit |
-| Recommendation | physical inspection if the collateral needs one; officer review if either side does; otherwise offer the full or a reduced amount. A flag that the requested amount breaks LTV does not force review, because the offer is already cut to the limit. |
+| Existing customer | Any of the 100 customers of the organizer dataset (`data/open-banking-synthetic-100-customers.xlsx`). Accounts and six months of transactions come through the Open Banking gateway in `server/` after the customer's consent; the bank's own records (the same workbook) are the fallback when the gateway or the sandbox is down. |
+| New customer | A synthetic applicant generated from a profile, a declared income and a seed: a six-month statement in the dataset's format, with income that differs from the declared figure the way real statements do. |
 
-There is no automatic refusal on either side: the income engine refers an application it cannot
-offer to the loan officer (`REFER`). Each full application is written to the shared audit log with
-the SHA-256 of the income assessment.
+The pipeline (`src/collateral_engine/lending/`) runs five stages:
 
-To read condition from photos, set `COLLATERAL_VISION_ENABLED=true` and `NVIDIA_API_KEY` (hosted
+| Stage | What it checks | Source |
+|---|---|---|
+| Identity and watchlists | Name against the sanctions/PEP list and the NAPR Debtors Registry | synthetic stand-ins in `config/screening_lists.yaml` |
+| Credit history | Thin file, current obligations (counted in PTI), days past due in the last 12 months | synthetic stand-in for Creditinfo Georgia, deterministic per customer |
+| Income | Whole calendar months of the statement: verified income is the median month, PTI uses the lower-quartile month; declared income above the verified one, unstable income, short history; salary and pension count as documented (stand-in for RS.ge), other income is flagged as undocumented | the statement |
+| Affordability | PTI limit by income and currency hedge, GEL lending below the FX threshold, longest term per product; the highest amount within PTI | `income-engine/config/nbg_rules.yaml`, version in force on the application date |
+| Collateral | Mortgage: a flat or house through the collateral engine; car loan: a vehicle; consumer loan: none | collateral engine, NBG LTV or bank vehicle policy |
+
+For a mortgage or a car loan, step 2 asks for the collateral in one of two ways:
+
+| Collateral data | What the officer does |
+|---|---|
+| Demo case | Picks one of five flats and houses or three cars; a summary card shows what the case contains and highlights its risks (right-hand drive, no customs clearance, accident history). |
+| Fill in myself | Fills in every field: for real estate the NAPR cadastral code, district, coordinates, area, rooms, floor, building status, declared condition, the off-plan details of a building under construction and the licensed appraisal; for a car the VIN, plate, make, model, year, mileage, engine, fuel, steering, customs clearance and accident history. The form starts from the chosen demo case, so only what differs needs typing. |
+
+Photos are uploaded in both modes. The verdict lists the concrete reasons behind it. The
+**Collateral · AI analysis** tab opens first and starts with the AI analysis of the photos, naming
+the vision model: for a flat or house the declared condition against what the model sees; for a car
+the odometer, VIN, body damage, steering side and the required views, each with its status, and
+every photo with what the model read from it. Then come the market value and calibrated range
+against the licensed appraisal, the LTV check (NBG for real estate, bank policy for cars) with the
+lari stress, the map of the property, comparable sales and metro, the adjustment grid with the NBG
+Order 84/04 limits, the model and rule versions, and a check of a valuer's report against Order
+84/04. The **Audit log** tab lists the application's records and verifies the hash chain.
+
+| AI check of car photos | Rule (`vision` in `config/vehicle_policy.yaml`) | Outcome when contradicted |
+|---|---|---|
+| Odometer | within 10% of the declared mileage; miles are converted to km | officer review; the car is valued at the higher mileage |
+| VIN plate | the 17 characters read must equal the declared VIN | physical inspection: the photos may show another car |
+| Body damage | major damage on the front, rear or sides without a declared accident | officer review |
+| Steering side | read only from cabin photos | officer review |
+| Views | front, rear, both sides, odometer, VIN plate | listed as missing |
+
+A reading counts only at medium confidence or higher and never from a photo with people in it;
+an unreadable photo leaves the claim INCONCLUSIVE, never CONTRADICTED. One application keeps one
+number across reruns, so its own photos are not mistaken for photos reused from another application.
+
+The offer is the request cut to the lowest of the PTI and LTV maximums, rounded down to 100 GEL,
+and the report names the binding limit. The recommendation is: compliance review on a watchlist
+match, physical inspection when the collateral needs one or cannot be valued, officer review when any stage needs
+review, otherwise the full or a reduced offer. There is no automatic refusal. The decision form
+starts from the decision that matches the recommendation; any other decision, and every decline,
+needs a written reason. The assessment (`LOAN_APPLICATION_ASSESSED`, with the SHA-256 of the
+report) and the decision (`LOAN_DECISION`) go to the shared hash-chained audit log. The page shows
+the processing time next to the manual minutes the checks replace (`config/lending_policy.yaml`,
+an assumption).
+
+Identity is a list check only: document and biometric verification is out of scope, because the
+platform processes no face or voice data. Creditinfo, RS.ge, the sanctions list and the Debtors
+Registry are synthetic stand-ins, labelled as such on every stage card, because the hackathon
+provides no access to them.
+
+**Open Banking consent, step by step.** Start the gateway (`cd ../server && npm run start:dev`, or
+`docker compose up`). On the Loan application page pick a customer and press *Request consent*:
+the gateway creates a consent bound to that dataset customer at the TBC sandbox. Press *Approve at
+the bank*, approve the consent on the sandbox page yourself, come back and press *Load the data*.
+Before approval the page says the consent is pending; *Use the bank's records* skips the consent.
+
+The earlier full application (income engine plus collateral) stays available through the API at
+`/v1/full-applications`.
+
+To read the photos with AI, set `COLLATERAL_VISION_ENABLED=true` and `NVIDIA_API_KEY` (hosted
 NVIDIA model `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, the default). For Claude instead, set
-`COLLATERAL_VISION_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`. Without a provider, photos are still
-checked and hashed, and the condition stays INCONCLUSIVE.
-`python -m collateral_engine.vision_check photo.jpg` runs the configured vision model on your own
-photos; it calls the hosted API and is not part of the test suite.
+`COLLATERAL_VISION_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`. The same model reads flat interiors
+and car photos, each with its own instructions and JSON schema (`vision.py`, `vehicles/vision.py`).
+Without a provider, photos are still checked and hashed, and every claim stays INCONCLUSIVE.
+`make vision-check ARGS="photo.jpg"` (or `ARGS="--vehicle front.jpg odometer.jpg"`) runs the
+configured model on your own photos; it calls the hosted API and is not part of the test suite.
+`make app APP_PORT=8504` starts the console on another port.
 
 ## How it works
 
@@ -148,8 +204,9 @@ officer decision (reason required against the recommendation) → hash-chained a
 | `evaluation.py` | Backtest with IAAO ratio statistics |
 | `api.py` | FastAPI service |
 | `i18n.py`, `ui_text.py` | Georgian and English texts |
-| `app/` | Officer console (Streamlit) |
-| `config/` | Valuation policy and condition rules (versioned YAML) |
+| `lending/` | Loan application pipeline: customer data, Open Banking client, screening, credit report, income analysis, affordability, recommendation, officer decision |
+| `app/` | Officer console (Streamlit): overview, loan application, collateral form and report |
+| `config/` | Valuation policy, condition rules, lending policy and screening lists (versioned YAML) |
 
 ## Data contract for comparable sales
 
@@ -210,7 +267,7 @@ the Open Banking gateway of this repository.
 
 | Guardrail | Where |
 |---|---|
-| The vision model only describes photos; versioned YAML rules set the status | `vision.py`, `condition.py`, `config/condition_rules.yaml` |
+| The vision model only describes photos; versioned YAML rules set the status | `vision.py`, `condition.py`, `config/condition_rules.yaml`, `vehicles/evidence.py`, `config/vehicle_policy.yaml` |
 | Vision answers off the JSON schema are discarded; refusals, truncation and outages leave the photo unassessed | `vision.py` (`parse_assessment_response`) |
 | A bad photo or failed model gives INCONCLUSIVE, never CONTRADICTED | `photos.py`, `condition.py` |
 | At least 3 photos of the flat; fewer is flagged and goes to officer review | `config/condition_rules.yaml` (`min_photos`), `findings.py` |
@@ -252,6 +309,9 @@ empty value such as `NVIDIA_API_KEY=` means "not set".
 | `COLLATERAL_VISION_TIMEOUT_S` | `60` |
 | `NBG_RATES_URL` | `https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/` |
 | `NBG_RATES_TIMEOUT_S` | `10` |
+| `NBG_DATASET_PATH` | `../data/open-banking-synthetic-100-customers.xlsx` |
+| `OPEN_BANKING_GATEWAY_URL` | `http://localhost:3000` |
+| `OPEN_BANKING_TIMEOUT_S` | `60` (the sandbox injects delays of up to 15 s on each call) |
 
 The NVIDIA endpoint has no strict JSON-schema mode: the schema is in the prompt, thinking is turned
 off (`chat_template_kwargs.enable_thinking: false`), temperature is 0, and the answer is validated
@@ -271,13 +331,18 @@ unassessed.
 - The cadastral code format is inferred from registry extracts; verify it against the NAPR rule.
 - Flats and private houses in Tbilisi only. Land and commercial property get the valuer report
   check, not a model valuation.
-- Vehicle photos are checked for quality and reuse only; the odometer and VIN plate are not read
-  from them yet, and the declared mileage and accident history are not verified.
+- The AI checks of car photos were tried on real listing photos but not measured on a labelled
+  set; the odometer and VIN readings depend on how sharp those photos are.
+- The synthetic vehicle market covers 14 models; any other model (a Ford Mustang, say) gets no
+  valuation and goes to a physical inspection.
 - Geostat's house prices are offer prices of new houses. Per the IMF technical assistance report
   on the Georgian RPPI (April 2025), Geostat's house model takes floor area and plot area as
   separate characteristics, so the price per m² is per m² of the house, as in this model. Listings
   may give the plot area without the building footprint, while NAPR includes it; align the two
   before using real sales.
+- The loan pipeline runs in the console only; it has no API route yet.
+- Credit history, RS.ge, the sanctions list and the Debtors Registry are synthetic stand-ins; a
+  pilot needs the bank's contracts with Creditinfo and access to the RS.ge and NAPR services.
 - The API does not authenticate callers; run it on localhost or a private network.
 - Have a native speaker review the Georgian texts.
 
@@ -297,11 +362,13 @@ Licences as declared by the installed packages.
 | pillow | 13.0.0 | MIT-CMU | Photo checks |
 | httpx | 0.28.1 | BSD-3-Clause | NBG rate client |
 | PyYAML | 6.0.3 | MIT | Configuration |
+| openpyxl | 3.1.5 | MIT | Reading the organizer dataset |
 | streamlit | 1.66.1 | Apache-2.0 | Officer console |
 | pydeck | 0.9.3 | Apache-2.0 | Map |
 | pytest, ruff (dev) | 9.1.1, 0.16.10 | MIT | Tests and lint |
 | OpenStreetMap metro stations | 2026-10-22 | ODbL 1.0, © OpenStreetMap contributors | `reference/tbilisi_metro_stations.json` |
 | Geostat district prices | Q1 2026 | public statistics | Synthetic price anchors |
 | NBG official exchange rate API | – | public service of the National Bank of Georgia | USD/GEL rate |
+| TBC Open Banking sandbox (mock) | – | hackathon sandbox | Consented accounts and transactions |
 | NVIDIA hosted API (Nemotron 3 Nano Omni) | – | NVIDIA API Trial Terms; model under NVIDIA Open Model Agreement | Condition from photos, default provider |
 | Claude API | – | commercial service of Anthropic | Condition from photos, alternative provider |
