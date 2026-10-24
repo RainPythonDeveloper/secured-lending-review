@@ -17,3 +17,6 @@ docs/research/
 
 # Local session notes
 *-results-copyhtml.txt
+
+# Lock files that Excel and Word leave next to an open document
+~$*
