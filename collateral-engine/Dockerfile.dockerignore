@@ -6,6 +6,13 @@
 !collateral-engine/config
 !collateral-engine/tests
 !collateral-engine/.streamlit
-!income-engine/config/nbg_rules.yaml
+!income-engine/pyproject.toml
+!income-engine/README.md
+!income-engine/src
+!income-engine/api
+!income-engine/app
+!income-engine/config
+!income-engine/tests
+!income-engine/.streamlit
 **/__pycache__
 **/.pytest_cache

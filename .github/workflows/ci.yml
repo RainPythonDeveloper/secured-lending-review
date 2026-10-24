@@ -18,6 +18,7 @@ jobs:
       - run: python -m ite.synth --out data && python -m ite.train && python -m ite.report
       - run: python -m pytest -q
 
+  # The platform: the collateral engine with the income engine installed in the same environment.
   collateral-engine:
     runs-on: ubuntu-latest
     defaults:
@@ -28,9 +29,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[dev]"
+      - run: pip install -e ../income-engine -e ".[dev]"
       - run: ruff format --check .
       - run: ruff check .
+      - run: python -m ite.synth --out data && python -m ite.train && python -m ite.report
+        working-directory: income-engine
       - run: pytest
 
   server:
