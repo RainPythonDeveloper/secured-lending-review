@@ -16,7 +16,8 @@ from collateral_engine.policy import DEFAULT_CONFIG_DIR, SERVICE_ROOT
 from collateral_engine.vision import DEFAULT_VISION_MODEL
 
 REPOSITORY_ROOT = SERVICE_ROOT.parent
-DEFAULT_NBG_RULES_PATH = REPOSITORY_ROOT / "income-engine" / "config" / "nbg_rules.yaml"
+INCOME_ENGINE_ROOT = REPOSITORY_ROOT / "income-engine"
+DEFAULT_NBG_RULES_PATH = INCOME_ENGINE_ROOT / "config" / "nbg_rules.yaml"
 DEFAULT_NBG_RATES_URL = "https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/"
 SYNTHETIC_MARKET_DATA_SOURCE = "synthetic sales (collateral_engine.synth), not real transactions"
 TRUE_VALUES = {"1", "true", "yes"}
@@ -57,6 +58,10 @@ class Settings(BaseModel):
     nvidia_chat_url: str
     nbg_rates_url: str
     nbg_rates_timeout_s: PositiveSeconds
+    income_models_dir: Path
+    income_data_dir: Path
+    # Transactions are personal data: when set, the income routes of the API need this key.
+    income_api_key: SecretStr | None
 
     @model_validator(mode="after")
     def _check_nvidia_key(self) -> Self:
@@ -94,6 +99,9 @@ def load_settings(environment: Mapping[str, str] = os.environ) -> Settings:
             nvidia_chat_url=read("NVIDIA_CHAT_URL", DEFAULT_NVIDIA_CHAT_URL),
             nbg_rates_url=read("NBG_RATES_URL", DEFAULT_NBG_RATES_URL),
             nbg_rates_timeout_s=read("NBG_RATES_TIMEOUT_S", 10),
+            income_models_dir=read("INCOME_MODELS_DIR", INCOME_ENGINE_ROOT / "models"),
+            income_data_dir=read("INCOME_DATA_DIR", INCOME_ENGINE_ROOT / "data"),
+            income_api_key=read("ITE_API_KEY", None),
         )
     except (ValidationError, ValueError) as error:
         raise SettingsError(f"invalid collateral engine settings: {error}") from error

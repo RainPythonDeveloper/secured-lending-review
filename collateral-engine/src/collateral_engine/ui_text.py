@@ -265,6 +265,51 @@ UI_TEXT: dict[str, Bilingual] = {
     },
     "audit_empty": {KA: "ჩანაწერები ჯერ არ არის.", EN: "No records yet."},
     "tab_vehicle": {KA: "ავტომობილი", EN: "Vehicle"},
+    "full_title": {KA: "სრული განაცხადი", EN: "Full loan application"},
+    "full_intro": {
+        KA: "ერთი განაცხადი: შემოსავალი Open Banking-ის ტრანზაქციებიდან (სებ-ის PTI) და "
+        "გირაო (LTV). შეთავაზება ორივე ლიმიტს აკმაყოფილებს; გადაწყვეტილებას იღებს ოფიცერი.",
+        EN: "One application: income from consented Open Banking transactions (NBG PTI) and "
+        "the collateral (LTV). The offer meets both limits; the loan officer decides.",
+    },
+    "borrower": {KA: "მსესხებელი (სინთეტიკური)", EN: "Borrower (synthetic)"},
+    "collateral_kind": {KA: "გირაო", EN: "Collateral"},
+    "real_estate": {KA: "უძრავი ქონება", EN: "Real estate"},
+    "vehicle": {KA: "ავტომობილი", EN: "Vehicle"},
+    "collateral_case": {KA: "გირაოს ნიმუში", EN: "Collateral case"},
+    "full_photos": {KA: "გირაოს ფოტოები", EN: "Collateral photos"},
+    "assess_full": {KA: "განაცხადის შეფასება", EN: "Assess the application"},
+    "full_start_hint": {
+        KA: "აირჩიეთ მსესხებელი და გირაო, შემდეგ დააჭირეთ „განაცხადის შეფასებას“.",
+        EN: "Pick a borrower and a collateral, then press 'Assess the application'.",
+    },
+    "full_loan_note": {
+        KA: "სესხი: {amount} ლარი, {term} თვე — მსესხებლის განაცხადიდან; გირაოს შეფასება იმავე "
+        "სესხისთვის კეთდება.",
+        EN: "Loan: {amount} GEL over {term} months, from the borrower's application; the "
+        "collateral is assessed for the same loan.",
+    },
+    "requested_amount": {KA: "მოთხოვნილი", EN: "Requested"},
+    "max_by_income": {KA: "მაქსიმუმი შემოსავლით (PTI)", EN: "Maximum by income (PTI)"},
+    "max_by_collateral": {KA: "მაქსიმუმი გირაოთი (LTV)", EN: "Maximum by collateral (LTV)"},
+    "offer_amount": {KA: "შეთავაზება", EN: "Offer"},
+    "binding_limit": {KA: "შემზღუდველი ლიმიტი: {limit}", EN: "Binding limit: {limit}"},
+    "income_section": {KA: "შემოსავალი", EN: "Income"},
+    "income_recommendation": {KA: "შემოსავლის შეფასება", EN: "Income assessment"},
+    "income_band": {KA: "თვიური შემოსავალი P10–P90", EN: "Monthly income P10–P90"},
+    "income_conservative": {
+        KA: "PTI-სთვის: P25 = {amount} ლარი",
+        EN: "For PTI: P25 = {amount} GEL",
+    },
+    "pti": {KA: "PTI / ლიმიტი", EN: "PTI / limit"},
+    "default_probability": {KA: "დეფოლტის ალბათობა (12 თვე)", EN: "Default probability (12 m)"},
+    "income_flags": {KA: "შენიშვნები", EN: "Notes"},
+    "income_reasons": {KA: "მთავარი ფაქტორები", EN: "Main factors"},
+    "collateral_section": {KA: "გირაო", EN: "Collateral"},
+    "income_unavailable": {
+        KA: "შემოსავლის მოდელი არ არის მზად: {error}",
+        EN: "The income model is not ready: {error}",
+    },
     "vehicle_intro": {
         KA: "ავტომობილი სესხის უზრუნველყოფად. სებ-ის №84/04 ბრძანება მხოლოდ უძრავ ქონებას "
         "ეხება და სებ ავტოსესხზე LTV ლიმიტს არ ადგენს, ამიტომ ლიმიტი და ვადა ბანკის "

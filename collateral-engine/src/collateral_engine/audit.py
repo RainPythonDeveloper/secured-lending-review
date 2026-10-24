@@ -23,6 +23,7 @@ GENESIS_HASH = "0" * 64
 
 class AuditEvent(StrEnum):
     VALUATION_ASSESSED = "valuation_assessed"
+    FULL_APPLICATION_ASSESSED = "full_application_assessed"
     OFFICER_DECISION = "officer_decision"
 
 

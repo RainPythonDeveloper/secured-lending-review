@@ -1,9 +1,11 @@
 """Test data builders: requests, photos and stand-ins for the vision model."""
 
 import io
+import json
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -21,6 +23,14 @@ from collateral_engine.domain import (
     PropertyKind,
     SubjectProperty,
     ValuationRequest,
+)
+from collateral_engine.income import (
+    AccountTransaction,
+    EmploymentType,
+    IncomeApplication,
+    IncomeAssessment,
+    IncomeAssessmentRequest,
+    income_assessment_from_engine_output,
 )
 from collateral_engine.vehicles.domain import (
     FuelType,
@@ -233,3 +243,51 @@ def make_vehicle_request(
         ),
         usd_rate=USD_RATE,
     )
+
+
+INCOME_ENGINE_OUTPUT_PATH = Path(__file__).parent / "fixtures" / "income_engine_output_747.json"
+SYNTHETIC_TRANSACTION_COUNT = 24
+
+
+def make_income_request(
+    loan_amount: str = "8000", term_months: int = 12
+) -> IncomeAssessmentRequest:
+    application = IncomeApplication(
+        borrower_id=747,
+        application_date=VALUATION_DATE,
+        employment_type=EmploymentType.FARMER,
+        declared_income_gel=Decimal("1100"),
+        loan_amount_gel=Decimal(loan_amount),
+        term_months=term_months,
+        annual_rate=Decimal("0.2489"),
+        consent_id="OB-TEST-747",
+    )
+    transactions = [
+        AccountTransaction(
+            tx_id=index,
+            date=VALUATION_DATE - timedelta(days=7 * index),
+            amount=Decimal("450.00"),
+            currency=Currency.GEL,
+            counterparty="Invented Wine Cooperative",
+            description="grape delivery",
+        )
+        for index in range(SYNTHETIC_TRANSACTION_COUNT)
+    ]
+    return IncomeAssessmentRequest(application=application, transactions=transactions)
+
+
+def recorded_income_assessment(**changes: object) -> IncomeAssessment:
+    output = json.loads(INCOME_ENGINE_OUTPUT_PATH.read_text(encoding="utf-8"))
+    return income_assessment_from_engine_output(output).model_copy(update=changes)
+
+
+@dataclass
+class StubIncomeAssessor:
+    """Answers every application with the given assessment, without the trained models."""
+
+    assessment: IncomeAssessment = field(default_factory=recorded_income_assessment)
+    requests: list[IncomeAssessmentRequest] = field(default_factory=list)
+
+    def assess(self, request: IncomeAssessmentRequest) -> IncomeAssessment:
+        self.requests.append(request)
+        return self.assessment

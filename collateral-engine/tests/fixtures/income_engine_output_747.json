@@ -1,0 +1,135 @@
+{
+ "borrower_id": 747,
+ "requested_amount": 8000.0,
+ "offer_amount": 3100.0,
+ "offer_payment": 294.47,
+ "term_months": 12,
+ "declared_income": 1099.0,
+ "existing_debt": 0.0,
+ "annual_rate": 0.2489,
+ "loan_currency": "GEL",
+ "income_currency": "GEL",
+ "inc_q10": 1085.0,
+ "inc_q25": 1186.0,
+ "inc_q50": 1318.0,
+ "inc_q90": 1349.0,
+ "pti_requested": 0.6405,
+ "pti_limit": 0.25,
+ "pti_pass": false,
+ "ltv": null,
+ "ltv_limit": 0.9,
+ "ltv_pass": true,
+ "max_compliant_amount": 3100.0,
+ "pd_requested": 0.4099,
+ "pd_offer": 0.0628,
+ "pd_gel_minus20": 0.0628,
+ "band_width": 0.2,
+ "circular_ratio": 0.0,
+ "seasonal": true,
+ "thin_file": true,
+ "recommendation": "APPROVE_REDUCED",
+ "rules_version": "2025-02",
+ "model_version": "1.0.0",
+ "reasons": [
+  {
+   "feature": "pti_est",
+   "value": 0.22343843642721387,
+   "impact": -0.2879286713375693,
+   "direction": "lowers risk",
+   "en": "Loan payments are a comfortable share of income",
+   "ka": "სესხის გადასახადი შემოსავალთან შედარებით დაბალია"
+  },
+  {
+   "feature": "late_util_rate",
+   "value": 0.20833333333333334,
+   "impact": 0.24804573921915843,
+   "direction": "raises risk",
+   "en": "Utility bills are often paid late",
+   "ka": "კომუნალური გადასახადები ხშირად გვიან იხდება"
+  },
+  {
+   "feature": "stress_est",
+   "value": 0.7944867737352651,
+   "impact": 0.23634510195162023,
+   "direction": "raises risk",
+   "en": "Payments are hard to cover in low-income months",
+   "ka": "დაბალი შემოსავლის თვეებში გადახდა რთულია"
+  },
+  {
+   "feature": "burden_p25",
+   "value": 0.24820980996440747,
+   "impact": -0.1057457946301671,
+   "direction": "lowers risk",
+   "en": "Payment is affordable on a conservative income estimate",
+   "ka": "გადასახადი ხელმისაწვდომია კონსერვატიული შეფასებითაც"
+  }
+ ],
+ "alternatives": [
+  {
+   "term_months": 12,
+   "max_amount": 3100.0
+  },
+  {
+   "term_months": 24,
+   "max_amount": 5500.0
+  },
+  {
+   "term_months": 36,
+   "max_amount": 7400.0
+  },
+  {
+   "term_months": 48,
+   "max_amount": 8900.0
+  },
+  {
+   "term_months": 60,
+   "max_amount": 10100.0
+  }
+ ],
+ "seasonal_schedule": {
+  "payments_first_12": [
+   814.71,
+   824.37,
+   824.37,
+   96.18,
+   96.18,
+   96.18,
+   96.18,
+   96.18,
+   96.18,
+   96.18,
+   96.18,
+   96.18
+  ],
+  "annuity_payment": 294.47,
+  "min_payment": 96.18,
+  "max_payment": 824.37,
+  "income_profile_by_month": [
+   207.0,
+   170.0,
+   227.0,
+   176.0,
+   176.0,
+   232.0,
+   230.0,
+   2016.0,
+   2277.0,
+   2051.0,
+   187.0,
+   209.0
+  ],
+  "start_month": 8,
+  "note": "Same present value as the annuity. Confirm PTI treatment of non-equal schedules with NBG."
+ },
+ "flags": [
+  "Thin file: no credit-bureau history",
+  "Requested amount breaks NBG PTI limit"
+ ],
+ "offer": {
+  "amount": 3100.0,
+  "term_months": 12,
+  "monthly_payment": 294.47
+ },
+ "letter_ka": "შეგვიძლია შემოგთავაზოთ 3,100 ლარი 12 თვით.\n\nმთავარი ფაქტორები:\n• სესხის გადასახადი შემოსავალთან შედარებით დაბალია\n• კომუნალური გადასახადები ხშირად გვიან იხდება\n• დაბალი შემოსავლის თვეებში გადახდა რთულია\nშეთავაზება შეესაბამება საქართველოს ეროვნული ბანკის პასუხისმგებლიანი დაკრედიტების მოთხოვნებს. გადაწყვეტილებას იღებს ბანკის თანამშრომელი.",
+ "letter_en": "We can offer 3,100 GEL over 12 months.\n\nMain factors:\n• Loan payments are a comfortable share of income\n• Utility bills are often paid late\n• Payments are hard to cover in low-income months\nThe offer follows the National Bank of Georgia's responsible-lending rules. A bank officer makes the final decision."
+}

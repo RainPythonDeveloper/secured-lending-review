@@ -4,7 +4,8 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 
-from collateral_engine.api import create_app
+from builders import StubIncomeAssessor
+from collateral_engine.api import Platform, create_app
 from collateral_engine.demo_cases import DEMO_FACTORY_REPORT
 from collateral_engine.domain import Currency
 from collateral_engine.i18n import REPORT_ISSUE_TEMPLATES, Language, report_finding_text
@@ -138,7 +139,8 @@ def test_every_issue_has_georgian_and_english_text() -> None:
 
 
 def test_api_checks_report_with_rules_in_force(make_engine, make_vehicle_engine) -> None:
-    client = TestClient(create_app(make_engine(), make_vehicle_engine(), rates_client=None))
+    platform = Platform(make_engine(), make_vehicle_engine(), StubIncomeAssessor())
+    client = TestClient(create_app(platform, rates_client=None))
 
     response = client.post(
         "/v1/valuer-reports/check", json=DEMO_FACTORY_REPORT.model_dump(mode="json")

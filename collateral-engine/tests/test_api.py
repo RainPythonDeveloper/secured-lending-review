@@ -7,13 +7,15 @@ from fastapi.testclient import TestClient
 
 from builders import (
     USD_RATE,
+    StubIncomeAssessor,
     make_appraisal,
     make_house,
+    make_income_request,
     make_request,
     make_vehicle_request,
     scene_photo,
 )
-from collateral_engine.api import PROBLEM_JSON, create_app
+from collateral_engine.api import PROBLEM_JSON, Platform, create_app
 from collateral_engine.domain import Currency
 from collateral_engine.nbg_rates import OfficialRateUnavailableError
 
@@ -30,7 +32,8 @@ class StubRatesClient:
 
 @pytest.fixture
 def client(make_engine, make_vehicle_engine) -> TestClient:
-    return TestClient(create_app(make_engine(), make_vehicle_engine(), StubRatesClient()))
+    platform = Platform(make_engine(), make_vehicle_engine(), StubIncomeAssessor())
+    return TestClient(create_app(platform, StubRatesClient()))
 
 
 def post_valuation(client: TestClient, request_json: str, photos: list[bytes] = ()):
@@ -170,7 +173,8 @@ def test_usd_rate_comes_from_nbg_client(client: TestClient) -> None:
 
 def test_unavailable_nbg_rate_is_bad_gateway(make_engine, make_vehicle_engine) -> None:
     failing = StubRatesClient(OfficialRateUnavailableError("NBG has no rate for 2027-05-01 yet"))
-    client = TestClient(create_app(make_engine(), make_vehicle_engine(), failing))
+    platform = Platform(make_engine(), make_vehicle_engine(), StubIncomeAssessor())
+    client = TestClient(create_app(platform, failing))
 
     response = client.get("/v1/exchange-rates/usd", params={"rate_date": "2027-05-01"})
 
@@ -212,3 +216,55 @@ def test_officer_decision_on_vehicle_valuation_is_recorded(client: TestClient) -
     response = client.post(f"/v1/valuations/{report['valuation_id']}/decision", json=decision)
 
     assert response.status_code == 201
+
+
+def test_income_assessment_is_served_by_the_income_engine(client: TestClient) -> None:
+    response = client.post(
+        "/v1/income/assessments", json=json.loads(make_income_request().model_dump_json())
+    )
+
+    assert response.status_code == 200
+    assert response.json()["recommendation"] == "APPROVE_REDUCED"
+
+
+def test_full_application_combines_income_and_collateral(client: TestClient) -> None:
+    request = {
+        "income": json.loads(make_income_request("8000").model_dump_json()),
+        "vehicle": json.loads(make_vehicle_request(loan_amount="8000").model_dump_json()),
+    }
+
+    response = client.post("/v1/full-applications", data={"request": json.dumps(request)})
+
+    body = response.json()
+    assert response.status_code == 201
+    assert body["binding_limit"] == "PTI"
+    assert body["vehicle"]["valuation"] is not None
+
+
+def test_income_routes_need_the_api_key_when_one_is_set(make_engine, make_vehicle_engine):
+    platform = Platform(
+        make_engine(), make_vehicle_engine(), StubIncomeAssessor(), income_api_key="secret-key"
+    )
+    client = TestClient(create_app(platform, StubRatesClient()))
+
+    response = client.post(
+        "/v1/income/assessments", json=json.loads(make_income_request().model_dump_json())
+    )
+
+    assert response.status_code == 401
+    assert response.headers["content-type"].startswith(PROBLEM_JSON)
+
+
+def test_income_routes_accept_the_right_api_key(make_engine, make_vehicle_engine) -> None:
+    platform = Platform(
+        make_engine(), make_vehicle_engine(), StubIncomeAssessor(), income_api_key="secret-key"
+    )
+    client = TestClient(create_app(platform, StubRatesClient()))
+
+    response = client.post(
+        "/v1/income/assessments",
+        json=json.loads(make_income_request().model_dump_json()),
+        headers={"X-API-Key": "secret-key"},
+    )
+
+    assert response.status_code == 200

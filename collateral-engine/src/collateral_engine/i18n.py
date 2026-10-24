@@ -11,6 +11,8 @@ from collateral_engine.domain import (
     PropertyKind,
 )
 from collateral_engine.flags import Flag, ReasonCode, Recommendation, Severity
+from collateral_engine.full_application import BindingLimit, FullApplicationRecommendation
+from collateral_engine.income import IncomeRecommendation
 from collateral_engine.report import AppraisalPosition, LendingValueBasis
 from collateral_engine.report_check import ReportFinding, ReportIssue
 from collateral_engine.vehicles.domain import FuelType, SteeringSide
@@ -436,3 +438,50 @@ def report_finding_text(finding: ReportFinding, language: Language) -> str:
         parts = params["items"].split(", ")
         params["items"] = ", ".join(REPORT_PART_NAMES[part][language] for part in parts)
     return REPORT_ISSUE_TEMPLATES[finding.issue][language].format(**params)
+
+
+INCOME_RECOMMENDATION_NAMES: dict[IncomeRecommendation, Bilingual] = {
+    IncomeRecommendation.APPROVE: {Language.GEORGIAN: "დამტკიცება", Language.ENGLISH: "Approve"},
+    IncomeRecommendation.APPROVE_REDUCED: {
+        Language.GEORGIAN: "დამტკიცება შემცირებული თანხით",
+        Language.ENGLISH: "Approve a reduced amount",
+    },
+    IncomeRecommendation.REVIEW: {
+        Language.GEORGIAN: "საჭიროა ოფიცრის განხილვა",
+        Language.ENGLISH: "Officer review needed",
+    },
+    IncomeRecommendation.REFER: {
+        Language.GEORGIAN: "გადაეცეს ოფიცერს: შესაბამისი შეთავაზება არ არის ან რისკი მაღალია",
+        Language.ENGLISH: "Refer to the officer: no compliant offer or high risk",
+    },
+}
+
+FULL_APPLICATION_RECOMMENDATION_NAMES: dict[FullApplicationRecommendation, Bilingual] = {
+    FullApplicationRecommendation.OFFER: {
+        Language.GEORGIAN: "შეთავაზება მოთხოვნილი თანხით",
+        Language.ENGLISH: "Offer the requested amount",
+    },
+    FullApplicationRecommendation.OFFER_REDUCED: {
+        Language.GEORGIAN: "შეთავაზება შემცირებული თანხით",
+        Language.ENGLISH: "Offer a reduced amount",
+    },
+    FullApplicationRecommendation.OFFICER_REVIEW: {
+        Language.GEORGIAN: "საჭიროა ოფიცრის განხილვა",
+        Language.ENGLISH: "Officer review needed",
+    },
+    FullApplicationRecommendation.PHYSICAL_INSPECTION: {
+        Language.GEORGIAN: "საჭიროა გირაოს ადგილზე დათვალიერება",
+        Language.ENGLISH: "Physical inspection of the collateral needed",
+    },
+}
+
+BINDING_LIMIT_NAMES: dict[BindingLimit, Bilingual] = {
+    BindingLimit.PTI: {
+        Language.GEORGIAN: "შემოსავალი (PTI ლიმიტი)",
+        Language.ENGLISH: "Income (PTI limit)",
+    },
+    BindingLimit.LTV: {
+        Language.GEORGIAN: "გირაო (LTV ლიმიტი)",
+        Language.ENGLISH: "Collateral (LTV limit)",
+    },
+}

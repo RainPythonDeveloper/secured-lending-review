@@ -35,7 +35,8 @@ packages = ["src/collateral_engine"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# app/ holds the console modules some tests import, such as the language selector.
+pythonpath = ["src", "app"]
 addopts = "-q"
 
 [tool.ruff]
@@ -49,4 +50,13 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "N", "RUF"]
 allowed-confusables = ["–"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["collateral_engine", "report_view", "builders"]
+known-first-party = [
+    "collateral_engine",
+    "report_view",
+    "builders",
+    "vehicle_tab",
+    "resources",
+    "full_application_page",
+    "language",
+]
+known-third-party = ["ite"]

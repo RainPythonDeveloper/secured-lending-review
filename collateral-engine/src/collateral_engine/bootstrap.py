@@ -6,6 +6,7 @@ import httpx
 from collateral_engine.audit import AuditLog
 from collateral_engine.engine import CollateralEngine, EngineConfig, EngineStores
 from collateral_engine.evidence import EvidenceStore
+from collateral_engine.income import IteIncomeAssessor
 from collateral_engine.market import MarketDataError, load_market_data
 from collateral_engine.nbg_rates import NbgRatesClient
 from collateral_engine.nbg_rules import load_nbg_rules
@@ -59,6 +60,10 @@ def build_vehicle_engine(settings: Settings, stores: EngineStores) -> VehicleEng
     )
     market = load_vehicle_market_data(settings.vehicle_market_data_path)
     return VehicleEngine(market, config, stores)
+
+
+def build_income_assessor(settings: Settings) -> IteIncomeAssessor:
+    return IteIncomeAssessor(settings.income_models_dir)
 
 
 def build_classifier(settings: Settings) -> ConditionClassifier | None:

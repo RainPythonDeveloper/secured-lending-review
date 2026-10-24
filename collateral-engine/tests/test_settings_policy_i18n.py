@@ -8,11 +8,15 @@ from pydantic import ValidationError
 from collateral_engine.demo_cases import DEMO_CASES
 from collateral_engine.domain import BuildingStatus, ClaimStatus, Condition
 from collateral_engine.flags import Flag, ReasonCode, Recommendation, Severity
+from collateral_engine.full_application import BindingLimit, FullApplicationRecommendation
 from collateral_engine.i18n import (
+    BINDING_LIMIT_NAMES,
     BUILDING_STATUS_NAMES,
     CLAIM_STATUS_NAMES,
     CONDITION_NAMES,
     FUEL_TYPE_NAMES,
+    FULL_APPLICATION_RECOMMENDATION_NAMES,
+    INCOME_RECOMMENDATION_NAMES,
     REASON_TEMPLATES,
     RECOMMENDATION_NAMES,
     STEERING_SIDE_NAMES,
@@ -20,6 +24,7 @@ from collateral_engine.i18n import (
     Language,
     reason_text,
 )
+from collateral_engine.income import IncomeRecommendation
 from collateral_engine.nvidia_vision import DEFAULT_NVIDIA_VISION_MODEL
 from collateral_engine.policy import (
     DEFAULT_CONFIG_DIR,
@@ -42,6 +47,9 @@ from collateral_engine.vehicles.report import VehicleAdjustmentGroup
         (FUEL_TYPE_NAMES, FuelType),
         (STEERING_SIDE_NAMES, SteeringSide),
         (VEHICLE_ADJUSTMENT_NAMES, VehicleAdjustmentGroup),
+        (INCOME_RECOMMENDATION_NAMES, IncomeRecommendation),
+        (FULL_APPLICATION_RECOMMENDATION_NAMES, FullApplicationRecommendation),
+        (BINDING_LIMIT_NAMES, BindingLimit),
     ],
 )
 def test_every_value_has_georgian_and_english_text(names: dict, members) -> None:

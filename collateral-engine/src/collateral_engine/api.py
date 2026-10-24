@@ -6,12 +6,15 @@ Banking gateway of this repository.
     uvicorn collateral_engine.api:create_app_from_environment --factory --port 8100
 """
 
+import hmac
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import date
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -26,12 +29,24 @@ from collateral_engine.audit import (
 )
 from collateral_engine.bootstrap import (
     build_engine,
+    build_income_assessor,
     build_nbg_rates_client,
     build_stores,
     build_vehicle_engine,
 )
 from collateral_engine.domain import Currency, ExchangeRate, ValuationRequest
 from collateral_engine.engine import CollateralEngine, TooManyPhotosError
+from collateral_engine.full_application import (
+    FullApplicationAssessor,
+    FullApplicationReport,
+    FullApplicationRequest,
+)
+from collateral_engine.income import (
+    IncomeAssessment,
+    IncomeAssessmentError,
+    IncomeAssessmentRequest,
+    IncomeAssessor,
+)
 from collateral_engine.nbg_rates import NbgRatesClient, OfficialRateUnavailableError
 from collateral_engine.nbg_rules import NoRuleInForceError, rule_version_in_force
 from collateral_engine.photos import PhotoUpload
@@ -98,30 +113,44 @@ def problem_response(status: HTTPStatus, code: str, detail: str) -> JSONResponse
     return JSONResponse(problem.model_dump(), status_code=status.value, media_type=PROBLEM_JSON)
 
 
-def create_app(
-    engine: CollateralEngine, vehicle_engine: VehicleEngine, rates_client: NbgRatesClient
-) -> FastAPI:
+@dataclass(frozen=True)
+class Platform:
+    """Every engine the API serves; they share one audit log."""
+
+    engine: CollateralEngine
+    vehicle_engine: VehicleEngine
+    income_assessor: IncomeAssessor
+    # None leaves the income routes open, like the rest of this localhost-only API.
+    income_api_key: str | None = None
+
+
+def create_app(platform: Platform, rates_client: NbgRatesClient) -> FastAPI:
     app = FastAPI(
         title="Collateral second opinion",
         version=MODEL_VERSION,
-        description="Valuation of Tbilisi flats and houses and of vehicles offered as collateral, "
-        "condition check from photos and the LTV check. Demo build on synthetic sales.",
+        description="One loan application: income from consented transactions (NBG PTI), "
+        "valuation of Tbilisi flats and houses and of vehicles offered as collateral (LTV), "
+        "condition check from photos. Demo build on synthetic data.",
     )
     _register_error_handlers(app)
-    _register_health(app, engine, vehicle_engine)
-    _register_routes(app, engine, rates_client)
-    _register_vehicle_routes(app, vehicle_engine)
+    _register_health(app, platform.engine, platform.vehicle_engine)
+    _register_routes(app, platform.engine, rates_client)
+    _register_vehicle_routes(app, platform.vehicle_engine)
+    _register_income_routes(app, platform)
     return app
 
 
 def create_app_from_environment() -> FastAPI:
     settings = load_settings()
     stores = build_stores(settings)
-    return create_app(
-        build_engine(settings, stores),
-        build_vehicle_engine(settings, stores),
-        build_nbg_rates_client(settings),
+    income_api_key = settings.income_api_key
+    platform = Platform(
+        engine=build_engine(settings, stores),
+        vehicle_engine=build_vehicle_engine(settings, stores),
+        income_assessor=build_income_assessor(settings),
+        income_api_key=income_api_key.get_secret_value() if income_api_key else None,
     )
+    return create_app(platform, build_nbg_rates_client(settings))
 
 
 def _register_error_handlers(app: FastAPI) -> None:
@@ -233,6 +262,56 @@ def _register_vehicle_routes(app: FastAPI, vehicle_engine: VehicleEngine) -> Non
             return vehicle_engine.assess(valuation_request, uploads)
         except TooManyPhotosError as error:
             raise ApiError(HTTPStatus.BAD_REQUEST, "TOO_MANY_PHOTOS", str(error)) from error
+
+
+def _register_income_routes(app: FastAPI, platform: Platform) -> None:
+    require_key = _income_key_check(platform.income_api_key)
+    full_assessor = FullApplicationAssessor(
+        platform.income_assessor,
+        platform.engine,
+        platform.vehicle_engine,
+        platform.engine.audit_log,
+    )
+
+    @app.post("/v1/income/assessments", dependencies=[Depends(require_key)])
+    def assess_income(request: IncomeAssessmentRequest) -> IncomeAssessment:
+        try:
+            return platform.income_assessor.assess(request)
+        except IncomeAssessmentError as error:
+            raise ApiError(
+                HTTPStatus.UNPROCESSABLE_ENTITY, "INCOME_ASSESSMENT_FAILED", str(error)
+            ) from error
+
+    @app.post(
+        "/v1/full-applications",
+        status_code=HTTPStatus.CREATED,
+        dependencies=[Depends(require_key)],
+    )
+    def assess_full_application(
+        request: Annotated[str, Form(description="FullApplicationRequest as JSON")],
+        photos: Annotated[list[UploadFile], File()] = [],  # noqa: B006 - FastAPI form default
+    ) -> FullApplicationReport:
+        application = _parse_request(request, FullApplicationRequest)
+        max_bytes = platform.engine.config.policy.photos.max_bytes
+        uploads = [_read_upload(photo, max_bytes) for photo in photos]
+        try:
+            return full_assessor.assess(application, uploads)
+        except IncomeAssessmentError as error:
+            raise ApiError(
+                HTTPStatus.UNPROCESSABLE_ENTITY, "INCOME_ASSESSMENT_FAILED", str(error)
+            ) from error
+        except TooManyPhotosError as error:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "TOO_MANY_PHOTOS", str(error)) from error
+
+
+def _income_key_check(expected_key: str | None) -> Callable[[str], None]:
+    def require_key(x_api_key: Annotated[str, Header()] = "") -> None:
+        if expected_key is None:
+            return
+        if not hmac.compare_digest(x_api_key.encode(), expected_key.encode()):
+            raise ApiError(HTTPStatus.UNAUTHORIZED, "UNAUTHORIZED", "missing or invalid X-API-Key")
+
+    return require_key
 
 
 def _parse_valuation_request(raw_request: str) -> ValuationRequest:
