@@ -90,7 +90,7 @@ def borrower_letter(decision: dict, lang: str = "ka") -> str:
         head = {"APPROVE": "თქვენი სესხის განაცხადი დამტკიცებულია.",
                 "APPROVE_REDUCED": f"შეგვიძლია შემოგთავაზოთ {o['amount']:,.0f} ლარი {o['term_months']} თვით.",
                 "REVIEW": "თქვენს განაცხადს განიხილავს საკრედიტო ოფიცერი.",
-                "REJECT": "სამწუხაროდ, ამ ეტაპზე სესხის გაცემა ვერ ხერხდება."}[decision["recommendation"]]
+                "REFER": "თქვენს განაცხადს დამატებით განიხილავს საკრედიტო ოფიცერი."}[decision["recommendation"]]
         body = "\n".join(f"• {r['ka']}" for r in reasons)
         tail = ("\nშეთავაზება შეესაბამება საქართველოს ეროვნული ბანკის პასუხისმგებლიანი დაკრედიტების მოთხოვნებს. "
                 "გადაწყვეტილებას იღებს ბანკის თანამშრომელი.")
@@ -98,7 +98,7 @@ def borrower_letter(decision: dict, lang: str = "ka") -> str:
     head = {"APPROVE": "Your loan application is approved.",
             "APPROVE_REDUCED": f"We can offer {o['amount']:,.0f} GEL over {o['term_months']} months.",
             "REVIEW": "Your application will be reviewed by a loan officer.",
-            "REJECT": "Unfortunately we cannot offer a loan at this time."}[decision["recommendation"]]
+            "REFER": "Your application needs a further review by a loan officer."}[decision["recommendation"]]
     body = "\n".join(f"• {r['en']}" for r in reasons)
     return (f"{head}\n\nMain factors:\n{body}\nThe offer follows the National Bank of Georgia's responsible-lending "
             "rules. A bank officer makes the final decision.")

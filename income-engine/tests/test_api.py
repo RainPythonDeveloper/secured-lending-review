@@ -48,7 +48,7 @@ def test_assess_end_to_end(client):
     r = client.post("/v1/assess", json=payload(), headers={"X-API-Key": "test-key"})
     assert r.status_code == 200, r.text
     j = r.json()
-    assert j["recommendation"] in {"APPROVE", "APPROVE_REDUCED", "REVIEW", "REJECT"}
+    assert j["recommendation"] in {"APPROVE", "APPROVE_REDUCED", "REVIEW", "REFER"}
     assert j["offer"]["amount"] <= j["max_compliant_amount"]
     assert "features" not in j and j["consent_id"] == "OB-TEST-1"
 

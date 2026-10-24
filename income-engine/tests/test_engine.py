@@ -59,6 +59,12 @@ def test_offers_never_break_pti(eng):
     assert (pti <= o.pti_limit + 1e-3).all()          # tolerance: reported income is rounded to 1 GEL
 
 
+def test_engine_never_recommends_rejection():
+    # Only the loan officer may refuse; the engine refers instead.
+    dec = pd.read_parquet(ROOT / "reports" / "decisions_test.parquet")
+    assert set(dec.recommendation) <= {"APPROVE", "APPROVE_REDUCED", "REVIEW", "REFER"}
+
+
 def test_more_debt_never_lowers_risk(eng, data):
     bor, tx = data
     bid = int(bor[bor.cohort == "B"].borrower_id.iloc[3])

@@ -66,8 +66,9 @@ class Engine:
         band = ((inc["inc_q90"] - inc["inc_q10"]) / inc["inc_q50"]).to_numpy()
         circ = feat["circular_ratio"].to_numpy()
         P = self.policy
-        rec = np.where(no_offer, "REJECT",
-              np.where(pd_off >= P["pd_reject_min"], "REJECT",
+        # No automatic refusal: the strongest outcome is a referral to the loan officer, who decides.
+        rec = np.where(no_offer, "REFER",
+              np.where(pd_off >= P["pd_reject_min"], "REFER",
               np.where((circ > P["round_trip_review"]) | (band > P["band_width_review"]) | (pd_off >= P["pd_approve_max"]), "REVIEW",
               np.where(offer_amt < req_amt, "APPROVE_REDUCED", "APPROVE"))))
 

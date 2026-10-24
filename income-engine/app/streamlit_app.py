@@ -24,7 +24,8 @@ st.set_page_config(page_title="Income Truth Engine", page_icon="🏦", layout="w
 NAVY, GREEN, RED, AMBER, GREY = "#16337a", "#1f9d55", "#c53030", "#b7791f", "#8a94a6"
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 REC_STYLE = {"APPROVE": (GREEN, "Approve"), "APPROVE_REDUCED": (GREEN, "Approve reduced amount"),
-             "REVIEW": (AMBER, "Human review required"), "REJECT": (RED, "Reject")}
+             "REVIEW": (AMBER, "Human review required"),
+             "REFER": (RED, "Refer to the loan officer: no compliant offer or high risk")}
 FIRST_NAMES = ["Giorgi", "Nino", "Davit", "Mariam", "Levan", "Ana", "Irakli", "Tamar", "Luka", "Salome", "Nika", "Eka"]
 
 st.markdown("""
