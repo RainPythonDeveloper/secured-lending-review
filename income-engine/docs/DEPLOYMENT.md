@@ -5,7 +5,7 @@
 | Option | Steps |
 |---|---|
 | **Testable URL (free)** | Push this repo to GitHub → share.streamlit.io → New app → `app/streamlit_app.py`. Data and models are in the repo, so it starts immediately. Add the URL and "no login needed" to the submission email. |
-| **Docker** | `docker compose up --build` → API on :8000 (`/docs` for Swagger), app on :8501. The image regenerates data, retrains and runs the tests at build time, so a broken model cannot ship. |
+| **Docker** | On its own: `docker build -t income-engine .` in `income-engine/` → API on :8000 (`/docs` for Swagger). As part of the platform: `docker compose up --build` from the repository root → platform API on :8100, console on :8502. Both images regenerate data, retrain and run the tests at build time, so a broken model cannot ship. |
 | **Local** | `pip install -r requirements.txt && make all && make app` |
 
 ## Path to production at national scale

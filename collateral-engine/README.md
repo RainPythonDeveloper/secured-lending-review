@@ -64,17 +64,37 @@ Vehicles, same out-of-time design on synthetic sales of 14 models:
 ## Run it
 
 ```bash
-make install        # Python 3.12 virtual environment with pinned dependencies
+make install        # Python 3.12 environment with this engine and ../income-engine, pinned
 make data           # 6,000 flat and 1,200 house sales -> data/comparables.csv,
-                    # 8,000 vehicle sales -> data/vehicle_sales.csv (all synthetic)
-make app            # officer console on http://localhost:8502 (restart it after editing src/)
-make api            # REST API on http://localhost:8100/docs
-make check          # ruff format --check, ruff check, pytest (389 tests, about 25 s)
+                    # 8,000 vehicle sales -> data/vehicle_sales.csv, and the income engine's
+                    # synthetic borrowers and trained models in ../income-engine (about 2 min)
+make app            # platform console on http://localhost:8502 (restart it after editing src/)
+make api            # platform API on http://localhost:8100/docs
+make check          # ruff, then the tests of both engines (458 tests, about 45 s)
 make evaluate       # backtest of flats, houses and vehicles -> reports/metrics.json
 ```
 
-From the repository root: `docker compose up --build collateral-engine-api collateral-console`.
-The image is built from the repository root so it carries the shared NBG rules file.
+From the repository root: `docker compose up --build platform-api platform-console`. The image is
+built from the repository root so it carries the income engine and the shared NBG rules file.
+
+### One platform
+
+The console has three pages: **Full application** (default), **Collateral** and **Income**. The
+income engine (`income-engine/`, package `ite`) is installed into this environment and called in
+process through `collateral_engine.income`, which validates its output into pydantic models. A full
+application (`collateral_engine.full_application`) takes the income application and one collateral
+for the same GEL loan:
+
+| Step | Source |
+|---|---|
+| Highest amount within the NBG PTI limit | income engine, on the conservative P25 income |
+| Highest amount within the LTV limit | collateral engine: NBG for real estate, bank policy for vehicles |
+| Offer | the request cut to the lower of the two; the report names the binding limit |
+| Recommendation | physical inspection if the collateral needs one; officer review if either side does; otherwise offer the full or a reduced amount. A flag that the requested amount breaks LTV does not force review, because the offer is already cut to the limit. |
+
+There is no automatic refusal on either side: the income engine refers an application it cannot
+offer to the loan officer (`REFER`). Each full application is written to the shared audit log with
+the SHA-256 of the income assessment.
 
 To read condition from photos, set `COLLATERAL_VISION_ENABLED=true` and `NVIDIA_API_KEY` (hosted
 NVIDIA model `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, the default). For Claude instead, set
@@ -173,6 +193,8 @@ Vehicle sales follow `VehicleSale` in `src/collateral_engine/vehicles/market.py`
 | POST | `/v1/valuations` | Multipart: `request` (ValuationRequest JSON) and `photos`; returns the report |
 | POST | `/v1/valuer-reports/check` | Checks a licensed valuer's report (any real estate, including factories) against NBG Order 84/04; each finding names its article |
 | POST | `/v1/vehicle-valuations` | Multipart: `request` (VehicleValuationRequest JSON) and `photos`; returns the vehicle report with the bank LTV and the value at the end of the loan |
+| POST | `/v1/income/assessments` | IncomeAssessmentRequest JSON (application and at least 20 consented transactions); returns income P10–P90, the PTI check, the highest compliant amount, default probability and bilingual reasons |
+| POST | `/v1/full-applications` | Multipart: `request` (FullApplicationRequest JSON: income plus `real_estate` or `vehicle`) and `photos`; returns both reports, the binding limit, the offer and one recommendation |
 | POST | `/v1/valuations/{valuation_id}/decision` | Officer decision; 422 `REASON_REQUIRED` against the recommendation without a reason |
 | GET | `/v1/audit/verify` | Checks the hash chain |
 
@@ -210,6 +232,9 @@ empty value such as `NVIDIA_API_KEY=` means "not set".
 | `COLLATERAL_CONFIG_DIR` | `config/` |
 | `COLLATERAL_MARKET_DATA_PATH` | `data/comparables.csv` |
 | `COLLATERAL_VEHICLE_MARKET_DATA_PATH` | `data/vehicle_sales.csv` |
+| `INCOME_MODELS_DIR` | `../income-engine/models` |
+| `INCOME_DATA_DIR` | `../income-engine/data` (synthetic borrowers for the console) |
+| `ITE_API_KEY` | none; when set, the income and full-application routes need `X-API-Key` |
 | `COLLATERAL_MARKET_DATA_SOURCE` | text naming the synthetic generator |
 | `NBG_RULES_PATH` | `../income-engine/config/nbg_rules.yaml` |
 | `COLLATERAL_AUDIT_DB_PATH` | `audit.db` |
