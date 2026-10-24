@@ -58,5 +58,7 @@ known-first-party = [
     "resources",
     "full_application_page",
     "language",
+    "design",
+    "overview_page",
 ]
 known-third-party = ["ite"]

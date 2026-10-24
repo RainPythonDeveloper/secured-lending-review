@@ -73,7 +73,7 @@ STYLES = """
 .reason{padding:4px 0;font-size:15px}
 .pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:700;
   color:#fff;margin-right:8px}
-.range{position:relative;height:64px;margin:18px 6px 4px}
+.range{position:relative;height:64px;margin:30px 6px 4px}
 .range .track{position:absolute;top:22px;left:0;right:0;height:6px;border-radius:3px;
   background:rgba(128,128,128,.2)}
 .range .band{position:absolute;top:16px;height:18px;border-radius:9px;
@@ -81,6 +81,7 @@ STYLES = """
 .range .mark{position:absolute;top:8px;width:3px;height:34px;border-radius:2px}
 .range .tag{position:absolute;top:44px;transform:translateX(-50%);font-size:12px;
   white-space:nowrap}
+.range .tag.above{top:-12px}
 .small{font-size:13px;opacity:.8}
 </style>
 """
@@ -160,6 +161,7 @@ def render_range_chart(
                 "#c53030",
                 label("appraisal", language),
                 appraisal.appraised_value_usd,
+                is_above=True,
             )
         )
     st.markdown(f"**{label('range_chart_title', language)}**")
@@ -171,10 +173,14 @@ def render_range_chart(
     )
 
 
-def _range_marker(left_percent: float, colour: str, title: str, amount: Decimal) -> str:
+def _range_marker(
+    left_percent: float, colour: str, title: str, amount: Decimal, is_above: bool = False
+) -> str:
+    # The appraisal tag goes above the bar, so it never overlaps the model tag below.
+    tag_class = "tag above" if is_above else "tag"
     return (
         f'<div class="mark" style="left:{left_percent:.1f}%;background:{colour}"></div>'
-        f'<div class="tag" style="left:{left_percent:.1f}%;color:{colour}">'
+        f'<div class="{tag_class}" style="left:{left_percent:.1f}%;color:{colour}">'
         f"{html.escape(title)}: {amount:,.0f} USD</div>"
     )
 

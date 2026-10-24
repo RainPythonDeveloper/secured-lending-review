@@ -12,7 +12,7 @@ from collateral_engine.domain import (
 )
 from collateral_engine.flags import Flag, ReasonCode, Recommendation, Severity
 from collateral_engine.full_application import BindingLimit, FullApplicationRecommendation
-from collateral_engine.income import IncomeRecommendation
+from collateral_engine.income import EmploymentType, IncomeRecommendation
 from collateral_engine.report import AppraisalPosition, LendingValueBasis
 from collateral_engine.report_check import ReportFinding, ReportIssue
 from collateral_engine.vehicles.domain import FuelType, SteeringSide
@@ -483,5 +483,23 @@ BINDING_LIMIT_NAMES: dict[BindingLimit, Bilingual] = {
     BindingLimit.LTV: {
         Language.GEORGIAN: "გირაო (LTV ლიმიტი)",
         Language.ENGLISH: "Collateral (LTV limit)",
+    },
+}
+
+
+EMPLOYMENT_NAMES: dict[EmploymentType, Bilingual] = {
+    EmploymentType.SALARIED: {Language.GEORGIAN: "დაქირავებული", Language.ENGLISH: "Salaried"},
+    EmploymentType.SALARIED_YOUNG: {
+        Language.GEORGIAN: "დაქირავებული, პირველი სესხი",
+        Language.ENGLISH: "Salaried, first loan",
+    },
+    EmploymentType.FARMER: {Language.GEORGIAN: "ფერმერი", Language.ENGLISH: "Farmer"},
+    EmploymentType.SELF_EMPLOYED: {
+        Language.GEORGIAN: "თვითდასაქმებული",
+        Language.ENGLISH: "Self-employed",
+    },
+    EmploymentType.REMITTANCE: {
+        Language.GEORGIAN: "ფულადი გზავნილები",
+        Language.ENGLISH: "Remittances",
     },
 }

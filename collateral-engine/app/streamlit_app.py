@@ -3,6 +3,7 @@
 streamlit run app/streamlit_app.py
 """
 
+from collections.abc import Callable
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -10,6 +11,7 @@ import pandas as pd
 import streamlit as st
 from pydantic import ValidationError
 
+import design
 import report_view
 from collateral_engine.audit import (
     OfficerDecision,
@@ -57,7 +59,8 @@ from collateral_engine.photos import PhotoUpload
 from collateral_engine.reference import load_districts
 from collateral_engine.report import ValuationReport
 from collateral_engine.report_check import ValuerReport, check_valuer_report
-from language import current_language
+from collateral_engine.ui_text import UI_TEXT
+from language import choice, current_language, remember_choices
 from resources import get_engine, get_rates_client, get_vehicle_engine
 from vehicle_tab import render_vehicle_tab
 
@@ -96,15 +99,15 @@ def get_backtest_metrics(property_kind: PropertyKind) -> BacktestMetrics:
     return summarise(run, policy)
 
 
-def bilingual(names: Bilingual) -> str:
-    # Select boxes keep the text of the chosen option across reruns, so their labels must not
-    # depend on the interface language; both languages are shown instead.
-    return f"{names[Language.GEORGIAN]} / {names[Language.ENGLISH]}"
+def named(names: dict[object, Bilingual]) -> Callable[[object], str]:
+    """Option labels in the interface language of this run; choice() keeps them safe to change."""
+    current = language()
+    return lambda option: names[option][current]
 
 
-def demo_case_label(application_id: str) -> str:
-    district = DEMO_CASES_BY_ID[application_id].subject.district
-    return f"{application_id} · {bilingual(DISTRICT_NAMES[district])}"
+def demo_case_labels() -> Callable[[str], str]:
+    current = language()
+    return lambda application_id: DEMO_CASES_BY_ID[application_id].title[current]
 
 
 def language() -> Language:
@@ -202,14 +205,14 @@ def current_rate() -> ExchangeRate:
 
 def render_sidebar() -> None:
     with st.sidebar:
-        st.selectbox(
+        choice(
+            st.radio,
             text("demo_case"),
             list(DEMO_CASES_BY_ID),
-            format_func=demo_case_label,
-            key="demo_case",
+            demo_case_labels(),
+            "demo_case",
             on_change=load_demo_case,
         )
-        st.caption(DEMO_CASES_BY_ID[st.session_state["demo_case"]].title[language()])
         render_rate_controls()
         render_application_form()
 
@@ -230,20 +233,24 @@ def render_application_form() -> None:
     with st.form("application"):
         st.subheader(text("application_section"))
         st.text_input(text("application_id"), key="field_application_id")
-        st.radio(
+        choice(
+            st.radio,
             text("property_kind"),
             list(PropertyKind),
-            format_func=lambda kind: bilingual(PROPERTY_KIND_NAMES[kind]),
-            key="field_property_kind",
+            named(PROPERTY_KIND_NAMES),
+            "field_property_kind",
+            in_form=True,
             horizontal=True,
             help=text("house_hint"),
         )
         st.text_input(text("cadastral_code"), key="field_cadastral_code")
-        st.selectbox(
+        choice(
+            st.selectbox,
             text("district"),
             list(District),
-            format_func=lambda district: bilingual(DISTRICT_NAMES[district]),
-            key="field_district",
+            named(DISTRICT_NAMES),
+            "field_district",
+            in_form=True,
         )
         latitude_column, longitude_column = st.columns(2)
         latitude_column.number_input(
@@ -263,7 +270,7 @@ def render_application_form() -> None:
             help=text("photos_help"),
         )
         st.form_submit_button(
-            text("assess"), type="primary", key="assess", on_click=assess_application
+            text("assess"), type="primary", key="assess", on_click=request_assessment
         )
 
 
@@ -281,17 +288,21 @@ def render_property_fields() -> None:
     floors_column.number_input(
         text("building_floors"), key="field_building_floors", min_value=1, max_value=70, step=1
     )
-    st.selectbox(
+    choice(
+        st.selectbox,
         text("building_status"),
         list(BuildingStatus),
-        format_func=lambda status: bilingual(BUILDING_STATUS_NAMES[status]),
-        key="field_building_status",
+        named(BUILDING_STATUS_NAMES),
+        "field_building_status",
+        in_form=True,
     )
-    st.selectbox(
+    choice(
+        st.selectbox,
         text("declared_condition"),
         list(Condition),
-        format_func=lambda condition: bilingual(CONDITION_NAMES[condition]),
-        key="field_declared_condition",
+        named(CONDITION_NAMES),
+        "field_declared_condition",
+        in_form=True,
     )
 
 
@@ -299,11 +310,13 @@ def render_off_plan_fields() -> None:
     with st.expander(text("off_plan_section")):
         st.caption(text("off_plan_hint"))
         st.text_input(text("developer_name"), key="field_developer_name")
-        st.selectbox(
+        choice(
+            st.selectbox,
             text("construction_stage"),
             list(ConstructionStage),
-            format_func=lambda stage: bilingual(CONSTRUCTION_STAGE_NAMES[stage]),
-            key="field_construction_stage",
+            named(CONSTRUCTION_STAGE_NAMES),
+            "field_construction_stage",
+            in_form=True,
         )
         st.date_input(text("expected_completion_date"), key="field_expected_completion_date")
         st.checkbox(text("agreement_registered"), key="field_purchase_agreement_registered")
@@ -381,6 +394,12 @@ def build_appraisal(valuation_date: date) -> LicensedAppraisal | None:
     )
 
 
+def request_assessment() -> None:
+    # The assessment runs in the page body, where a spinner can show while it works.
+    remember_choices()
+    st.session_state["assessment_requested"] = True
+
+
 def assess_application() -> None:
     st.session_state.pop("report", None)
     st.session_state.pop("input_error", None)
@@ -415,11 +434,14 @@ def render_header() -> None:
 
 
 def render_valuation_tab() -> None:
+    if st.session_state.pop("assessment_requested", False):
+        with st.spinner(text("assessing")):
+            assess_application()
     if "input_error" in st.session_state:
         st.error(text("invalid_input", error=st.session_state["input_error"]))
     report = st.session_state.get("report")
     if report is None:
-        st.info(text("start_hint"))
+        design.empty_state(text("start_hint"))
         return
     current_language = language()
     report_view.render_recommendation(report, current_language)
@@ -447,21 +469,24 @@ def render_decision_form(report: ValuationReport) -> None:
     st.subheader(text("decision_title"))
     with st.form("decision"):
         st.text_input(text("officer_id"), key="officer_id", value="officer-demo")
-        st.radio(
+        choice(
+            st.radio,
             text("decision"),
             list(OfficerDecisionKind),
-            format_func=lambda kind: text(DECISION_KEYS[kind]),
-            key="decision",
+            named({kind: UI_TEXT[key] for kind, key in DECISION_KEYS.items()}),
+            "officer_decision",
+            in_form=True,
             horizontal=True,
         )
         st.text_area(text("reason"), key="decision_reason")
         submitted = st.form_submit_button(text("record_decision"), key="record_decision")
     if not submitted:
         return
+    remember_choices()
     decision = OfficerDecision(
         valuation_id=report.valuation_id,
         officer_id=st.session_state["officer_id"],
-        decision=st.session_state["decision"],
+        decision=st.session_state["officer_decision"],
         reason=st.session_state["decision_reason"],
     )
     try:
@@ -474,11 +499,12 @@ def render_decision_form(report: ValuationReport) -> None:
 
 def render_quality_tab() -> None:
     st.caption(text("quality_intro"))
-    property_kind = st.radio(
+    property_kind = choice(
+        st.radio,
         text("property_kind"),
         list(PropertyKind),
-        format_func=lambda kind: bilingual(PROPERTY_KIND_NAMES[kind]),
-        key="quality_property_kind",
+        named(PROPERTY_KIND_NAMES),
+        "quality_property_kind",
         horizontal=True,
     )
     with st.spinner(text("quality_running")):
@@ -546,7 +572,7 @@ def render_audit_tab() -> None:
             st.error(text("audit_broken"))
     records = audit_log.recent()
     if not records:
-        st.info(text("audit_empty"))
+        design.empty_state(text("audit_empty"))
         return
     st.dataframe(
         pd.DataFrame(

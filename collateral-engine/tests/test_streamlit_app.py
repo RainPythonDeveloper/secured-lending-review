@@ -12,9 +12,10 @@ from collateral_engine.i18n import Language
 from collateral_engine.market import write_market_data
 from collateral_engine.synth import generate_sales
 from collateral_engine.ui_text import UI_TEXT
+from collateral_engine.vehicles.demo_cases import VEHICLE_DEMO_CASES
 from collateral_engine.vehicles.market import write_vehicle_market_data
 from collateral_engine.vehicles.synth import generate_vehicle_sales
-from language import LANGUAGE_WIDGET_KEY
+from language import LANGUAGE_WIDGET_KEY, choice_widget_key
 
 # The collateral console runs as a page of the platform, which draws the language selector.
 PLATFORM_PATH = Path(__file__).parents[1] / "app" / "platform_app.py"
@@ -61,6 +62,11 @@ def test_console_does_not_reload_the_cached_engine_package() -> None:
     assert "src" in server.get("folderWatchBlacklist", [])
 
 
+def georgian(key: str) -> str:
+    """Key of a choice() widget in the console's default language."""
+    return choice_widget_key(key, Language.GEORGIAN)
+
+
 def assess(console: AppTest) -> AppTest:
     return console.button(key="assess").click().run()
 
@@ -95,7 +101,7 @@ def test_report_shows_how_many_photos_are_required(console: AppTest) -> None:
 
 
 def test_thin_market_demo_asks_for_physical_inspection(console: AppTest) -> None:
-    console.selectbox(key="demo_case").set_value("DEMO-GLD-003").run()
+    console.radio(key=georgian("demo_case")).set_value("DEMO-GLD-003").run()
 
     assess(console)
 
@@ -140,7 +146,7 @@ def test_valuer_report_tab_lists_breaches_of_84_04(console: AppTest) -> None:
 
 
 def test_off_plan_demo_shows_stage_discount(console: AppTest) -> None:
-    console.selectbox(key="demo_case").set_value("DEMO-SAB-004").run()
+    console.radio(key=georgian("demo_case")).set_value("DEMO-SAB-004").run()
 
     assess(console)
 
@@ -150,7 +156,7 @@ def test_off_plan_demo_shows_stage_discount(console: AppTest) -> None:
 
 
 def test_house_demo_is_valued_with_land_column(console: AppTest) -> None:
-    console.selectbox(key="demo_case").set_value("DEMO-DID-005").run()
+    console.radio(key=georgian("demo_case")).set_value("DEMO-DID-005").run()
 
     assess(console)
 
@@ -161,7 +167,7 @@ def test_house_demo_is_valued_with_land_column(console: AppTest) -> None:
 
 
 def test_quality_tab_backtests_houses(console: AppTest) -> None:
-    console.radio(key="quality_property_kind").set_value(PropertyKind.HOUSE).run()
+    console.radio(key=georgian("quality_property_kind")).set_value(PropertyKind.HOUSE).run()
 
     assert not console.exception
 
@@ -176,7 +182,7 @@ def test_vehicle_demo_is_valued_with_bank_ltv(console: AppTest) -> None:
 
 
 def test_vehicle_not_cleared_through_customs_needs_inspection(console: AppTest) -> None:
-    console.selectbox(key="vehicle_demo_case").set_value("DEMO-CAR-003").run()
+    console.radio(key=georgian("vehicle_demo_case")).set_value("DEMO-CAR-003").run()
 
     console.button(key="assess_vehicle").click().run()
 
@@ -194,11 +200,21 @@ def test_invalid_vin_is_reported_not_crashed(console: AppTest) -> None:
     assert console.error
 
 
-def test_vehicle_demo_labels_do_not_change_with_language(console: AppTest) -> None:
-    # The browser sends back the label of the chosen option; a label that changed with the
-    # language came back as the value: "KeyError: 'DEMO-CAR-001 · Toyota Prius: ...'".
-    georgian_labels = console.selectbox(key="vehicle_demo_case").options
-
+def test_vehicle_demo_labels_follow_the_language(console: AppTest) -> None:
     console.radio(key=LANGUAGE_WIDGET_KEY).set_value(Language.ENGLISH).run()
 
-    assert console.selectbox(key="vehicle_demo_case").options == georgian_labels
+    options = console.radio(key=choice_widget_key("vehicle_demo_case", Language.ENGLISH)).options
+
+    assert VEHICLE_DEMO_CASES[0].title[Language.ENGLISH] in options
+
+
+def test_vehicle_demo_can_be_chosen_after_switching_language(console: AppTest) -> None:
+    # The browser sends back the label of the chosen option; a label that changed with the
+    # language once came back as the value: "KeyError: 'DEMO-CAR-001 · Toyota Prius: ...'".
+    console.radio(key=LANGUAGE_WIDGET_KEY).set_value(Language.ENGLISH).run()
+    english_cases = console.radio(key=choice_widget_key("vehicle_demo_case", Language.ENGLISH))
+
+    english_cases.set_value("DEMO-CAR-002").run()
+
+    assert not console.exception
+    assert console.session_state["vehicle_field_make"] == "Mercedes-Benz"

@@ -1,6 +1,13 @@
 [theme]
-primaryColor = "#2f7d4f"
 base = "light"
+primaryColor = "#16337a"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f6fb"
+textColor = "#0f1f3d"
+
+[client]
+# Hides the Deploy button; the menu keeps rerun and settings.
+toolbarMode = "minimal"
 
 [server]
 headless = true

@@ -8,13 +8,13 @@ import pandas as pd
 import streamlit as st
 from pydantic import ValidationError
 
+import design
 import report_view
 from collateral_engine.domain import Currency, ExchangeRate
 from collateral_engine.i18n import (
     FUEL_TYPE_NAMES,
     STEERING_SIDE_NAMES,
     VEHICLE_ADJUSTMENT_NAMES,
-    Bilingual,
     Language,
 )
 from collateral_engine.photos import PhotoUpload
@@ -28,6 +28,7 @@ from collateral_engine.vehicles.domain import (
 )
 from collateral_engine.vehicles.engine import VehicleEngine
 from collateral_engine.vehicles.report import VehicleMarketValuation, VehicleValuationReport
+from language import choice, remember_choices
 from report_view import label
 
 PHOTO_TYPES = ["jpg", "jpeg", "png", "webp"]
@@ -35,13 +36,8 @@ VEHICLE_CASES_BY_ID = {case.application_id: case for case in VEHICLE_DEMO_CASES}
 FIELD_PREFIX = "vehicle_field_"
 
 
-def _bilingual(names: Bilingual) -> str:
-    # Select boxes keep the text of the chosen option across reruns, so both languages are shown.
-    return f"{names[Language.GEORGIAN]} / {names[Language.ENGLISH]}"
-
-
-def vehicle_case_label(application_id: str) -> str:
-    return f"{application_id} · {_bilingual(VEHICLE_CASES_BY_ID[application_id].title)}"
+def vehicle_case_labels(language: Language) -> Callable[[str], str]:
+    return lambda application_id: VEHICLE_CASES_BY_ID[application_id].title[language]
 
 
 def _field(name: str) -> object:
@@ -91,12 +87,14 @@ def render_vehicle_tab(
 ) -> None:
     _initialise()
     st.caption(label("vehicle_intro", language))
-    st.selectbox(
+    choice(
+        st.radio,
         label("vehicle_demo_case", language),
         list(VEHICLE_CASES_BY_ID),
-        format_func=vehicle_case_label,
-        key="vehicle_demo_case",
+        vehicle_case_labels(language),
+        "vehicle_demo_case",
         on_change=load_vehicle_demo_case,
+        horizontal=True,
     )
     form_column, report_column = st.columns([2, 3])
     with form_column:
@@ -138,7 +136,9 @@ def _render_form(
             label("assess_vehicle", language), type="primary", key="assess_vehicle"
         )
     if submitted:
-        _assess(engine, valuation_date, usd_rate, language)
+        remember_choices()
+        with st.spinner(label("assessing_vehicle", language)):
+            _assess(engine, valuation_date, usd_rate, language)
 
 
 def _render_vehicle_fields(language: Language) -> None:
@@ -161,17 +161,21 @@ def _render_vehicle_fields(language: Language) -> None:
         min_value=0,
         step=100,
     )
-    st.selectbox(
+    choice(
+        st.selectbox,
         label("fuel", language),
         list(FuelType),
-        format_func=lambda fuel: _bilingual(FUEL_TYPE_NAMES[fuel]),
-        key=f"{FIELD_PREFIX}fuel",
+        lambda fuel: FUEL_TYPE_NAMES[fuel][language],
+        f"{FIELD_PREFIX}fuel",
+        in_form=True,
     )
-    st.radio(
+    choice(
+        st.radio,
         label("steering", language),
         list(SteeringSide),
-        format_func=lambda side: _bilingual(STEERING_SIDE_NAMES[side]),
-        key=f"{FIELD_PREFIX}steering",
+        lambda side: STEERING_SIDE_NAMES[side][language],
+        f"{FIELD_PREFIX}steering",
+        in_form=True,
         horizontal=True,
     )
     st.checkbox(label("customs_cleared", language), key=f"{FIELD_PREFIX}is_customs_cleared")
@@ -238,7 +242,7 @@ def _render_report(language: Language) -> None:
         st.error(label("invalid_input", language, error=st.session_state["vehicle_input_error"]))
     report: VehicleValuationReport | None = st.session_state.get("vehicle_report")
     if report is None:
-        st.info(label("vehicle_start_hint", language))
+        design.empty_state(label("vehicle_start_hint", language))
         return
     report_view.render_recommendation(report, language)
     st.caption(

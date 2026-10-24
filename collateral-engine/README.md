@@ -79,7 +79,12 @@ built from the repository root so it carries the income engine and the shared NB
 
 ### One platform
 
-The console has three pages: **Full application** (default), **Collateral** and **Income**. The
+The console opens on an **Overview** for first-time visitors: what the platform does, one
+application in four steps, quality on synthetic data and the responsible-AI guarantees. The
+**Application** page assesses a full application: three setup cards (borrower, collateral, assess),
+a verdict with a one-line explanation, and bars that show the request, the PTI and LTV limits and
+the offer on one scale. The **Collateral** and **Income** modules keep their detailed consoles. One
+language selector serves every page. The
 income engine (`income-engine/`, package `ite`) is installed into this environment and called in
 process through `collateral_engine.income`, which validates its output into pydantic models. A full
 application (`collateral_engine.full_application`) takes the income application and one collateral

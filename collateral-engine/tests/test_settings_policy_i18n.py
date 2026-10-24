@@ -14,6 +14,7 @@ from collateral_engine.i18n import (
     BUILDING_STATUS_NAMES,
     CLAIM_STATUS_NAMES,
     CONDITION_NAMES,
+    EMPLOYMENT_NAMES,
     FUEL_TYPE_NAMES,
     FULL_APPLICATION_RECOMMENDATION_NAMES,
     INCOME_RECOMMENDATION_NAMES,
@@ -24,7 +25,7 @@ from collateral_engine.i18n import (
     Language,
     reason_text,
 )
-from collateral_engine.income import IncomeRecommendation
+from collateral_engine.income import EmploymentType, IncomeRecommendation
 from collateral_engine.nvidia_vision import DEFAULT_NVIDIA_VISION_MODEL
 from collateral_engine.policy import (
     DEFAULT_CONFIG_DIR,
@@ -50,6 +51,7 @@ from collateral_engine.vehicles.report import VehicleAdjustmentGroup
         (INCOME_RECOMMENDATION_NAMES, IncomeRecommendation),
         (FULL_APPLICATION_RECOMMENDATION_NAMES, FullApplicationRecommendation),
         (BINDING_LIMIT_NAMES, BindingLimit),
+        (EMPLOYMENT_NAMES, EmploymentType),
     ],
 )
 def test_every_value_has_georgian_and_english_text(names: dict, members) -> None:

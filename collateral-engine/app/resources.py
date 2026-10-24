@@ -15,23 +15,26 @@ from collateral_engine.nbg_rates import NbgRatesClient
 from collateral_engine.settings import load_settings
 from collateral_engine.vehicles.engine import VehicleEngine
 
+# Shown while an engine loads for the first time; the language is not known at that point.
+LOADING_ENGINES = "ძრავების ჩატვირთვა… · Loading the engines…"
+
 
 @st.cache_resource(show_spinner=False)
 def get_stores() -> EngineStores:
     return build_stores(load_settings())
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=LOADING_ENGINES)
 def get_engine() -> CollateralEngine:
     return build_engine(load_settings(), get_stores())
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=LOADING_ENGINES)
 def get_vehicle_engine() -> VehicleEngine:
     return build_vehicle_engine(load_settings(), get_stores())
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=LOADING_ENGINES)
 def get_income_assessor() -> IteIncomeAssessor:
     return build_income_assessor(load_settings())
 
