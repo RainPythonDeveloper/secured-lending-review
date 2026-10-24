@@ -14,6 +14,8 @@ from collateral_engine.policy import (
     IntervalPolicy,
     PhotoPolicy,
 )
+from collateral_engine.vehicles.vision import VehicleView
+from collateral_engine.vision import VisionConfidence
 
 DEFAULT_VEHICLE_POLICY_PATH = DEFAULT_CONFIG_DIR / "vehicle_policy.yaml"
 
@@ -50,6 +52,12 @@ class VehicleEvidencePolicy(_Config):
     min_photos: Annotated[int, Field(ge=1, le=50)]
 
 
+class VehicleVisionRules(_Config):
+    min_confidence: VisionConfidence
+    mileage_tolerance: Annotated[float, Field(ge=0, lt=1)]
+    required_views: Annotated[list[VehicleView], Field(min_length=1)]
+
+
 class VehiclePolicy(_Config):
     version: str
     comparables: VehicleComparablesPolicy
@@ -59,6 +67,7 @@ class VehiclePolicy(_Config):
     fx_stress: FxStressPolicy
     photos: PhotoPolicy
     evidence: VehicleEvidencePolicy
+    vision: VehicleVisionRules
     flag_severity: dict[ReasonCode, Severity]
 
     @model_validator(mode="after")

@@ -150,6 +150,8 @@ class ValuationReport(_Report):
     valuation: MarketValuation | None
     condition: ConditionVerification
     photos: list[PhotoFinding]
+    # The vision model that described the photos; None when photo analysis is off.
+    vision_model: str | None
     appraisal: AppraisalCheck | None
     ltv: LtvCheck | None
     flags: list[Flag]

@@ -1,0 +1,12 @@
+{
+  "accounts": [
+    {
+      "resourceId": "ACC-0001",
+      "iban": "GE00SY0000000000000001",
+      "currency": "GEL",
+      "product": "current",
+      "cashAccountType": "CACC",
+      "balances": [{"balanceType": "closingBooked", "balanceAmount": {"currency": "GEL", "amount": "8898.12"}}]
+    }
+  ]
+}

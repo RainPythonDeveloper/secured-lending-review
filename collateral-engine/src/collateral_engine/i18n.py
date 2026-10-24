@@ -17,6 +17,7 @@ from collateral_engine.report import AppraisalPosition, LendingValueBasis
 from collateral_engine.report_check import ReportFinding, ReportIssue
 from collateral_engine.vehicles.domain import FuelType, SteeringSide
 from collateral_engine.vehicles.report import VehicleAdjustmentGroup
+from collateral_engine.vehicles.vision import VehicleView, VisibleDamage
 
 
 class Language(StrEnum):
@@ -328,6 +329,55 @@ REASON_TEMPLATES: dict[ReasonCode, Bilingual] = {
         "და ბანკის {limit}%-იან ლიმიტს გადააჭარბებს.",
         Language.ENGLISH: "If the lari strengthens by {stress}%, LTV rises to {ltv}%, "
         "above the bank's {limit}% limit.",
+    },
+    ReasonCode.VEHICLE_MILEAGE_CONTRADICTED: {
+        Language.GEORGIAN: "AI-მ ოდომეტრზე წაიკითხა {read_km} კმ, დეკლარირებულია {declared_km} კმ; "
+        "ავტომობილი ფასდება უფრო მაღალი გარბენით.",
+        Language.ENGLISH: "AI read {read_km} km on the odometer against {declared_km} km declared; "
+        "the vehicle is valued at the higher mileage.",
+    },
+    ReasonCode.VEHICLE_VIN_MISMATCH: {
+        Language.GEORGIAN: "AI-მ ფოტოზე წაიკითხა VIN {read_vin}, განაცხადშია "
+        "{declared_vin}; ფოტოები შეიძლება სხვა ავტომობილს ეკუთვნოდეს.",
+        Language.ENGLISH: "AI read VIN {read_vin} in the photos, the application has "
+        "{declared_vin}; the photos may show another vehicle.",
+    },
+    ReasonCode.VEHICLE_UNDECLARED_DAMAGE: {
+        Language.GEORGIAN: "AI-მ ფოტოებზე დაინახა სერიოზული დაზიანება, თუმცა ავარიის ისტორია "
+        "დეკლარირებული არ არის.",
+        Language.ENGLISH: "AI sees major body damage in the photos, but no accident history "
+        "was declared.",
+    },
+    ReasonCode.VEHICLE_STEERING_MISMATCH: {
+        Language.GEORGIAN: "AI-ს მიხედვით საჭე მეორე მხარესაა, ვიდრე განაცხადშია მითითებული.",
+        Language.ENGLISH: "AI sees the steering wheel on the other side than the application says.",
+    },
+    ReasonCode.VEHICLE_VIEWS_MISSING: {
+        Language.GEORGIAN: "AI-მ ვერ იპოვა {count} საჭირო ხედი (წინა, უკანა, გვერდები, "
+        "ოდომეტრი, VIN ფირფიტა).",
+        Language.ENGLISH: "AI did not find {count} of the required views (front, rear, sides, "
+        "odometer, VIN plate).",
+    },
+}
+
+VEHICLE_VIEW_NAMES: dict[VehicleView, Bilingual] = {
+    VehicleView.FRONT: {Language.GEORGIAN: "წინა ხედი", Language.ENGLISH: "Front"},
+    VehicleView.REAR: {Language.GEORGIAN: "უკანა ხედი", Language.ENGLISH: "Rear"},
+    VehicleView.LEFT_SIDE: {Language.GEORGIAN: "მარცხენა გვერდი", Language.ENGLISH: "Left side"},
+    VehicleView.RIGHT_SIDE: {Language.GEORGIAN: "მარჯვენა გვერდი", Language.ENGLISH: "Right side"},
+    VehicleView.ODOMETER: {Language.GEORGIAN: "ოდომეტრი", Language.ENGLISH: "Odometer"},
+    VehicleView.VIN_PLATE: {Language.GEORGIAN: "VIN ფირფიტა", Language.ENGLISH: "VIN plate"},
+    VehicleView.INTERIOR: {Language.GEORGIAN: "სალონი", Language.ENGLISH: "Interior"},
+    VehicleView.OTHER: {Language.GEORGIAN: "სხვა", Language.ENGLISH: "Other"},
+}
+
+VISIBLE_DAMAGE_NAMES: dict[VisibleDamage, Bilingual] = {
+    VisibleDamage.NONE: {Language.GEORGIAN: "არ ჩანს", Language.ENGLISH: "None visible"},
+    VisibleDamage.MINOR: {Language.GEORGIAN: "მცირე", Language.ENGLISH: "Minor"},
+    VisibleDamage.MAJOR: {Language.GEORGIAN: "სერიოზული", Language.ENGLISH: "Major"},
+    VisibleDamage.UNDETERMINED: {
+        Language.GEORGIAN: "ვერ განისაზღვრა",
+        Language.ENGLISH: "Undetermined",
     },
 }
 

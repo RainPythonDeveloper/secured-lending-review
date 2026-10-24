@@ -9,6 +9,11 @@
 # ltv.fx_income_from_abroad: foreign-currency mortgages of borrowers with income from abroad.
 # valuation: NBG Order 84/04 Art. 4(5): at least three comparables; a single adjustment within +/-15%,
 # the gross adjustment within +/-25%, or up to +/-35% when the report justifies it.
+# maturity: longest term in months. Unsecured consumer loans 4 years (cap raised back from 3 years,
+# Georgia Today 2023), mortgages 20 years, foreign-currency mortgages 10 years (secondary sources).
+# fx_lending: a loan below min_amount_gel must be in GEL unless the borrower's income is in the loan
+# currency (NBG decision raising the threshold to 750,000 from 1 Aug 2025 and to 1,000,000 from
+# 1 Jul 2026, as reported by bm.ge and georgiatoday.ge). VERIFY all three against NBG acts.
 versions:
   - id: "2022-01"
     effective_from: "2022-01-01"
@@ -32,6 +37,24 @@ versions:
       above: {hedged: 0.50, unhedged: 0.30}
     ltv: &ltv_2025_easing {gel: 0.90, fx: 0.70, fx_income_from_abroad: 0.80}
     valuation: *valuation_84_04
+    maturity: &maturity_limits {consumer_unsecured_months: 48, mortgage_months: 240, fx_mortgage_months: 120}
+  - id: "2025-08"
+    effective_from: "2025-08-01"
+    pti: &pti_1500
+      income_threshold_gel: 1500
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: {min_amount_gel: 750000}
+  - id: "2026-07"
+    effective_from: "2026-07-01"
+    pti: *pti_1500
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: &fx_lending_2026 {min_amount_gel: 1000000}
   - id: "2027-02"
     effective_from: "2027-02-01"
     pti:
@@ -40,6 +63,8 @@ versions:
       above: {hedged: 0.50, unhedged: 0.30}
     ltv: *ltv_2025_easing
     valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: *fx_lending_2026
   - id: "2027-09"
     effective_from: "2027-09-01"
     pti:
@@ -48,6 +73,8 @@ versions:
       above: {hedged: 0.50, unhedged: 0.30}
     ltv: *ltv_2025_easing
     valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: *fx_lending_2026
 
 # Internal policy (bank-configurable, not NBG rules)
 policy:

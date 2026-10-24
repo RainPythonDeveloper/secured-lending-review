@@ -6,7 +6,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from collateral_engine.domain import Currency, ExchangeRate
+from collateral_engine.domain import ClaimStatus, Currency, ExchangeRate
 from collateral_engine.flags import Flag, Recommendation
 from collateral_engine.report import PhotoFinding
 from collateral_engine.vehicles.domain import (
@@ -15,6 +15,8 @@ from collateral_engine.vehicles.domain import (
     VehicleLoanRequest,
     VehicleSubject,
 )
+from collateral_engine.vehicles.vision import SteeringReading, VehicleView, VisibleDamage
+from collateral_engine.vision import VisionConfidence, VisionFailure
 
 
 class VehicleAdjustmentGroup(StrEnum):
@@ -78,6 +80,39 @@ class VehicleLtvCheck(_Report):
     is_within_limit_under_stress: bool | None
 
 
+class VehiclePhotoReading(_Report):
+    """What the vision model read from one photo; is_counted says whether the rules used it."""
+
+    sha256: str
+    view: VehicleView | None
+    odometer_km: int | None
+    vin: str | None
+    damage: VisibleDamage | None
+    steering_side: SteeringReading | None
+    confidence: VisionConfidence | None
+    visible_evidence: list[str]
+    is_counted: bool
+    vision_failure: VisionFailure | None
+
+
+class VehicleEvidenceCheck(_Report):
+    """The status of each declared fact the photos can confirm, set by the vision rules."""
+
+    counted_photos: int
+    views_seen: list[VehicleView]
+    views_missing: list[VehicleView]
+    declared_mileage_km: int
+    odometer_km: int | None
+    mileage_status: ClaimStatus
+    # The mileage the vehicle is valued at: the higher of the declared and the read figure.
+    valued_mileage_km: int
+    vin_read: str | None
+    vin_status: ClaimStatus
+    damage_seen: VisibleDamage | None
+    damage_status: ClaimStatus
+    steering_status: ClaimStatus
+
+
 class VehicleValuationReport(_Report):
     valuation_id: str
     application_id: str
@@ -91,6 +126,9 @@ class VehicleValuationReport(_Report):
     valuation: VehicleMarketValuation | None
     photos: list[PhotoFinding]
     photos_required: int
+    photo_readings: list[VehiclePhotoReading]
+    evidence: VehicleEvidenceCheck
+    vision_model: str | None
     ltv: VehicleLtvCheck | None
     flags: list[Flag]
     recommendation: Recommendation

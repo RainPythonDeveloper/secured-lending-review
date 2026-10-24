@@ -10,7 +10,7 @@ from collateral_engine.vision import (
     ASSESSMENT_JSON_SCHEMA,
     DEFAULT_VISION_MODEL,
     SERVER_SIDE_FALLBACK_BETA,
-    ClaudeConditionClassifier,
+    ClaudeVisionClassifier,
     VisionConfidence,
     VisionFailure,
 )
@@ -26,7 +26,7 @@ API_REQUEST = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
 
 
 def classify_with(messages: FakeAnthropicMessages):
-    classifier = ClaudeConditionClassifier(fake_anthropic_client(messages))
+    classifier = ClaudeVisionClassifier(fake_anthropic_client(messages))
     return classifier.classify(b"jpeg-bytes", "image/jpeg")
 
 

@@ -85,8 +85,43 @@ section[data-testid="stSidebar"]{min-width:340px}
 [data-testid="stPageLink"] a:hover{border-color:var(--brand);background:var(--brand-soft)}
 .empty{border:1.5px dashed var(--line);border-radius:14px;padding:26px;text-align:center;
   color:var(--muted);margin:10px 0}
+.stages{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:8px 0 14px}
+.stage{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--stage);
+  border-radius:12px;padding:12px 14px}
+.stage .name{font-weight:700;color:var(--ink);font-size:.95rem;margin-bottom:6px}
+.stage .status{display:inline-block;color:#fff;background:var(--stage);border-radius:999px;
+  padding:1px 10px;font-size:12px;font-weight:700}
+.stage .meta{color:var(--muted);font-size:.76rem;margin-top:8px;line-height:1.35}
+.source-badge{display:inline-block;background:var(--brand-soft);color:var(--brand);
+  border-radius:8px;padding:3px 10px;font-size:.82rem;font-weight:600;margin:2px 0 6px}
+.cards.compact .stat{padding:10px 14px}
+.cards.compact .stat .value{font-size:1.02rem;font-weight:650}
+.form-subhead{font-weight:700;color:var(--ink);font-size:1rem;margin:18px 0 4px;
+  padding-top:14px;border-top:1px solid var(--line)}
+.form-subhead small{display:block;font-weight:400;color:var(--muted);font-size:.84rem;
+  margin-top:2px}
+.range{position:relative;height:64px;margin:30px 6px 4px}
+.range .track{position:absolute;top:22px;left:0;right:0;height:6px;border-radius:3px;
+  background:rgba(15,31,61,.1)}
+.range .band{position:absolute;top:16px;height:18px;border-radius:9px;
+  background:rgba(37,99,235,.35)}
+.range .mark{position:absolute;top:8px;width:3px;height:34px;border-radius:2px}
+.range .tag{position:absolute;top:44px;transform:translateX(-50%);font-size:12px;
+  white-space:nowrap}
+.range .tag.above{top:-12px}
+.subtitle{font-weight:700;color:var(--ink);font-size:1.02rem;margin:18px 0 6px}
+.verdict .why-list{margin:10px 0 0;padding-left:20px;color:var(--ink);font-size:.95rem}
+.verdict .why-list li{margin:3px 0}
+.ai-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+.ai-head .title{font-weight:700;color:var(--ink);font-size:1.12rem}
+.ai-chip{background:linear-gradient(90deg,#16337a,#2b6cb0);color:#fff;border-radius:999px;
+  padding:2px 11px;font-weight:800;font-size:.78rem;letter-spacing:.04em}
+.ai-model{color:var(--brand);background:var(--brand-soft);border-radius:8px;padding:2px 9px;
+  font-size:.8rem;font-weight:600}
+.ai-note{color:var(--muted);font-size:.84rem;margin:0 0 8px}
 @media (max-width: 900px){
   .flow{grid-template-columns:1fr 1fr} .cards{grid-template-columns:1fr 1fr}
+  .stages{grid-template-columns:1fr 1fr}
   .guarantees{grid-template-columns:1fr} .limit-row{grid-template-columns:1fr}
   .limit-row .amount{text-align:left}
 }
@@ -127,6 +162,14 @@ class LimitBar:
     is_binding: bool = False
 
 
+@dataclass(frozen=True)
+class StageCard:
+    name: str
+    status: str
+    colour: str
+    meta: str
+
+
 def apply_styles() -> None:
     st.markdown(STYLES, unsafe_allow_html=True)
 
@@ -161,7 +204,7 @@ def flow(steps: list[FlowStep]) -> None:
     st.markdown(f'<div class="flow">{items}</div>', unsafe_allow_html=True)
 
 
-def stat_cards(stats: list[Stat], columns: int = 4) -> None:
+def stat_cards(stats: list[Stat], columns: int = 4, is_compact: bool = False) -> None:
     items = "".join(
         f'<div class="stat {stat.tone}"><div class="label">{_escape(stat.label)}</div>'
         f'<div class="value">{_escape(stat.value)}</div>'
@@ -169,16 +212,33 @@ def stat_cards(stats: list[Stat], columns: int = 4) -> None:
         + "</div>"
         for stat in stats
     )
+    compact = " compact" if is_compact else ""
     st.markdown(
-        f'<div class="cards" style="--columns:{columns}">{items}</div>', unsafe_allow_html=True
+        f'<div class="cards{compact}" style="--columns:{columns}">{items}</div>',
+        unsafe_allow_html=True,
     )
 
 
-def verdict(caption: str, title: str, explanation: str, colour: str) -> None:
+def verdict(
+    caption: str, title: str, explanation: str, colour: str, reasons: list[str] | None = None
+) -> None:
+    reason_items = "".join(f"<li>{_escape(reason)}</li>" for reason in reasons or [])
+    reason_html = f'<ul class="why-list">{reason_items}</ul>' if reason_items else ""
     st.markdown(
         f'<div class="verdict" style="--verdict:{colour}">'
         f'<div class="small">{_escape(caption)}</div><h3>{_escape(title)}</h3>'
-        f'<p class="why">{_escape(explanation)}</p></div>',
+        f'<p class="why">{_escape(explanation)}</p>{reason_html}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def ai_header(title: str, model: str, note: str) -> None:
+    """Marks a section whose evidence comes from a vision model, and names the model."""
+    model_html = f'<span class="ai-model">{_escape(model)}</span>' if model else ""
+    st.markdown(
+        f'<div class="ai-head"><span class="ai-chip">AI</span><span class="title">'
+        f"{_escape(title)}</span>{model_html}</div>"
+        f'<p class="ai-note">{_escape(note)}</p>',
         unsafe_allow_html=True,
     )
 
@@ -213,3 +273,28 @@ def guarantees(items: list[tuple[str, str]]) -> None:
 
 def empty_state(text: str) -> None:
     st.markdown(f'<div class="empty">{_escape(text)}</div>', unsafe_allow_html=True)
+
+
+def stage_strip(cards: list[StageCard]) -> None:
+    items = "".join(
+        f'<div class="stage" style="--stage:{card.colour}"><div class="name">'
+        f'{_escape(card.name)}</div><span class="status">{_escape(card.status)}</span>'
+        f'<div class="meta">{_escape(card.meta)}</div></div>'
+        for card in cards
+    )
+    st.markdown(f'<div class="stages">{items}</div>', unsafe_allow_html=True)
+
+
+def source_badge(text: str) -> None:
+    st.markdown(f'<span class="source-badge">{_escape(text)}</span>', unsafe_allow_html=True)
+
+
+def form_subhead(title: str, hint: str = "") -> None:
+    hint_html = f"<small>{_escape(hint)}</small>" if hint else ""
+    st.markdown(
+        f'<div class="form-subhead">{_escape(title)}{hint_html}</div>', unsafe_allow_html=True
+    )
+
+
+def subtitle(text: str) -> None:
+    st.markdown(f'<div class="subtitle">{_escape(text)}</div>', unsafe_allow_html=True)

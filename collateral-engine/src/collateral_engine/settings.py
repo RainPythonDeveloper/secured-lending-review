@@ -17,6 +17,8 @@ from collateral_engine.vision import DEFAULT_VISION_MODEL
 
 REPOSITORY_ROOT = SERVICE_ROOT.parent
 INCOME_ENGINE_ROOT = REPOSITORY_ROOT / "income-engine"
+DEFAULT_BANK_DATASET_PATH = REPOSITORY_ROOT / "data" / "open-banking-synthetic-100-customers.xlsx"
+DEFAULT_OPEN_BANKING_GATEWAY_URL = "http://localhost:3000"
 DEFAULT_NBG_RULES_PATH = INCOME_ENGINE_ROOT / "config" / "nbg_rules.yaml"
 DEFAULT_NBG_RATES_URL = "https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/"
 SYNTHETIC_MARKET_DATA_SOURCE = "synthetic sales (collateral_engine.synth), not real transactions"
@@ -62,6 +64,9 @@ class Settings(BaseModel):
     income_data_dir: Path
     # Transactions are personal data: when set, the income routes of the API need this key.
     income_api_key: SecretStr | None
+    bank_dataset_path: Path
+    open_banking_gateway_url: str
+    open_banking_timeout_s: PositiveSeconds
 
     @model_validator(mode="after")
     def _check_nvidia_key(self) -> Self:
@@ -102,6 +107,12 @@ def load_settings(environment: Mapping[str, str] = os.environ) -> Settings:
             income_models_dir=read("INCOME_MODELS_DIR", INCOME_ENGINE_ROOT / "models"),
             income_data_dir=read("INCOME_DATA_DIR", INCOME_ENGINE_ROOT / "data"),
             income_api_key=read("ITE_API_KEY", None),
+            bank_dataset_path=read("NBG_DATASET_PATH", DEFAULT_BANK_DATASET_PATH),
+            open_banking_gateway_url=read(
+                "OPEN_BANKING_GATEWAY_URL", DEFAULT_OPEN_BANKING_GATEWAY_URL
+            ),
+            # The sandbox answers within 15 seconds, and the gateway retries it up to three times.
+            open_banking_timeout_s=read("OPEN_BANKING_TIMEOUT_S", 60),
         )
     except (ValidationError, ValueError) as error:
         raise SettingsError(f"invalid collateral engine settings: {error}") from error

@@ -1,4 +1,4 @@
-"""Condition classifier on NVIDIA hosted models (build.nvidia.com), OpenAI-compatible chat API.
+"""Photo classifier on NVIDIA hosted models (build.nvidia.com), OpenAI-compatible chat API.
 
 The hosted endpoint has no strict JSON-schema mode, so the schema is spelled out in the prompt and
 the answer is validated exactly as for Claude: anything off-schema is discarded and the photo
@@ -15,14 +15,11 @@ from collections.abc import Callable
 import httpx
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from collateral_engine.domain import Condition
 from collateral_engine.vision import (
-    SYSTEM_PROMPT,
-    UNDETERMINED,
-    USER_INSTRUCTION,
+    CONDITION_TASK,
     PhotoClassification,
-    VisionConfidence,
     VisionFailure,
+    VisionTask,
     classification_from_json,
 )
 
@@ -43,14 +40,6 @@ RETRY_BASE_DELAY_S = 2.0
 # Share of the delay added at random, so that parallel requests do not retry in step.
 RETRY_JITTER_SHARE = 0.5
 _THINKING_BLOCK = re.compile(r"<think>.*?</think>", re.DOTALL)
-
-JSON_ANSWER_INSTRUCTION = (
-    "Answer with one JSON object and nothing else, with exactly these keys: "
-    '"shows_apartment_interior" (true or false), "contains_people" (true or false), '
-    f'"condition" (one of: {", ".join([*Condition, UNDETERMINED])}), '
-    f'"confidence" (one of: {", ".join(VisionConfidence)}), '
-    '"visible_evidence" (a list of up to five short strings).'
-)
 
 
 class _ChatMessage(BaseModel):
@@ -78,7 +67,7 @@ class _RetryableStatusError(Exception):
         self.status_code = status_code
 
 
-class NvidiaConditionClassifier:
+class NvidiaVisionClassifier:
     def __init__(
         self,
         http_client: httpx.Client,
@@ -88,7 +77,9 @@ class NvidiaConditionClassifier:
         timeout_s: float = 60.0,
         sleep: Callable[[float], None] = time.sleep,
         jitter: Callable[[], float] = random.random,
+        task: VisionTask = CONDITION_TASK,
     ) -> None:
+        self._task = task
         self._http_client = http_client
         self._api_key = api_key
         self._model = model
@@ -96,6 +87,10 @@ class NvidiaConditionClassifier:
         self._timeout_s = timeout_s
         self._sleep = sleep
         self._jitter = jitter
+
+    @property
+    def model_name(self) -> str:
+        return self._model
 
     def classify(self, image: bytes, media_type: str) -> PhotoClassification:
         payload = self._payload(image, media_type)
@@ -155,18 +150,21 @@ class NvidiaConditionClassifier:
             return PhotoClassification(None, VisionFailure.UNAVAILABLE)
         except ValueError:
             return PhotoClassification(None, VisionFailure.INVALID_OUTPUT)
-        return parse_chat_completion(body)
+        return parse_chat_completion(body, self._task.answer_model)
 
     def _payload(self, image: bytes, media_type: str) -> dict[str, object]:
         data_url = f"data:{media_type};base64,{base64.standard_b64encode(image).decode('ascii')}"
         return {
             "model": self._model,
             "messages": [
-                {"role": "system", "content": f"{SYSTEM_PROMPT}\n\n{JSON_ANSWER_INSTRUCTION}"},
+                {
+                    "role": "system",
+                    "content": f"{self._task.system_prompt}\n\n{self._task.answer_instruction}",
+                },
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": USER_INSTRUCTION},
+                        {"type": "text", "text": self._task.user_instruction},
                         {"type": "image_url", "image_url": {"url": data_url}},
                     ],
                 },
@@ -179,7 +177,7 @@ class NvidiaConditionClassifier:
         }
 
 
-def parse_chat_completion(body: object) -> PhotoClassification:
+def parse_chat_completion(body: object, answer_model: type[BaseModel]) -> PhotoClassification:
     try:
         completion = _ChatCompletion.model_validate(body)
     except ValidationError:
@@ -192,7 +190,7 @@ def parse_chat_completion(body: object) -> PhotoClassification:
     answer = extract_json_object(choice.message.content)
     if answer is None:
         return PhotoClassification(None, VisionFailure.INVALID_OUTPUT)
-    return classification_from_json(answer)
+    return classification_from_json(answer, answer_model)
 
 
 def extract_json_object(content: str) -> str | None:

@@ -7,7 +7,8 @@ import pandas as pd
 import pydeck as pdk
 import streamlit as st
 
-from collateral_engine.domain import PropertyKind
+import design
+from collateral_engine.domain import ClaimStatus, PropertyKind
 from collateral_engine.flags import Recommendation, Severity
 from collateral_engine.hedonic import AdjustmentGroup
 from collateral_engine.i18n import (
@@ -17,6 +18,7 @@ from collateral_engine.i18n import (
     LENDING_VALUE_BASIS_NAMES,
     RECOMMENDATION_NAMES,
     SEVERITY_NAMES,
+    VEHICLE_ADJUSTMENT_NAMES,
     Language,
     reason_text,
 )
@@ -30,13 +32,24 @@ from collateral_engine.report import (
 )
 from collateral_engine.ui_text import UI_TEXT
 from collateral_engine.valuation import IntervalCalibration
-from collateral_engine.vehicles.report import VehicleLtvCheck, VehicleValuationReport
+from collateral_engine.vehicles.report import (
+    VehicleLtvCheck,
+    VehicleMarketValuation,
+    VehicleValuationReport,
+)
 from collateral_engine.vision import VisionFailure
 
 RECOMMENDATION_COLOURS = {
     Recommendation.ACCEPT_VALUATION: "#1f9d55",
     Recommendation.OFFICER_REVIEW: "#b7791f",
     Recommendation.PHYSICAL_INSPECTION: "#c53030",
+}
+STATUS_TONES = {
+    ClaimStatus.VERIFIED: design.Tone.GOOD,
+    ClaimStatus.PARTLY: design.Tone.WARN,
+    ClaimStatus.NOT_VERIFIED: design.Tone.PLAIN,
+    ClaimStatus.CONTRADICTED: design.Tone.BAD,
+    ClaimStatus.INCONCLUSIVE: design.Tone.PLAIN,
 }
 SEVERITY_COLOURS = {
     Severity.INFO: "#64748b",
@@ -61,30 +74,6 @@ ADJUSTMENT_COLUMNS = {
 }
 # Flats have no land, so the land columns are shown for houses only.
 HOUSE_ONLY_COLUMNS = ("column_land", "column_land_area")
-
-STYLES = """
-<style>
-.block-container{padding-top:1.4rem;max-width:1400px}
-.synthetic{background:#fff6e5;color:#7a4b00;border:1px solid #f0c36d;padding:6px 12px;
-  border-radius:8px;font-size:13px;display:inline-block}
-.verdict{border-left:6px solid var(--verdict);background:rgba(128,128,128,.07);
-  border-radius:10px;padding:14px 18px;margin:6px 0 14px}
-.verdict h3{margin:0 0 6px;color:var(--verdict)}
-.reason{padding:4px 0;font-size:15px}
-.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:700;
-  color:#fff;margin-right:8px}
-.range{position:relative;height:64px;margin:30px 6px 4px}
-.range .track{position:absolute;top:22px;left:0;right:0;height:6px;border-radius:3px;
-  background:rgba(128,128,128,.2)}
-.range .band{position:absolute;top:16px;height:18px;border-radius:9px;
-  background:rgba(37,99,235,.35)}
-.range .mark{position:absolute;top:8px;width:3px;height:34px;border-radius:2px}
-.range .tag{position:absolute;top:44px;transform:translateX(-50%);font-size:12px;
-  white-space:nowrap}
-.range .tag.above{top:-12px}
-.small{font-size:13px;opacity:.8}
-</style>
-"""
 
 
 def label(key: str, language: Language, **params: object) -> str:
@@ -123,14 +112,21 @@ def render_key_figures(report: ValuationReport, language: Language) -> None:
         st.warning(label("no_valuation", language))
         return
     value_gel = valuation.market_value_usd * report.usd_rate.gel_per_unit
-    columns = st.columns(4)
-    columns[0].metric(label("market_value", language), money(valuation.market_value_usd, "USD"))
-    columns[1].metric(
-        label("value_range", language, coverage=round(valuation.range_coverage * 100)),
-        f"{valuation.range_low_usd / 1000:,.1f}k–{valuation.range_high_usd / 1000:,.1f}k",
+    design.stat_cards(
+        [
+            design.Stat(
+                label("market_value", language),
+                money(valuation.market_value_usd, "USD"),
+                tone=design.Tone.BRAND,
+            ),
+            design.Stat(
+                label("value_range", language, coverage=round(valuation.range_coverage * 100)),
+                f"{valuation.range_low_usd / 1000:,.1f}k–{valuation.range_high_usd / 1000:,.1f}k",
+            ),
+            design.Stat(label("price_per_m2", language), money(valuation.price_per_m2_usd, "USD")),
+            design.Stat(label("value_in_gel", language), money(value_gel, "GEL")),
+        ]
     )
-    columns[2].metric(label("price_per_m2", language), money(valuation.price_per_m2_usd, "USD"))
-    columns[3].metric(label("value_in_gel", language), money(value_gel, "GEL"))
 
 
 def render_range_chart(
@@ -164,7 +160,7 @@ def render_range_chart(
                 is_above=True,
             )
         )
-    st.markdown(f"**{label('range_chart_title', language)}**")
+    design.subtitle(label("range_chart_title", language))
     st.markdown(
         f'<div class="range"><div class="track"></div>'
         f'<div class="band" style="left:{low:.1f}%;width:{high - low:.1f}%"></div>'
@@ -220,7 +216,7 @@ def render_map(report: ValuationReport, language: Language) -> None:
         ),
     ]
     view = pdk.ViewState(latitude=subject.latitude, longitude=subject.longitude, zoom=MAP_ZOOM)
-    st.markdown(f"**{label('map_title', language)}**")
+    design.subtitle(label("map_title", language))
     st.pydeck_chart(
         pdk.Deck(
             layers=layers,
@@ -267,22 +263,34 @@ def render_condition(
         if condition.observed
         else label("not_settled", language)
     )
-    status = CLAIM_STATUS_NAMES[condition.status][language]
-    declared = CONDITION_NAMES[condition.declared][language]
-    valued_as = CONDITION_NAMES[condition.valued_condition][language]
-    st.markdown(f"**{label('condition_title', language)}** — {status}")
     _render_photo_count(condition.photos_submitted, condition.photos_required, language)
-    st.markdown(
-        f"{label('declared', language)}: **{declared}** · "
-        f"{label('observed', language)}: **{observed}** · "
-        f"{label('valued_as', language)}: **{valued_as}**"
+    design.stat_cards(
+        [
+            design.Stat(label("declared", language), CONDITION_NAMES[condition.declared][language]),
+            design.Stat(label("observed", language), observed),
+            design.Stat(
+                label("valued_as", language), CONDITION_NAMES[condition.valued_condition][language]
+            ),
+            design.Stat(
+                label("condition_title", language),
+                CLAIM_STATUS_NAMES[condition.status][language],
+                tone=STATUS_TONES[condition.status],
+            ),
+        ],
+        is_compact=True,
     )
+    render_photo_gallery(
+        [(photo.sha256, _photo_caption(photo, language)) for photo in report.photos], photo_bytes
+    )
+
+
+def render_photo_gallery(captions: list[tuple[str, str]], photo_bytes: dict[str, bytes]) -> None:
     columns = st.columns(PHOTO_COLUMNS)
-    for index, photo in enumerate(report.photos):
+    for index, (sha256, caption) in enumerate(captions):
         with columns[index % PHOTO_COLUMNS]:
-            if photo.sha256 in photo_bytes:
-                st.image(photo_bytes[photo.sha256], width="stretch")
-            st.caption(_photo_caption(photo, language))
+            if sha256 in photo_bytes:
+                st.image(photo_bytes[sha256], width="stretch")
+            st.caption(caption)
 
 
 def _render_photo_count(submitted: int, required: int, language: Language) -> None:
@@ -320,7 +328,7 @@ def _photo_caption(photo: PhotoFinding, language: Language) -> str:
 def render_comparables(
     valuation: MarketValuation, property_kind: PropertyKind, language: Language
 ) -> None:
-    st.markdown(f"**{label('comparables_title', language)}**")
+    design.subtitle(label("comparables_title", language))
     st.caption(label("comparables_caption", language))
     rows = [
         {
@@ -351,7 +359,7 @@ def render_comparables(
     grid = pd.DataFrame(rows)
     if property_kind is PropertyKind.FLAT:
         grid = grid.drop(columns=[label(column, language) for column in HOUSE_ONLY_COLUMNS])
-    st.dataframe(grid, hide_index=True, column_config=percent_columns)
+    st.dataframe(grid, hide_index=True, column_config=percent_columns, width="stretch")
     limits = valuation.valuation_limits
     st.caption(
         label(
@@ -368,18 +376,9 @@ def render_comparables(
 def render_ltv_and_appraisal(report: ValuationReport, language: Language) -> None:
     if report.ltv is None:
         return
-    st.markdown(f"**{label('ltv_title', language)}**")
-    columns = st.columns(4)
     ltv = report.ltv
-    columns[0].metric(
-        label("lending_value", language),
-        money(ltv.lending_value_in_loan_currency, ltv.loan_currency.value),
-    )
-    columns[1].metric(label("ltv", language), f"{ltv.ltv_ratio:.1%} / {ltv.ltv_limit:.0%}")
-    columns[2].metric(
-        label("max_loan", language), money(ltv.max_loan_amount, ltv.loan_currency.value)
-    )
-    render_stressed_ltv(columns[3], ltv, language)
+    design.subtitle(label("ltv_title", language))
+    design.stat_cards(_ltv_stats(ltv, "ltv", language))
     basis = LENDING_VALUE_BASIS_NAMES[ltv.lending_value_basis][language]
     st.caption(
         f"{label('basis', language)}: {basis} · "
@@ -389,15 +388,32 @@ def render_ltv_and_appraisal(report: ValuationReport, language: Language) -> Non
         _render_appraisal(report.appraisal, language)
 
 
-def render_stressed_ltv(
-    column: object, ltv: LtvCheck | VehicleLtvCheck, language: Language
-) -> None:
-    if ltv.stressed_ltv_ratio is None or ltv.gel_appreciation_stress is None:
-        return
-    column.metric(
-        label("stressed_ltv", language, stress=round(ltv.gel_appreciation_stress * 100)),
-        f"{ltv.stressed_ltv_ratio:.1%}",
-    )
+def _ltv_stats(
+    ltv: LtvCheck | VehicleLtvCheck, limit_key: str, language: Language
+) -> list[design.Stat]:
+    is_within_limit = ltv.ltv_ratio <= ltv.ltv_limit
+    stats = [
+        design.Stat(
+            label("lending_value", language),
+            money(ltv.lending_value_in_loan_currency, ltv.loan_currency.value),
+        ),
+        design.Stat(
+            label(limit_key, language),
+            f"{ltv.ltv_ratio:.1%} / {ltv.ltv_limit:.0%}",
+            tone=design.Tone.GOOD if is_within_limit else design.Tone.WARN,
+        ),
+        design.Stat(
+            label("max_loan", language), money(ltv.max_loan_amount, ltv.loan_currency.value)
+        ),
+    ]
+    if ltv.stressed_ltv_ratio is not None and ltv.gel_appreciation_stress is not None:
+        stats.append(
+            design.Stat(
+                label("stressed_ltv", language, stress=round(ltv.gel_appreciation_stress * 100)),
+                f"{ltv.stressed_ltv_ratio:.1%}",
+            )
+        )
+    return stats
 
 
 def _render_appraisal(appraisal: AppraisalCheck, language: Language) -> None:
@@ -430,3 +446,74 @@ def render_provenance(
             file_name=f"valuation-{report.application_id}.json",
             mime="application/json",
         )
+
+
+def render_vehicle_key_figures(
+    report: VehicleValuationReport, valuation: VehicleMarketValuation, language: Language
+) -> None:
+    value_gel = valuation.market_value_usd * report.usd_rate.gel_per_unit
+    design.stat_cards(
+        [
+            design.Stat(
+                label("vehicle_value", language),
+                money(valuation.market_value_usd, "USD"),
+                tone=design.Tone.BRAND,
+            ),
+            design.Stat(
+                label("value_range", language, coverage=round(valuation.range_coverage * 100)),
+                f"{valuation.range_low_usd:,.0f}–{valuation.range_high_usd:,.0f}",
+            ),
+            design.Stat(label("value_in_gel", language), money(value_gel, "GEL")),
+            design.Stat(
+                label("projected_value", language, months=report.loan.term_months),
+                money(valuation.projected_value_at_maturity_usd, "USD"),
+                note=label("annual_depreciation", language)
+                + f": {valuation.annual_depreciation:.1%} · "
+                + label("age_at_maturity", language)
+                + ": "
+                + label("years", language, count=valuation.vehicle_age_at_maturity_years),
+            ),
+        ]
+    )
+
+
+def render_vehicle_ltv(report: VehicleValuationReport, language: Language) -> None:
+    ltv = report.ltv
+    if ltv is None:
+        return
+    design.subtitle(label("bank_ltv_title", language))
+    # NBG sets no LTV limit for vehicle loans; the 70% is bank policy.
+    design.stat_cards(_ltv_stats(ltv, "ltv_bank_limit", language))
+    st.caption(f"{label('rules_version', language)}: {ltv.policy_version}")
+
+
+def render_vehicle_comparables(valuation: VehicleMarketValuation, language: Language) -> None:
+    design.subtitle(label("comparables_title", language))
+    st.caption(label("vehicle_comparables_caption", language))
+    rows = [
+        {
+            label("column_sale", language): row.sale_id,
+            label("column_date", language): row.sale_date,
+            label("column_year", language): row.production_year,
+            label("column_mileage", language): row.mileage_km,
+            label("column_price_usd", language): float(row.price_usd),
+            **{
+                VEHICLE_ADJUSTMENT_NAMES[group][language]: round(fraction * 100, 1)
+                for group, fraction in row.adjustments.items()
+            },
+            label("column_gross", language): round(row.gross_adjustment * 100, 1),
+            label("column_adjusted_usd", language): float(row.adjusted_price_usd),
+            label("column_weight", language): row.weight,
+        }
+        for row in valuation.comparables
+    ]
+    percent_columns = {
+        names[language]: st.column_config.NumberColumn(format="%+.1f%%")
+        for names in VEHICLE_ADJUSTMENT_NAMES.values()
+    }
+    percent_columns[label("column_gross", language)] = st.column_config.NumberColumn(
+        format="%.1f%%"
+    )
+    st.dataframe(
+        pd.DataFrame(rows), hide_index=True, column_config=percent_columns, width="stretch"
+    )

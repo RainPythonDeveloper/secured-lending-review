@@ -1,10 +1,15 @@
 """Reason codes of a vehicle assessment, with the values their messages need."""
 
+from collateral_engine.domain import ClaimStatus
 from collateral_engine.findings import FlagSpec
 from collateral_engine.flags import Flag, ReasonCode
 from collateral_engine.vehicles.domain import SteeringSide, VehicleSubject
 from collateral_engine.vehicles.policy import VehiclePolicy
-from collateral_engine.vehicles.report import VehicleLtvCheck, VehicleMarketValuation
+from collateral_engine.vehicles.report import (
+    VehicleEvidenceCheck,
+    VehicleLtvCheck,
+    VehicleMarketValuation,
+)
 from collateral_engine.vehicles.valuation import InsufficientVehicleComparablesError
 
 
@@ -65,6 +70,31 @@ def vehicle_photo_count_findings(photo_count: int, required: int) -> list[FlagSp
         return []
     params = {"count": str(photo_count), "required": str(required)}
     return [(ReasonCode.VEHICLE_TOO_FEW_PHOTOS, params)]
+
+
+def vehicle_evidence_findings(
+    vehicle: VehicleSubject, evidence: VehicleEvidenceCheck
+) -> list[FlagSpec]:
+    if evidence.counted_photos == 0:
+        return []
+    findings: list[FlagSpec] = []
+    if evidence.mileage_status is ClaimStatus.CONTRADICTED and evidence.odometer_km is not None:
+        params = {
+            "declared_km": f"{vehicle.mileage_km:,}",
+            "read_km": f"{evidence.odometer_km:,}",
+        }
+        findings.append((ReasonCode.VEHICLE_MILEAGE_CONTRADICTED, params))
+    if evidence.vin_status is ClaimStatus.CONTRADICTED and evidence.vin_read is not None:
+        params = {"declared_vin": vehicle.vin, "read_vin": evidence.vin_read}
+        findings.append((ReasonCode.VEHICLE_VIN_MISMATCH, params))
+    if evidence.damage_status is ClaimStatus.CONTRADICTED:
+        findings.append((ReasonCode.VEHICLE_UNDECLARED_DAMAGE, {}))
+    if evidence.steering_status is ClaimStatus.CONTRADICTED:
+        findings.append((ReasonCode.VEHICLE_STEERING_MISMATCH, {}))
+    if evidence.views_missing:
+        params = {"count": str(len(evidence.views_missing))}
+        findings.append((ReasonCode.VEHICLE_VIEWS_MISSING, params))
+    return findings
 
 
 def to_vehicle_flags(findings: list[FlagSpec], policy: VehiclePolicy) -> list[Flag]:

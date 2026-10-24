@@ -148,7 +148,7 @@ def test_api_checks_report_with_rules_in_force(make_engine, make_vehicle_engine)
 
     body = response.json()
     assert response.status_code == 200
-    assert body["nbg_rules_version"] == "2025-02"
+    assert body["nbg_rules_version"] == "2026-07"
     assert any(finding["issue"] == "RESULTS_AVERAGED" for finding in body["findings"])
 
 

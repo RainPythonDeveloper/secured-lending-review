@@ -181,6 +181,7 @@ class FixedClassifier:
 
     classification: PhotoClassification
     calls: int = 0
+    model_name: str = "fixed-test-classifier"
 
     def classify(self, image: bytes, media_type: str) -> PhotoClassification:
         self.calls += 1

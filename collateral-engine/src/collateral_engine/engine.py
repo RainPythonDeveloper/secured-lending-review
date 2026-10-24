@@ -50,9 +50,9 @@ from collateral_engine.report import (
 )
 from collateral_engine.valuation import IntervalCalibration, calibrate_interval, value_property
 from collateral_engine.vision import (
-    ConditionClassifier,
     PhotoAssessment,
     PhotoClassification,
+    PhotoClassifier,
     VisionFailure,
 )
 
@@ -119,7 +119,7 @@ class CollateralEngine:
         market: MarketData,
         config: EngineConfig,
         stores: EngineStores,
-        classifier: ConditionClassifier | None,
+        classifier: PhotoClassifier | None,
         calibrations: Mapping[PropertyKind, IntervalCalibration] | None = None,
         new_valuation_id: Callable[[], str] = lambda: str(uuid.uuid4()),
     ) -> None:
@@ -253,6 +253,7 @@ class CollateralEngine:
             valuation=parts.valuation,
             condition=parts.condition,
             photos=[photo.to_finding() for photo in parts.photos],
+            vision_model=self._classifier.model_name if self._classifier else None,
             appraisal=parts.appraisal,
             ltv=parts.ltv,
             flags=flags,

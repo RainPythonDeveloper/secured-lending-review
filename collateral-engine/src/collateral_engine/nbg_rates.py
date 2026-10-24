@@ -42,24 +42,27 @@ _RATES_PAYLOAD = TypeAdapter(list[NbgRatesDay])
 
 
 def parse_official_rate(payload: object, currency: Currency, rate_date: date) -> ExchangeRate:
+    return ExchangeRate(
+        currency=currency,
+        gel_per_unit=parse_gel_per_unit(payload, currency.value, rate_date),
+        rate_date=rate_date,
+        source=NBG_RATE_SOURCE,
+    )
+
+
+def parse_gel_per_unit(payload: object, currency_code: str, rate_date: date) -> Decimal:
     try:
         days = _RATES_PAYLOAD.validate_python(payload)
     except ValidationError as error:
         raise OfficialRateUnavailableError("NBG answered with an unexpected payload") from error
-    day = _day_for(days, rate_date)
-    currency_rate = _rate_for(day, currency)
+    currency_rate = _rate_for(_day_for(days, rate_date), currency_code)
     try:
         rate = Decimal(currency_rate.rate_formated)
     except InvalidOperation as error:
         raise OfficialRateUnavailableError(
             f"NBG rate '{currency_rate.rate_formated}' is not a number"
         ) from error
-    return ExchangeRate(
-        currency=currency,
-        gel_per_unit=rate / currency_rate.quantity,
-        rate_date=rate_date,
-        source=NBG_RATE_SOURCE,
-    )
+    return rate / currency_rate.quantity
 
 
 def _day_for(days: list[NbgRatesDay], rate_date: date) -> NbgRatesDay:
@@ -73,11 +76,13 @@ def _day_for(days: list[NbgRatesDay], rate_date: date) -> NbgRatesDay:
     return day
 
 
-def _rate_for(day: NbgRatesDay, currency: Currency) -> NbgCurrencyRate:
+def _rate_for(day: NbgRatesDay, currency_code: str) -> NbgCurrencyRate:
     for currency_rate in day.currencies:
-        if currency_rate.code == currency.value:
+        if currency_rate.code == currency_code:
             return currency_rate
-    raise OfficialRateUnavailableError(f"NBG returned no {currency} rate for {day.date.date()}")
+    raise OfficialRateUnavailableError(
+        f"NBG returned no {currency_code} rate for {day.date.date()}"
+    )
 
 
 class NbgRatesClient:
@@ -87,7 +92,17 @@ class NbgRatesClient:
         self._timeout_s = timeout_s
 
     def fetch_rate(self, currency: Currency, rate_date: date) -> ExchangeRate:
-        params = {"currencies": currency.value, "date": rate_date.isoformat()}
+        payload = self._fetch_payload(currency.value, rate_date)
+        logger.info("Fetched NBG %s rate for %s", currency, rate_date)
+        return parse_official_rate(payload, currency, rate_date)
+
+    def fetch_gel_per_unit(self, currency_code: str, rate_date: date) -> Decimal:
+        """GEL per unit of any currency NBG quotes, for example EUR in a statement."""
+        payload = self._fetch_payload(currency_code, rate_date)
+        return parse_gel_per_unit(payload, currency_code, rate_date)
+
+    def _fetch_payload(self, currency_code: str, rate_date: date) -> object:
+        params = {"currencies": currency_code, "date": rate_date.isoformat()}
         try:
             response = self._http_client.get(self._base_url, params=params, timeout=self._timeout_s)
             response.raise_for_status()
@@ -100,5 +115,4 @@ class NbgRatesClient:
             raise OfficialRateUnavailableError(f"NBG rate API request failed: {error}") from error
         except ValueError as error:
             raise OfficialRateUnavailableError("NBG rate API returned invalid JSON") from error
-        logger.info("Fetched NBG %s rate for %s", currency, rate_date)
-        return parse_official_rate(payload, currency, rate_date)
+        return payload

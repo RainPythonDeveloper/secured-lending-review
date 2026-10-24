@@ -24,7 +24,9 @@ GENESIS_HASH = "0" * 64
 class AuditEvent(StrEnum):
     VALUATION_ASSESSED = "valuation_assessed"
     FULL_APPLICATION_ASSESSED = "full_application_assessed"
+    LOAN_APPLICATION_ASSESSED = "loan_application_assessed"
     OFFICER_DECISION = "officer_decision"
+    LOAN_DECISION = "loan_decision"
 
 
 class OfficerDecisionKind(StrEnum):
@@ -123,6 +125,18 @@ class AuditLog:
                 return False, len(rows)
             expected_previous = record_hash
         return True, len(rows)
+
+    def find_latest(self, event: "AuditEvent", field: str, value: str) -> dict | None:
+        """The most recent record of the event whose field has the value."""
+        with sqlite3.connect(self._path) as connection:
+            rows = connection.execute(
+                "SELECT payload FROM audit_log ORDER BY sequence DESC"
+            ).fetchall()
+        for (payload,) in rows:
+            record = json.loads(payload)
+            if record.get("event") == event and record.get(field) == value:
+                return record
+        return None
 
     def find_valuation(self, valuation_id: str) -> dict:
         with sqlite3.connect(self._path) as connection:

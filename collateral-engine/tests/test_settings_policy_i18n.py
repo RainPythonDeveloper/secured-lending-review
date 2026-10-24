@@ -26,6 +26,27 @@ from collateral_engine.i18n import (
     reason_text,
 )
 from collateral_engine.income import EmploymentType, IncomeRecommendation
+from collateral_engine.lending.affordability import LoanProduct
+from collateral_engine.lending.customer import CustomerProfile, DataSource
+from collateral_engine.lending.decision import LoanDecisionKind
+from collateral_engine.lending.pipeline import BindingLimit as LendingBindingLimit
+from collateral_engine.lending.pipeline import (
+    LendingReason,
+    LendingRecommendation,
+    StageKind,
+    StageStatus,
+)
+from collateral_engine.lending.texts import (
+    CUSTOMER_PROFILE_NAMES,
+    DATA_SOURCE_NAMES,
+    LENDING_BINDING_NAMES,
+    LENDING_REASON_TEMPLATES,
+    LENDING_RECOMMENDATION_NAMES,
+    LOAN_DECISION_NAMES,
+    LOAN_PRODUCT_NAMES,
+    STAGE_NAMES,
+    STAGE_STATUS_NAMES,
+)
 from collateral_engine.nvidia_vision import DEFAULT_NVIDIA_VISION_MODEL
 from collateral_engine.policy import (
     DEFAULT_CONFIG_DIR,
@@ -52,6 +73,15 @@ from collateral_engine.vehicles.report import VehicleAdjustmentGroup
         (FULL_APPLICATION_RECOMMENDATION_NAMES, FullApplicationRecommendation),
         (BINDING_LIMIT_NAMES, BindingLimit),
         (EMPLOYMENT_NAMES, EmploymentType),
+        (LENDING_REASON_TEMPLATES, LendingReason),
+        (STAGE_NAMES, StageKind),
+        (STAGE_STATUS_NAMES, StageStatus),
+        (LENDING_RECOMMENDATION_NAMES, LendingRecommendation),
+        (LOAN_PRODUCT_NAMES, LoanProduct),
+        (DATA_SOURCE_NAMES, DataSource),
+        (CUSTOMER_PROFILE_NAMES, CustomerProfile),
+        (LENDING_BINDING_NAMES, LendingBindingLimit),
+        (LOAN_DECISION_NAMES, LoanDecisionKind),
     ],
 )
 def test_every_value_has_georgian_and_english_text(names: dict, members) -> None:
@@ -173,3 +203,15 @@ def test_settings_reject_invalid_timeout() -> None:
 def test_demo_cases_are_invented_and_bilingual() -> None:
     assert all(case.application_id.startswith("DEMO-") for case in DEMO_CASES)
     assert all(case.title[language] for case in DEMO_CASES for language in Language)
+
+
+def test_lending_templates_use_the_same_placeholders_in_both_languages() -> None:
+    def placeholders(template: str) -> set[str]:
+        return {name for _, name, _, _ in Formatter().parse(template) if name}
+
+    mismatched = [
+        reason
+        for reason, texts in LENDING_REASON_TEMPLATES.items()
+        if placeholders(texts[Language.GEORGIAN]) != placeholders(texts[Language.ENGLISH])
+    ]
+    assert mismatched == []

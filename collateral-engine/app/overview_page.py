@@ -1,20 +1,25 @@
 """Overview: what the platform does, how one application flows through it, and how good it is."""
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import streamlit as st
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 import design
+from collateral_engine.demo_cases import DEMO_VALUATION_DATE
 from collateral_engine.i18n import Language
+from collateral_engine.lending.income_analysis import analyse_income
+from collateral_engine.lending.policy import load_lending_policy
 from collateral_engine.policy import SERVICE_ROOT
-from collateral_engine.settings import INCOME_ENGINE_ROOT
 from language import current_language
 from report_view import label
+from resources import get_bank_snapshot, get_statement_rates
 
 COLLATERAL_METRICS_PATH = SERVICE_ROOT / "reports" / "metrics.json"
-INCOME_METRICS_PATH = INCOME_ENGINE_ROOT / "reports" / "metrics.json"
+P90 = 0.9
 
 
 class _Metrics(BaseModel):
@@ -32,17 +37,31 @@ class CollateralMetrics(_Metrics):
     vehicle: ValuationMetrics
 
 
-class PolicyOutcome(_Metrics):
-    approval_rate: float
+@dataclass(frozen=True)
+class IncomeCheck:
+    customers: int
+    median_error: float
+    p90_error: float
 
 
-class IncomePolicies(_Metrics):
-    traditional: PolicyOutcome
-    engine_auto: PolicyOutcome
-
-
-class IncomeMetrics(_Metrics):
-    policy: IncomePolicies
+# A resource cache: the result is immutable, and a class defined in a page cannot be pickled.
+@st.cache_resource(show_spinner=False)
+def income_check_on_dataset() -> IncomeCheck:
+    """Income confirmed from each dataset customer's statement against the dataset's own figure
+    for their typical monthly inflow."""
+    snapshot = get_bank_snapshot()
+    policy = load_lending_policy().income
+    errors = []
+    for customer_id in snapshot.customer_ids():
+        customer_file = snapshot.customer_file(customer_id)
+        analysis = analyse_income(customer_file, get_statement_rates(DEMO_VALUATION_DATE), policy)
+        stated = float(customer_file.customer.declared_income_gel)
+        errors.append(abs(float(analysis.verified_income_gel) / stated - 1))
+    return IncomeCheck(
+        customers=len(errors),
+        median_error=float(np.median(errors)),
+        p90_error=float(np.quantile(errors, P90)),
+    )
 
 
 def _load[Metrics: BaseModel](path: Path, model: type[Metrics]) -> Metrics | None:
@@ -97,18 +116,21 @@ def _render_quality(language: Language) -> None:
         label("overview_quality_title", language), label("overview_quality_lead", language)
     )
     collateral = _load(COLLATERAL_METRICS_PATH, CollateralMetrics)
-    income = _load(INCOME_METRICS_PATH, IncomeMetrics)
-    if collateral is None or income is None:
+    if collateral is None:
         design.empty_state(label("overview_metrics_missing", language))
         return
-    approval = income.policy.engine_auto.approval_rate
-    baseline = income.policy.traditional.approval_rate
+    income_check = income_check_on_dataset()
     design.stat_cards(
         [
             design.Stat(
-                label("kpi_approval", language),
-                f"{approval:.1%}",
-                label("kpi_approval_note", language, baseline=f"{baseline:.1%}"),
+                label("kpi_income_check", language),
+                f"{income_check.median_error:.1%}",
+                label(
+                    "kpi_income_check_note",
+                    language,
+                    count=income_check.customers,
+                    p90=f"{income_check.p90_error:.1%}",
+                ),
                 design.Tone.GOOD,
             ),
             _error_stat("kpi_flat_error", collateral.flat, language),
@@ -130,16 +152,7 @@ def _render_guarantees(language: Language) -> None:
 
 def _render_links(language: Language) -> None:
     design.section(label("overview_try_title", language))
-    full_column, collateral_column, income_column = st.columns(3)
-    full_column.page_link("full_application_page.py", label=label("try_full", language), icon="🏦")
-    collateral_column.page_link(
-        "streamlit_app.py", label=label("try_collateral", language), icon="🏠"
-    )
-    income_column.page_link(
-        str(INCOME_ENGINE_ROOT / "app" / "streamlit_app.py"),
-        label=label("try_income", language),
-        icon="💼",
-    )
+    st.page_link("application_page.py", label=label("try_full", language), icon="🏦")
 
 
 def main() -> None:

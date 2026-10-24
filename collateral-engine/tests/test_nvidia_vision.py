@@ -6,7 +6,7 @@ import pytest
 from collateral_engine.domain import Condition
 from collateral_engine.nvidia_vision import (
     DEFAULT_NVIDIA_VISION_MODEL,
-    NvidiaConditionClassifier,
+    NvidiaVisionClassifier,
     extract_json_object,
 )
 from collateral_engine.vision import VisionFailure
@@ -37,7 +37,7 @@ def completion(content: str | None, finish_reason: str = "stop") -> dict:
 
 def classify_with(answer: httpx.MockTransport, waits_s: list[float] | None = None):
     recorded_waits_s = waits_s if waits_s is not None else []
-    classifier = NvidiaConditionClassifier(
+    classifier = NvidiaVisionClassifier(
         httpx.Client(transport=answer),
         TEST_API_KEY,
         url=CHAT_URL,

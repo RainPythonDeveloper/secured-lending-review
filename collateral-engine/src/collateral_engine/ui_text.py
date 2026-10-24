@@ -5,20 +5,7 @@ from collateral_engine.i18n import Bilingual, Language
 KA, EN = Language.GEORGIAN, Language.ENGLISH
 
 UI_TEXT: dict[str, Bilingual] = {
-    "app_title": {KA: "გირაოს შეფასება: მეორე აზრი", EN: "Collateral second opinion"},
-    "app_subtitle": {
-        KA: "თბილისის ბინები და კერძო სახლები სესხის უზრუნველყოფად · სებ-ის LTV შემოწმება · "
-        "გადაწყვეტილებას იღებს საკრედიტო ოფიცერი",
-        EN: "Tbilisi flats and houses offered as loan collateral · NBG LTV check · "
-        "the loan officer decides",
-    },
-    "synthetic_notice": {
-        KA: "ყველა მონაცემი სინთეტიკურია: არც ერთი რეალური პირი, ბინა, შემფასებელი ან გარიგება.",
-        EN: "All data is synthetic: no real person, flat, valuer or transaction.",
-    },
     "language": {KA: "ენა", EN: "Language"},
-    "demo_case": {KA: "სადემონსტრაციო განაცხადი", EN: "Demo application"},
-    "application_section": {KA: "განაცხადი", EN: "Application"},
     "application_id": {KA: "განაცხადის ID", EN: "Application ID"},
     "cadastral_code": {KA: "საკადასტრო კოდი (საჯარო რეესტრი)", EN: "Cadastral code (NAPR)"},
     "district": {KA: "რაიონი", EN: "District"},
@@ -38,12 +25,7 @@ UI_TEXT: dict[str, Bilingual] = {
     "building_floors": {KA: "სართულიანობა", EN: "Floors in the building"},
     "building_status": {KA: "შენობა", EN: "Building"},
     "declared_condition": {KA: "დეკლარირებული მდგომარეობა", EN: "Declared condition"},
-    "loan_section": {KA: "სესხი", EN: "Loan"},
     "off_plan_section": {KA: "მშენებარე სახლი", EN: "Building under construction"},
-    "off_plan_hint": {
-        KA: "ივსება, თუ შენობის სტატუსია „მშენებარე“.",
-        EN: "Fill in when the building status is 'Under construction'.",
-    },
     "developer_name": {KA: "დეველოპერი", EN: "Developer"},
     "construction_stage": {KA: "მშენებლობის ეტაპი", EN: "Construction stage"},
     "expected_completion_date": {KA: "დასრულების თარიღი", EN: "Expected completion"},
@@ -63,34 +45,10 @@ UI_TEXT: dict[str, Bilingual] = {
         KA: "ობიექტის ფოტოები — მინიმუმ {count}, სხვადასხვა ოთახი",
         EN: "Photos of the property — at least {count}, different rooms",
     },
-    "photos_help": {
-        KA: "JPEG, PNG ან WEBP. გადაიღეთ თავად ობიექტი: კედლები, იატაკი, სამზარეულო, აბაზანა. "
-        "კადრში ადამიანები არ უნდა იყვნენ.",
-        EN: "JPEG, PNG or WEBP. Photograph the property itself: walls, floors, kitchen, bathroom. "
-        "No people in the frame.",
-    },
     "photos_count": {KA: "ფოტოები", EN: "Photos"},
     "valuation_date": {KA: "შეფასების თარიღი", EN: "Valuation date"},
     "usd_rate": {KA: "USD/GEL, სებ-ის ოფიციალური კურსი", EN: "USD/GEL, NBG official rate"},
-    "fetch_rate": {KA: "სებ-ის კურსის მიღება", EN: "Get the NBG rate"},
-    "rate_from_nbg": {KA: "წყარო: სებ, {date}", EN: "Source: NBG, {date}"},
-    "rate_manual": {KA: "წყარო: შეიყვანა ოფიცერმა", EN: "Source: entered by the officer"},
-    "rate_unavailable": {
-        KA: "სებ-ის კურსი მიუწვდომელია ({error}). შეიყვანეთ ხელით.",
-        EN: "NBG rate unavailable ({error}). Enter it manually.",
-    },
-    "assess": {KA: "გირაოს შეფასება", EN: "Assess the collateral"},
-    "assessing": {KA: "მიმდინარეობს ობიექტის შეფასება…", EN: "Valuing the property…"},
     "invalid_input": {KA: "შეამოწმეთ განაცხადი: {error}", EN: "Check the application: {error}"},
-    "invalid_number": {
-        KA: "თანხა და კურსი უნდა იყოს რიცხვი, მაგალითად 220000 ან 2.5976.",
-        EN: "Amounts and the rate must be numbers, for example 220000 or 2.5976.",
-    },
-    "start_hint": {
-        KA: "აირჩიეთ სადემონსტრაციო განაცხადი ან შეიყვანეთ საკუთარი და დააჭირეთ "
-        "„გირაოს შეფასებას“.",
-        EN: "Choose a demo application or enter your own, then press “Assess the collateral”.",
-    },
     "recommendation": {KA: "რეკომენდაცია", EN: "Recommendation"},
     "no_reasons": {KA: "პრობლემები არ გამოვლენილა.", EN: "No issues found."},
     "market_value": {KA: "საბაზრო ღირებულება", EN: "Market value"},
@@ -115,10 +73,9 @@ UI_TEXT: dict[str, Bilingual] = {
     },
     "condition_title": {KA: "მდგომარეობა ფოტოების მიხედვით", EN: "Condition from photos"},
     "declared": {KA: "დეკლარირებული", EN: "Declared"},
-    "observed": {KA: "ფოტოებზე ჩანს", EN: "Seen in photos"},
+    "observed": {KA: "AI ხედავს ფოტოებზე", EN: "AI sees in the photos"},
     "valued_as": {KA: "შეფასდა როგორც", EN: "Valued as"},
-    "not_settled": {KA: "ვერ დადგინდა", EN: "not settled"},
-    "photo_ok": {KA: "ხარისხი კარგია", EN: "Quality OK"},
+    "not_settled": {KA: "ვერ დადგინდა", EN: "Not settled"},
     "vision_off": {KA: "ვიზუალური მოდელი გამორთულია", EN: "Vision model is off"},
     "vision_failed": {KA: "ვერ შეფასდა: {failure}", EN: "Not assessed: {failure}"},
     "seen_elsewhere": {KA: "ასევე განაცხადში: {applications}", EN: "Also in: {applications}"},
@@ -170,11 +127,8 @@ UI_TEXT: dict[str, Bilingual] = {
         EN: "LTV if the lari strengthens {stress}%",
     },
     "appraisal_check": {KA: "შემფასებლის დასკვნა", EN: "Licensed appraisal"},
-    "decision_title": {KA: "ოფიცრის გადაწყვეტილება", EN: "Officer decision"},
     "officer_id": {KA: "ოფიცრის ID", EN: "Officer ID"},
     "decision": {KA: "გადაწყვეტილება", EN: "Decision"},
-    "decision_accept": {KA: "შეფასების მიღება", EN: "Accept the valuation"},
-    "decision_inspect": {KA: "ადგილზე დათვალიერების დანიშვნა", EN: "Order a physical inspection"},
     "reason": {
         KA: "მიზეზი (სავალდებულოა, თუ გადაწყვეტილება რეკომენდაციას არ ემთხვევა)",
         EN: "Reason (required when deciding against the recommendation)",
@@ -190,8 +144,6 @@ UI_TEXT: dict[str, Bilingual] = {
     },
     "provenance_title": {KA: "მონაცემები, მოდელი და ვერსიები", EN: "Data, model and versions"},
     "download_report": {KA: "ანგარიშის ჩამოტვირთვა (JSON)", EN: "Download the report (JSON)"},
-    "tab_valuation": {KA: "შეფასება", EN: "Valuation"},
-    "tab_quality": {KA: "მოდელის ხარისხი", EN: "Model quality"},
     "tab_audit": {KA: "აუდიტის ჟურნალი", EN: "Audit log"},
     "tab_report_check": {KA: "შემფასებლის ანგარიში", EN: "Valuer report check"},
     "report_check_intro": {
@@ -213,47 +165,6 @@ UI_TEXT: dict[str, Bilingual] = {
     "article": {KA: "სებ-ის №84/04, მუხ. {article}", EN: "NBG Order 84/04, Art. {article}"},
     "recommended": {KA: "რეკომენდაცია", EN: "Recommendation"},
     "required": {KA: "დარღვევა", EN: "Breach"},
-    "quality_intro": {
-        KA: "დროში გადანაცვლებული ტესტი: ყოველი ბოლოდროინდელი გაყიდვა ფასდება მხოლოდ მანამდე "
-        "განხორციელებული გაყიდვებით. სინთეტიკური მონაცემები ამოწმებს მეთოდს "
-        "და არა რეალურ სიზუსტეს.",
-        EN: "Out-of-time backtest: each recent sale is valued from earlier sales only. "
-        "Synthetic data checks the method, not real-world accuracy.",
-    },
-    "quality_running": {KA: "მიმდინარეობს ტესტი…", EN: "Running the backtest…"},
-    "mdape": {KA: "მედიანური ცდომილება", EN: "Median error"},
-    "within_10": {KA: "±10%-ის ფარგლებში", EN: "Within ±10%"},
-    "within_20": {KA: "±20%-ის ფარგლებში", EN: "Within ±20%"},
-    "coverage": {
-        KA: "დიაპაზონის დაფარვა (მიზანი {target}%)",
-        EN: "Range coverage (target {target}%)",
-    },
-    "cod": {KA: "COD (IAAO ≤ 15)", EN: "COD (IAAO ≤ 15)"},
-    "prd": {KA: "PRD (IAAO 0.98–1.03)", EN: "PRD (IAAO 0.98–1.03)"},
-    "sales_tested": {KA: "შემოწმებული გაყიდვები", EN: "Sales tested"},
-    "error_by_district": {
-        KA: "მედიანური ცდომილება რაიონების მიხედვით",
-        EN: "Median error by district",
-    },
-    "limitations_title": {KA: "ცნობილი შეზღუდვები", EN: "Known limitations"},
-    "limitations": {
-        KA: "- გაყიდვები სინთეტიკურია; რეალური სიზუსტე ცნობილი იქნება საჯარო რეესტრის მონაცემებზე "
-        "საპილოტე ტესტის შემდეგ.\n"
-        "- განცხადებების ფასი გარიგების ფასს არ უდრის; რეალურ მონაცემებზე საჭიროა კალიბრაცია.\n"
-        "- ფოტოებიდან მდგომარეობის დადგენა არ არის შემოწმებული მონიშნულ ფოტოებზე.\n"
-        "- მოდელი აფასებს თბილისის ბინებსა და კერძო სახლებს; მიწის ნაკვეთი შენობის გარეშე მხოლოდ "
-        "შემფასებლის ანგარიშის შემოწმებას გადის, რადგან მიწის ფასების ოფიციალური სტატისტიკა "
-        "არ არსებობს.\n"
-        "- სახლების ფასების საყრდენია Geostat-ის ახალი სახლების შეთავაზების ფასები "
-        "(2026 წლის I კვარტალი).",
-        EN: "- Sales are synthetic; real accuracy is known only after a pilot on public registry "
-        "data.\n"
-        "- Asking prices differ from transaction prices; calibrate on real deals.\n"
-        "- The condition reading from photos has not been measured on labelled photos yet.\n"
-        "- The model values flats and private houses in Tbilisi; land without a building gets the "
-        "valuer report check only, because there is no official land price series.\n"
-        "- House prices are anchored to Geostat offer prices for new houses (Q1 2026).",
-    },
     "audit_verify": {KA: "ჰეშ-ჯაჭვის შემოწმება", EN: "Verify the hash chain"},
     "audit_intact": {
         KA: "ჯაჭვი მთლიანია: შემოწმდა {count} ჩანაწერი.",
@@ -263,14 +174,115 @@ UI_TEXT: dict[str, Bilingual] = {
         KA: "ჯაჭვი დარღვეულია: ჩანაწერი შეიცვალა ან წაიშალა.",
         EN: "Chain broken: a record was changed or deleted.",
     },
-    "audit_empty": {KA: "ჩანაწერები ჯერ არ არის.", EN: "No records yet."},
-    "tab_vehicle": {KA: "ავტომობილი", EN: "Vehicle"},
+    "loan_title": {KA: "სესხის განაცხადი", EN: "Loan application"},
+    "loan_lead": {
+        KA: "ერთი პროცესი: განმცხადებელი → სესხი → ავტომატური შემოწმებები → ოფიცრის "
+        "გადაწყვეტილება. ყველა მონაცემი სინთეტიკურია.",
+        EN: "One pipeline: applicant → loan → automated checks → the officer's decision. All "
+        "data is synthetic.",
+    },
+    "step_applicant": {KA: "1 · განმცხადებელი", EN: "1 · Applicant"},
+    "step_loan": {KA: "2 · სესხი", EN: "2 · Loan"},
+    "step_checks": {KA: "3 · შემოწმებები", EN: "3 · Checks"},
+    "path_existing": {KA: "არსებული კლიენტი", EN: "Existing customer"},
+    "path_new": {KA: "ახალი კლიენტი", EN: "New customer"},
+    "path_existing_hint": {
+        KA: "ბანკის კლიენტი NBG-ის სინთეტიკური მონაცემებიდან; ანგარიშები და ტრანზაქციები მოდის "
+        "Open Banking API-ით, კლიენტის თანხმობის შემდეგ.",
+        EN: "A bank customer from the NBG synthetic dataset; accounts and transactions come "
+        "through the Open Banking API after the customer's consent.",
+    },
+    "path_new_hint": {
+        KA: "განმცხადებელი ბანკში ისტორიის გარეშე; მისი 6-თვიანი ამონაწერი სინთეტიკურად იქმნება.",
+        EN: "An applicant with no history at the bank; a six-month statement is generated.",
+    },
+    "customer": {KA: "კლიენტი", EN: "Customer"},
+    "profile_age": {KA: "ასაკი", EN: "Age"},
+    "profile_city": {KA: "ქალაქი", EN: "City"},
+    "profile_type": {KA: "პროფილი", EN: "Profile"},
+    "ob_title": {KA: "Open Banking თანხმობა", EN: "Open Banking consent"},
+    "ob_request": {KA: "1. თანხმობის მოთხოვნა", EN: "1. Request consent"},
+    "ob_approve": {KA: "2. დადასტურება ბანკში ↗", EN: "2. Approve at the bank ↗"},
+    "ob_load": {KA: "3. მონაცემების ჩატვირთვა", EN: "3. Load the data"},
+    "ob_hint": {
+        KA: "TBC sandbox-ის გვერდზე დააჭირეთ „Approve“, შემდეგ დაბრუნდით და ჩატვირთეთ მონაცემები.",
+        EN: "On the TBC sandbox page press Approve, then come back and load the data.",
+    },
+    "ob_consent_created": {KA: "თანხმობა შეიქმნა: {consent}", EN: "Consent created: {consent}"},
+    "ob_not_approved": {
+        KA: "თანხმობა ჯერ არ არის დადასტურებული ბანკში.",
+        EN: "The consent is not approved at the bank yet.",
+    },
+    "ob_failed": {
+        KA: "Open Banking მიუწვდომელია: {error}",
+        EN: "Open Banking is not available: {error}",
+    },
+    "use_bank_records": {KA: "ბანკის ჩანაწერების გამოყენება", EN: "Use the bank's records"},
+    "use_bank_records_hint": {
+        KA: "სარეზერვო გზა, თუ gateway ან sandbox მიუწვდომელია.",
+        EN: "Fallback when the gateway or the sandbox is down.",
+    },
+    "new_profile": {KA: "პროფილი", EN: "Profile"},
+    "new_declared": {KA: "დეკლარირებული შემოსავალი, ლარი", EN: "Declared income, GEL"},
+    "new_seed": {KA: "ვარიანტი (seed)", EN: "Variant (seed)"},
+    "generate_applicant": {KA: "განმცხადებლის შექმნა", EN: "Generate the applicant"},
+    "data_loaded": {
+        KA: "{source} · {transactions} ტრანზაქცია · {accounts} ანგარიში · {start} – {end}",
+        EN: "{source} · transactions: {transactions} · accounts: {accounts} · {start} – {end}",
+    },
+    "statement_preview": {KA: "ამონაწერი", EN: "Statement"},
+    "loan_product": {KA: "პროდუქტი", EN: "Product"},
+    "loan_rate": {KA: "წლიური განაკვეთი, %", EN: "Annual rate, %"},
+    "run_checks": {KA: "შემოწმებების გაშვება", EN: "Run the checks"},
+    "running_checks": {KA: "მიმდინარეობს შემოწმებები…", EN: "Running the checks…"},
+    "need_data": {
+        KA: "ჯერ ჩატვირთეთ განმცხადებლის მონაცემები (ნაბიჯი 1).",
+        EN: "Load the applicant's data first (step 1).",
+    },
+    "checks_title": {KA: "ავტომატური შემოწმებები", EN: "Automated checks"},
+    "offer_line": {
+        KA: "შეთავაზება: {amount} ლარი · {term} თვე · {payment} ლარი თვეში",
+        EN: "Offer: {amount} GEL · {term} months · {payment} GEL a month",
+    },
+    "time_saved": {
+        KA: "შემოწმდა {duration}-ში, ხელით შემოწმების დაახლოებით {minutes} წუთის ნაცვლად",
+        EN: "Checked in {duration} instead of about {minutes} minutes of manual checks",
+    },
+    "tab_credit": {KA: "საკრედიტო ისტორია", EN: "Credit history"},
+    "income_by_month": {KA: "შემოსავალი თვეების მიხედვით, ლარი", EN: "Income by month, GEL"},
+    "income_confirmed_label": {KA: "დადასტურებული", EN: "Confirmed"},
+    "income_declared_label": {KA: "დეკლარირებული", EN: "Declared"},
+    "income_documented_label": {
+        KA: "დოკუმენტირებული (RS.ge, stand-in)",
+        EN: "Documented (RS.ge stand-in)",
+    },
+    "income_for_pti_label": {KA: "PTI-სთვის (P25)", EN: "For PTI (P25)"},
+    "credit_score": {KA: "ქულა", EN: "Score"},
+    "no_history": {KA: "ისტორია არ არის", EN: "No history"},
+    "obligations": {KA: "ვალდებულებები", EN: "Obligations"},
+    "worst_dpd": {KA: "მაქს. ვადაგადაცილება, დღე", EN: "Worst days past due"},
+    "monthly_payments": {KA: "ყოველთვიური გადასახადები", EN: "Monthly payments"},
+    "officer_decision": {KA: "ოფიცრის გადაწყვეტილება", EN: "Officer's decision"},
+    "decision_amount": {KA: "თანხა, ლარი", EN: "Amount, GEL"},
+    "stage_source": {KA: "წყარო", EN: "Source"},
+    "rates_note": {KA: "ვალუტის კურსები: სებ, {date}", EN: "Exchange rates: NBG, {date}"},
+    "rates_missing": {
+        KA: "{currencies}: სებ-ის კურსი ვერ მივიღეთ — ამ ვალუტით შემოსავალი არ ითვლება.",
+        EN: "No NBG rate for {currencies}; income in it is not counted.",
+    },
+    "loan_start_hint": {
+        KA: "აირჩიეთ განმცხადებელი, ჩატვირთეთ მისი მონაცემები, შეავსეთ სესხი და გაუშვით "
+        "შემოწმებები.",
+        EN: "Pick an applicant, load their data, fill in the loan and run the checks.",
+    },
     "product_name": {KA: "უზრუნველყოფილი სესხის შეფასება", EN: "Secured Lending Review"},
     "product_lead": {
-        KA: "საკრედიტო ოფიცრის ასისტენტი: რეალური შემოსავალი Open Banking-იდან, გირაოს "
-        "დამოუკიდებელი შეფასება და სებ-ის წესები — ერთ ეკრანზე. გადაწყვეტილებას ადამიანი იღებს.",
-        EN: "A loan officer's assistant: real income from Open Banking, an independent valuation "
-        "of the collateral and the NBG rules on one screen. A person makes the decision.",
+        KA: "ერთი სესხის განაცხადი, რომელიც ასრულებს ოფიცრის წინასასესხო შემოწმებებს: პირი და "
+        "სიები, საკრედიტო ისტორია, შემოსავალი Open Banking-იდან, სებ-ის ლიმიტები და გირაოს "
+        "დამოუკიდებელი შეფასება. გადაწყვეტილებას ადამიანი იღებს.",
+        EN: "One loan application that runs the officer's pre-loan checks: identity and "
+        "watchlists, credit history, income from Open Banking, the NBG limits and an independent "
+        "valuation of the collateral. A person makes the decision.",
     },
     "chip_open_banking": {KA: "Open Banking (Berlin Group)", EN: "Open Banking (Berlin Group)"},
     "chip_pti_ltv": {KA: "სებ-ის PTI და LTV", EN: "NBG PTI and LTV"},
@@ -282,28 +294,30 @@ UI_TEXT: dict[str, Bilingual] = {
         KA: "ერთი განაცხადი ოთხ ნაბიჯად — ყოველი ციფრი ახსნილია და აუდიტში ჩაწერილი.",
         EN: "One application in four steps; every number is explained and written to the audit.",
     },
-    "step1_title": {KA: "თანხმობა და ამონაწერი", EN: "Consent and transactions"},
+    "step1_title": {KA: "განმცხადებელი და მონაცემები", EN: "Applicant and data"},
     "step1_body": {
-        KA: "მსესხებლის თანხმობით ბანკი Open Banking-ით იღებს ანგარიშის ტრანზაქციებს.",
-        EN: "With the borrower's consent the bank reads account transactions through Open Banking.",
+        KA: "არსებული კლიენტის ანგარიშები მოდის Open Banking-ით თანხმობის შემდეგ ან ბანკის "
+        "ჩანაწერებიდან; ახალ კლიენტს აქვს ექვსთვიანი სინთეტიკური ამონაწერი.",
+        EN: "An existing customer's accounts come through Open Banking after consent, or from the "
+        "bank's records; a new customer brings a synthetic six-month statement.",
     },
-    "step1_tag": {KA: "Berlin Group API", EN: "Berlin Group API"},
-    "step2_title": {KA: "შემოსავალი → PTI", EN: "Income → PTI"},
+    "step1_tag": {KA: "Open Banking · Berlin Group", EN: "Open Banking · Berlin Group"},
+    "step2_title": {KA: "პირი, ისტორია, შემოსავალი", EN: "Identity, history, income"},
     "step2_body": {
-        KA: "მოდელი აფასებს რეალურ შემოსავალს გაურკვევლობის დიაპაზონით, მათ შორის კრედიტ-ისტორიის "
-        "არმქონეებისთვის, და ითვლის მაქსიმუმს სებ-ის PTI ლიმიტით.",
-        EN: "A model estimates real income with an uncertainty band, also for borrowers without a "
-        "credit history, and finds the most the NBG PTI limit allows.",
+        KA: "სანქციების სიები და მოვალეთა რეესტრი, საკრედიტო ისტორია და შემოსავალი, "
+        "დადასტურებული ამონაწერის სრული თვეებით.",
+        EN: "Watchlists and the debtors registry, the credit history, and income confirmed from "
+        "whole months of the statement.",
     },
-    "step2_tag": {KA: "შემოსავლის მოდელი", EN: "Income model"},
-    "step3_title": {KA: "გირაო → LTV", EN: "Collateral → LTV"},
+    "step2_tag": {KA: "გამჭვირვალე წესები", EN: "Transparent rules"},
+    "step3_title": {KA: "სებ-ის ლიმიტები და გირაო", EN: "NBG limits and collateral"},
     "step3_body": {
-        KA: "ბინა, სახლი ან ავტომობილი ფასდება ანალოგიური გაყიდვებით და ფოტოებით; შემფასებლის "
-        "ანგარიში მოწმდება №84/04 ბრძანებით.",
-        EN: "A flat, house or vehicle is valued from comparable sales and photos; the valuer's "
-        "report is checked against Order 84/04.",
+        KA: "PTI, ლარში სესხება და მაქსიმალური ვადა სებ-ის თარიღიანი წესებით; ბინა, სახლი ან "
+        "ავტომობილი ფასდება ანალოგიური გაყიდვებით და ფოტოებით, LTV კი ზღუდავს შეთავაზებას.",
+        EN: "PTI, GEL lending and the longest term follow the dated NBG rules; the flat, house or "
+        "car is valued from comparable sales and photos, and LTV caps the offer.",
     },
-    "step3_tag": {KA: "გირაოს მოდელი", EN: "Collateral model"},
+    "step3_tag": {KA: "სებ-ის წესები · გირაოს მოდელი", EN: "NBG rules · collateral model"},
     "step4_title": {KA: "ოფიცერი წყვეტს", EN: "The officer decides"},
     "step4_body": {
         KA: "შეთავაზება ორივე ლიმიტს აკმაყოფილებს. ავტომატური უარი არ არის; რეკომენდაციისგან "
@@ -320,10 +334,13 @@ UI_TEXT: dict[str, Bilingual] = {
         KA: "დროში გადანაცვლებული ტესტი: ყოველი შემთხვევა ფასდება მხოლოდ წინა მონაცემებით.",
         EN: "Out-of-time tests: every case is assessed from earlier data only.",
     },
-    "kpi_approval": {KA: "დამტკიცების წილი", EN: "Approval rate"},
-    "kpi_approval_note": {
-        KA: "ტრადიციული პროცესი: {baseline}",
-        EN: "Traditional process: {baseline}",
+    "kpi_income_check": {
+        KA: "შემოსავლის შემოწმება, სებ-ის მონაცემები",
+        EN: "Income check on NBG data",
+    },
+    "kpi_income_check_note": {
+        KA: "მედიანური ცდომილება, {count} კლიენტი; P90 {p90}",
+        EN: "Median error, {count} customers; P90 {p90}",
     },
     "kpi_flat_error": {KA: "ბინის შეფასების ცდომილება", EN: "Flat valuation error"},
     "kpi_house_error": {KA: "სახლის შეფასების ცდომილება", EN: "House valuation error"},
@@ -355,48 +372,13 @@ UI_TEXT: dict[str, Bilingual] = {
         EN: "No traits read from faces or voices, and no protected attributes in the models.",
     },
     "overview_try_title": {KA: "სცადეთ", EN: "Try it"},
-    "try_full": {KA: "სრული განაცხადი →", EN: "Full application →"},
-    "try_collateral": {KA: "გირაოს შეფასება →", EN: "Collateral valuation →"},
-    "try_income": {KA: "შემოსავლის ანალიზი →", EN: "Income analysis →"},
-    "full_steps_lead": {
-        KA: "აირჩიეთ მსესხებელი და გირაო, შემდეგ დააჭირეთ შეფასებას. სესხის თანხა და ვადა "
-        "მსესხებლის განაცხადიდანაა.",
-        EN: "Pick a borrower and a collateral, then press Assess. The loan amount and term come "
-        "from the borrower's application.",
-    },
-    "setup_borrower": {KA: "1 · მსესხებელი", EN: "1 · Borrower"},
-    "setup_collateral": {KA: "2 · გირაო", EN: "2 · Collateral"},
-    "setup_assess": {KA: "3 · შეფასება", EN: "3 · Assess"},
-    "profile_employment": {KA: "დასაქმება", EN: "Employment"},
+    "try_full": {KA: "სესხის განაცხადი →", EN: "Loan application →"},
     "profile_declared": {KA: "დეკლარირებული შემოსავალი", EN: "Declared income"},
-    "profile_loan": {KA: "სესხი", EN: "Loan"},
-    "profile_loan_value": {
-        KA: "{amount} ლარი · {term} თვე · {rate}%",
-        EN: "{amount} GEL · {term} months · {rate}%",
-    },
-    "profile_history": {KA: "ტრანზაქციები", EN: "Transactions"},
-    "profile_history_value": {KA: "{count} ჩანაწერი", EN: "{count} records"},
     "photos_optional": {
         KA: "ფოტოები არასავალდებულოა დემოში; მათ გარეშე მდგომარეობა გადაუმოწმებელია და განაცხადი "
         "განხილვაზე გადადის.",
         EN: "Photos are optional in the demo; without them the condition stays unverified and the "
         "application goes to review.",
-    },
-    "why_binding_pti": {
-        KA: "შეთავაზება {offer} ლარი: შემოსავალი სებ-ის PTI ლიმიტით მაქსიმუმ {income} ლარს "
-        "უშვებს, გირაო — {collateral} ლარს. შემზღუდველია შემოსავალი.",
-        EN: "Offer {offer} GEL: income allows at most {income} GEL under the NBG PTI limit, the "
-        "collateral {collateral} GEL. Income is the binding limit.",
-    },
-    "why_binding_ltv": {
-        KA: "შეთავაზება {offer} ლარი: გირაო LTV ლიმიტით მაქსიმუმ {collateral} ლარს უშვებს, "
-        "შემოსავალი — {income} ლარს. შემზღუდველია გირაო.",
-        EN: "Offer {offer} GEL: the collateral allows at most {collateral} GEL under the LTV "
-        "limit, income {income} GEL. The collateral is the binding limit.",
-    },
-    "why_no_collateral": {
-        KA: "გირაო ვერ შეფასდა, ამიტომ შეთავაზება ვერ გამოითვლება; გადაწყვეტს ოფიცერი.",
-        EN: "The collateral could not be valued, so no offer is computed; the officer decides.",
     },
     "limits_title": {KA: "რამდენის გაცემაა შესაძლებელი", EN: "How much can be lent"},
     "bar_requested": {KA: "მოთხოვნილი", EN: "Requested"},
@@ -420,81 +402,76 @@ UI_TEXT: dict[str, Bilingual] = {
     "beyond_scale": {KA: "სკალის მიღმა", EN: "beyond the scale"},
     "tab_income_detail": {KA: "შემოსავალი", EN: "Income"},
     "tab_collateral_detail": {KA: "გირაო", EN: "Collateral"},
-    "tab_trail": {KA: "აუდიტი და ვერსიები", EN: "Audit and versions"},
-    "trail_application": {KA: "განაცხადი", EN: "Application"},
-    "trail_valuation": {KA: "შეფასების ID", EN: "Valuation ID"},
-    "trail_income_model": {KA: "შემოსავლის მოდელი", EN: "Income model"},
-    "trail_nbg_rules": {KA: "სებ-ის წესების ვერსია", EN: "NBG rules version"},
-    "trail_note": {
-        KA: "შეფასება ჩაიწერა ჰეშ-ჯაჭვიან აუდიტში შემოსავლის შეფასების SHA-256-თან ერთად.",
-        EN: "The assessment is in the hash-chained audit log with the SHA-256 of the income "
-        "assessment.",
+    "collateral_title": {KA: "გირაო", EN: "Collateral"},
+    "tab_collateral_ai": {KA: "გირაო · AI ანალიზი", EN: "Collateral · AI analysis"},
+    "ai_section_title": {KA: "ფოტოების AI ანალიზი", EN: "AI analysis of the photos"},
+    "ai_disclaimer": {
+        KA: "მოდელი მხოლოდ აღწერს თითოეულ ფოტოს მკაცრი JSON სქემით; სტატუსებს ადგენს "
+        "ვერსიული წესები, არა მოდელის ტექსტი.",
+        EN: "The model only describes each photo in a strict JSON schema; versioned rules, not "
+        "the model's text, set every status.",
     },
-    "lending_value_label": {KA: "დაკრედიტების ღირებულება", EN: "Lending value"},
-    "assessing_full": {
-        KA: "მიმდინარეობს შემოსავლისა და გირაოს შეფასება…",
-        EN: "Assessing the income and the collateral…",
+    "ai_off": {
+        KA: "AI ანალიზი გამორთულია: ჩართეთ COLLATERAL_VISION_ENABLED და მიუთითეთ პროვაიდერის "
+        "გასაღები. ფოტოები მაინც მოწმდება და ჰეშით ინახება; სტატუსები INCONCLUSIVE რჩება.",
+        EN: "AI analysis is off: set COLLATERAL_VISION_ENABLED and a provider key. Photos are "
+        "still checked and hashed; every status stays INCONCLUSIVE.",
     },
-    "assessing_vehicle": {
-        KA: "მიმდინარეობს ავტომობილის შეფასება…",
-        EN: "Valuing the vehicle…",
+    "ai_not_read": {KA: "ვერ წაიკითხა", EN: "Not read"},
+    "ai_declared": {KA: "დეკლარირებული", EN: "declared"},
+    "ai_damage": {KA: "ძარის დაზიანება", EN: "Body damage"},
+    "ai_views": {KA: "ნაპოვნი ხედები", EN: "Views found"},
+    "ai_photo_not_counted": {
+        KA: "არ ჩაითვალა: დაბალი სანდოობა, ადამიანი კადრში ან ავტომობილი არ ჩანს",
+        EN: "Not counted: low confidence, a person in the frame or no vehicle",
     },
-    "full_title": {KA: "სრული განაცხადი", EN: "Full loan application"},
-    "full_intro": {
-        KA: "ერთი განაცხადი: შემოსავალი Open Banking-ის ტრანზაქციებიდან (სებ-ის PTI) და "
-        "გირაო (LTV). შეთავაზება ორივე ლიმიტს აკმაყოფილებს; გადაწყვეტილებას იღებს ოფიცერი.",
-        EN: "One application: income from consented Open Banking transactions (NBG PTI) and "
-        "the collateral (LTV). The offer meets both limits; the loan officer decides.",
+    "valuation_section": {KA: "საბაზრო შეფასება და LTV", EN: "Market valuation and LTV"},
+    "collateral_title_real_estate": {
+        KA: "იპოთეკის უზრუნველყოფა: ბინა ან კერძო სახლი თბილისში.",
+        EN: "Security for the mortgage: a flat or a private house in Tbilisi.",
     },
-    "borrower": {KA: "მსესხებელი (სინთეტიკური)", EN: "Borrower (synthetic)"},
-    "collateral_kind": {KA: "გირაო", EN: "Collateral"},
-    "real_estate": {KA: "უძრავი ქონება", EN: "Real estate"},
+    "collateral_title_vehicle": {
+        KA: "ავტოსესხის უზრუნველყოფა: თავად ავტომობილი.",
+        EN: "Security for the car loan: the vehicle itself.",
+    },
+    "collateral_mode": {KA: "გირაოს მონაცემები", EN: "Collateral data"},
+    "collateral_mode_demo": {KA: "სადემონსტრაციო შემთხვევა", EN: "Demo case"},
+    "collateral_mode_manual": {KA: "თავად შევავსებ", EN: "Fill in myself"},
+    "collateral_demo_hint": {
+        KA: "ველის შესაცვლელად აირჩიეთ „თავად შევავსებ“: ფორმა ამ შემთხვევით შეივსება.",
+        EN: "To change any field, choose 'Fill in myself': the form starts from this case.",
+    },
+    "collateral_manual_hint": {
+        KA: "ფორმა შევსებულია არჩეული სადემონსტრაციო შემთხვევით; შეცვალეთ ის, რაც განსხვავდება.",
+        EN: "The form starts from the chosen demo case; change whatever differs.",
+    },
+    "collateral_not_needed": {
+        KA: "სამომხმარებლო სესხი უზრუნველყოფის გარეშეა, ამიტომ გირაო არ ფასდება.",
+        EN: "A consumer loan has no collateral, so nothing is valued here.",
+    },
+    "ltv_bank_limit": {KA: "LTV / ბანკის ლიმიტი", EN: "LTV / bank limit"},
+    "floor_of_building": {KA: "სართული / სართულიანობა", EN: "Floor / storeys"},
+    "no_appraisal": {KA: "არ არის", EN: "None attached"},
+    "yes": {KA: "კი", EN: "Yes"},
+    "no": {KA: "არა", EN: "No"},
+    "audit_intro": {
+        KA: "განაცხადის ყოველი ნაბიჯი იწერება ჰეშ-ჯაჭვით დაცულ ჟურნალში; ჩანაწერი არ იცვლება "
+        "და არ იშლება.",
+        EN: "Every step of this application is appended to a hash-chained log; no record is "
+        "changed or deleted.",
+    },
+    "audit_time": {KA: "დრო (UTC)", EN: "Time (UTC)"},
+    "audit_event": {KA: "მოვლენა", EN: "Event"},
+    "audit_outcome": {KA: "შედეგი", EN: "Outcome"},
     "vehicle": {KA: "ავტომობილი", EN: "Vehicle"},
     "collateral_case": {KA: "გირაოს ნიმუში", EN: "Collateral case"},
-    "full_photos": {KA: "გირაოს ფოტოები", EN: "Collateral photos"},
-    "assess_full": {KA: "განაცხადის შეფასება", EN: "Assess the application"},
-    "full_start_hint": {
-        KA: "აირჩიეთ მსესხებელი და გირაო, შემდეგ დააჭირეთ „განაცხადის შეფასებას“.",
-        EN: "Pick a borrower and a collateral, then press 'Assess the application'.",
-    },
-    "full_loan_note": {
-        KA: "სესხი: {amount} ლარი, {term} თვე — მსესხებლის განაცხადიდან; გირაოს შეფასება იმავე "
-        "სესხისთვის კეთდება.",
-        EN: "Loan: {amount} GEL over {term} months, from the borrower's application; the "
-        "collateral is assessed for the same loan.",
-    },
     "requested_amount": {KA: "მოთხოვნილი", EN: "Requested"},
-    "max_by_income": {KA: "მაქსიმუმი შემოსავლით (PTI)", EN: "Maximum by income (PTI)"},
-    "max_by_collateral": {KA: "მაქსიმუმი გირაოთი (LTV)", EN: "Maximum by collateral (LTV)"},
-    "offer_amount": {KA: "შეთავაზება", EN: "Offer"},
     "binding_limit": {KA: "შემზღუდველი ლიმიტი: {limit}", EN: "Binding limit: {limit}"},
-    "income_section": {KA: "შემოსავალი", EN: "Income"},
     "income_recommendation": {KA: "შემოსავლის შეფასება", EN: "Income assessment"},
-    "income_band": {KA: "თვიური შემოსავალი P10–P90", EN: "Monthly income P10–P90"},
-    "income_conservative": {
-        KA: "PTI-სთვის: P25 = {amount} ლარი",
-        EN: "For PTI: P25 = {amount} GEL",
-    },
     "pti": {
         KA: "PTI მოთხოვნილ თანხაზე / ლიმიტი",
         EN: "PTI at the requested amount / limit",
     },
-    "default_probability": {KA: "დეფოლტის ალბათობა (12 თვე)", EN: "Default probability (12 m)"},
-    "income_flags": {KA: "შენიშვნები", EN: "Notes"},
-    "income_reasons": {KA: "მთავარი ფაქტორები", EN: "Main factors"},
-    "collateral_section": {KA: "გირაო", EN: "Collateral"},
-    "income_unavailable": {
-        KA: "შემოსავლის მოდელი არ არის მზად: {error}",
-        EN: "The income model is not ready: {error}",
-    },
-    "vehicle_intro": {
-        KA: "ავტომობილი სესხის უზრუნველყოფად. სებ-ის №84/04 ბრძანება მხოლოდ უძრავ ქონებას "
-        "ეხება და სებ ავტოსესხზე LTV ლიმიტს არ ადგენს, ამიტომ ლიმიტი და ვადა ბანკის "
-        "პოლიტიკიდანაა.",
-        EN: "A vehicle offered as loan collateral. NBG Order 84/04 covers real estate only and "
-        "NBG sets no LTV limit for vehicle loans, so the limit and term come from bank policy.",
-    },
-    "vehicle_demo_case": {KA: "სადემონსტრაციო განაცხადი", EN: "Demo application"},
     "vin": {KA: "VIN კოდი", EN: "VIN"},
     "plate_number": {KA: "სახელმწიფო ნომერი", EN: "Registration plate"},
     "make": {KA: "მარკა", EN: "Make"},
@@ -510,11 +487,6 @@ UI_TEXT: dict[str, Bilingual] = {
     "vehicle_photos": {
         KA: "ავტომობილის ფოტოები — მინიმუმ {count}: წინა, უკანა, ორივე გვერდი, ოდომეტრი, VIN",
         EN: "Vehicle photos — at least {count}: front, rear, both sides, odometer, VIN plate",
-    },
-    "assess_vehicle": {KA: "ავტომობილის შეფასება", EN: "Value the vehicle"},
-    "vehicle_start_hint": {
-        KA: "აირჩიეთ განაცხადი ან შეავსეთ ფორმა და დააჭირეთ „ავტომობილის შეფასებას“.",
-        EN: "Pick an application or fill in the form and press 'Value the vehicle'.",
     },
     "vehicle_value": {KA: "საბაზრო ღირებულება", EN: "Market value"},
     "projected_value": {

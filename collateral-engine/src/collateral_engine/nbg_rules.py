@@ -1,8 +1,7 @@
-"""NBG rule versions: LTV limits and the valuation limits of Order 84/04.
+"""NBG rule versions: PTI, LTV, loan maturity, foreign-currency lending and Order 84/04 limits.
 
-The values are read from income-engine/config/nbg_rules.yaml, the same dated file that holds the
-PTI limits, so every NBG rule value lives in one place. The version in force on the application or
-valuation date applies.
+The values are read from income-engine/config/nbg_rules.yaml, the one dated file of NBG rule
+values. The version in force on the application or valuation date applies.
 """
 
 from datetime import date
@@ -48,14 +47,49 @@ class ValuationLimits(BaseModel):
         return self
 
 
+class PtiShares(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # Hedged: a GEL loan, or a loan in the currency of the borrower's income.
+    hedged: LtvShare
+    unhedged: LtvShare
+
+
+class PtiLimits(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    income_threshold_gel: Annotated[Decimal, Field(gt=0)]
+    below: PtiShares
+    above: PtiShares
+
+
+class MaturityLimits(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    consumer_unsecured_months: Annotated[int, Field(ge=1)]
+    mortgage_months: Annotated[int, Field(ge=1)]
+    fx_mortgage_months: Annotated[int, Field(ge=1)]
+
+
+class FxLendingRule(BaseModel):
+    """A loan below this amount must be in GEL unless the income is in the loan currency."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    min_amount_gel: Annotated[Decimal, Field(gt=0)]
+
+
 class NbgRuleVersion(BaseModel):
-    # The file also holds PTI limits, which the income engine reads.
     model_config = ConfigDict(frozen=True, extra="ignore")
 
     id: str
     effective_from: date
+    pti: PtiLimits
     ltv: LtvLimits
     valuation: ValuationLimits
+    # Older versions predate what the platform models; the loan pipeline needs both.
+    maturity: MaturityLimits | None = None
+    fx_lending: FxLendingRule | None = None
 
 
 class NbgRules(BaseModel):

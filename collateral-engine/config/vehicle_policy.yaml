@@ -45,6 +45,15 @@ evidence:
   # Front, rear, both sides, the odometer and the VIN plate.
   min_photos: 6
 
+# Rules that compare what the vision model reads from the photos with the application.
+# The model only describes each photo; these rules alone set the status of each claim.
+vision:
+  # A reading counts only when the model is at least this sure of the photo.
+  min_confidence: medium
+  # The declared mileage may differ from the odometer by this share before it is contradicted.
+  mileage_tolerance: 0.10
+  required_views: [front, rear, left_side, right_side, odometer, vin_plate]
+
 flag_severity:
   VEHICLE_INSUFFICIENT_COMPARABLES: physical_inspection
   VEHICLE_NOT_CUSTOMS_CLEARED: physical_inspection
@@ -54,6 +63,12 @@ flag_severity:
   VEHICLE_LTV_ABOVE_BANK_LIMIT: review
   VEHICLE_LTV_ABOVE_BANK_LIMIT_UNDER_FX_STRESS: info
   VEHICLE_TOO_FEW_PHOTOS: review
+  VEHICLE_MILEAGE_CONTRADICTED: review
+  # The photos may show another vehicle than the one offered.
+  VEHICLE_VIN_MISMATCH: physical_inspection
+  VEHICLE_UNDECLARED_DAMAGE: review
+  VEHICLE_STEERING_MISMATCH: review
+  VEHICLE_VIEWS_MISSING: info
   PHOTO_QUALITY_ISSUES: info
   PHOTOS_WITH_PEOPLE_EXCLUDED: info
   NEAR_DUPLICATE_PHOTOS: info

@@ -105,10 +105,12 @@ def test_rule_version_is_the_one_in_force_on_application_date(tmp_path: Path) ->
     path.write_text(
         "valuation: &v {min_comparables: 3, max_single_adjustment: 0.15,"
         " max_gross_adjustment: 0.25, max_gross_adjustment_justified: 0.35}\n"
+        "pti: &p {income_threshold_gel: 1500, below: {hedged: 0.25, unhedged: 0.20},"
+        " above: {hedged: 0.50, unhedged: 0.30}}\n"
         "versions:\n"
-        "  - {id: old, effective_from: 2020-01-01,"
+        "  - {id: old, effective_from: 2020-01-01, pti: *p,"
         " ltv: {gel: 0.85, fx: 0.70, fx_income_from_abroad: 0.70}, valuation: *v}\n"
-        "  - {id: new, effective_from: 2027-02-01,"
+        "  - {id: new, effective_from: 2027-02-01, pti: *p,"
         " ltv: {gel: 0.80, fx: 0.65, fx_income_from_abroad: 0.75}, valuation: *v}\n"
     )
     rules = load_nbg_rules(path)

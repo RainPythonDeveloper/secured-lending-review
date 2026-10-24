@@ -1,4 +1,5 @@
 PYTHON ?= .venv/bin/python
+APP_PORT ?= 8502
 # The income engine runs in the same environment, so the platform is one install and one process.
 INCOME_ENGINE_DIR := ../income-engine
 INCOME_PYTHON = $(abspath $(PYTHON))
@@ -9,7 +10,7 @@ include .env
 export
 endif
 
-.PHONY: install data check test evaluate api app
+.PHONY: install data check test evaluate api app vision-check
 
 install:
 	python3.12 -m venv .venv
@@ -39,4 +40,9 @@ api:
 	$(PYTHON) -m uvicorn collateral_engine.api:create_app_from_environment --factory --port 8100
 
 app:
-	$(PYTHON) -m streamlit run app/platform_app.py --server.port 8502
+	$(PYTHON) -m streamlit run app/platform_app.py --server.port $(APP_PORT)
+
+# Live call to the configured vision provider on your own photos; may be billed, not a test.
+# make vision-check ARGS="--vehicle front.jpg odometer.jpg"
+vision-check:
+	$(PYTHON) -m collateral_engine.vision_check $(ARGS)

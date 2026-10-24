@@ -3,6 +3,7 @@
 may be billed and is not part of the test suite.
 
     python -m collateral_engine.vision_check kitchen.jpg living-room.jpg
+    python -m collateral_engine.vision_check --vehicle front.jpg odometer.jpg
 """
 
 import argparse
@@ -14,17 +15,22 @@ from pathlib import Path
 from collateral_engine.bootstrap import build_classifier
 from collateral_engine.photos import prepare_for_vision
 from collateral_engine.settings import load_settings
+from collateral_engine.vehicles.vision import VEHICLE_TASK
+from collateral_engine.vision import CONDITION_TASK
 
 logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Classify interior condition of photos")
+    parser = argparse.ArgumentParser(description="Describe collateral photos with the vision model")
     parser.add_argument("photos", type=Path, nargs="+")
+    parser.add_argument(
+        "--vehicle", action="store_true", help="read vehicle photos instead of flat interiors"
+    )
     arguments = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     settings = load_settings({**os.environ, "COLLATERAL_VISION_ENABLED": "true"})
-    classifier = build_classifier(settings)
+    classifier = build_classifier(settings, VEHICLE_TASK if arguments.vehicle else CONDITION_TASK)
     logger.info("Provider %s, model %s", settings.vision_provider, settings.vision_model)
     for path in arguments.photos:
         image, media_type = prepare_for_vision(path.read_bytes())

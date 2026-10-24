@@ -33,7 +33,7 @@ from collateral_engine.vehicles.valuation import (
     VehicleIntervalCalibration,
     calibrate_vehicle_interval,
 )
-from collateral_engine.vision import ConditionClassifier
+from collateral_engine.vision import PhotoClassifier
 
 TEST_SEED = 7
 TEST_SALE_COUNT = 4000
@@ -100,10 +100,10 @@ def make_engine(
     calibration: IntervalCalibration,
     house_calibration: IntervalCalibration,
     stores: EngineStores,
-) -> Callable[[ConditionClassifier | None], CollateralEngine]:
+) -> Callable[[PhotoClassifier | None], CollateralEngine]:
     config = EngineConfig(policy, condition_rules, nbg_rules, "synthetic test sales")
 
-    def build(classifier: ConditionClassifier | None = None) -> CollateralEngine:
+    def build(classifier: PhotoClassifier | None = None) -> CollateralEngine:
         calibrations = {PropertyKind.FLAT: calibration, PropertyKind.HOUSE: house_calibration}
         return CollateralEngine(market, config, stores, classifier, calibrations)
 
@@ -139,10 +139,12 @@ def make_vehicle_engine(
     vehicle_policy: VehiclePolicy,
     vehicle_calibration: VehicleIntervalCalibration,
     stores: EngineStores,
-) -> Callable[[], VehicleEngine]:
+) -> Callable[[PhotoClassifier | None], VehicleEngine]:
     config = VehicleEngineConfig(vehicle_policy, "synthetic test vehicle sales")
 
-    def build() -> VehicleEngine:
-        return VehicleEngine(vehicle_market, config, stores, vehicle_calibration)
+    def build(classifier: PhotoClassifier | None = None) -> VehicleEngine:
+        return VehicleEngine(
+            vehicle_market, config, stores, vehicle_calibration, classifier=classifier
+        )
 
     return build

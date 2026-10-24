@@ -1,8 +1,9 @@
-"""Description of a flat's condition from one photo, by a vision language model.
+"""Description of one collateral photo by a vision language model.
 
-The model only describes the photo in a fixed JSON schema. It never sets the status of the
-borrower's claim; collateral_engine.condition does that with versioned rules. An answer that does
-not match the schema is discarded, and the photo counts as not assessed.
+A VisionTask says what to describe and the JSON schema of the answer: the condition of a flat here,
+the views and readings of a vehicle in collateral_engine.vehicles.vision. The model only describes
+the photo. It never sets the status of the borrower's claim; versioned rules do that. An answer
+that does not match the schema is discarded, and the photo counts as not assessed.
 """
 
 import base64
@@ -59,12 +60,27 @@ class PhotoAssessment(BaseModel):
 
 
 @dataclass(frozen=True)
-class PhotoClassification:
-    assessment: PhotoAssessment | None
+class PhotoClassification[Assessment: BaseModel]:
+    assessment: Assessment | None
     failure: VisionFailure | None
 
 
-class ConditionClassifier(Protocol):
+@dataclass(frozen=True)
+class VisionTask[Assessment: BaseModel]:
+    """What one vision request asks for and the schema its answer must match."""
+
+    system_prompt: str
+    user_instruction: str
+    json_schema: dict[str, object]
+    # The schema in words, for providers without a strict JSON-schema mode.
+    answer_instruction: str
+    answer_model: type[Assessment]
+
+
+class PhotoClassifier(Protocol):
+    @property
+    def model_name(self) -> str: ...
+
     def classify(self, image: bytes, media_type: str) -> PhotoClassification: ...
 
 
@@ -115,11 +131,37 @@ kitchen or bathroom fittings that support the class.
 
 USER_INSTRUCTION = "Classify the interior condition shown in this photo."
 
+CONDITION_ANSWER_INSTRUCTION = (
+    "Answer with one JSON object and nothing else, with exactly these keys: "
+    '"shows_apartment_interior" (true or false), "contains_people" (true or false), '
+    f'"condition" (one of: {", ".join([*Condition, UNDETERMINED])}), '
+    f'"confidence" (one of: {", ".join(VisionConfidence)}), '
+    '"visible_evidence" (a list of up to five short strings).'
+)
 
-class ClaudeConditionClassifier:
-    def __init__(self, client: anthropic.Anthropic, model: str = DEFAULT_VISION_MODEL) -> None:
+CONDITION_TASK = VisionTask(
+    system_prompt=SYSTEM_PROMPT,
+    user_instruction=USER_INSTRUCTION,
+    json_schema=ASSESSMENT_JSON_SCHEMA,
+    answer_instruction=CONDITION_ANSWER_INSTRUCTION,
+    answer_model=PhotoAssessment,
+)
+
+
+class ClaudeVisionClassifier:
+    def __init__(
+        self,
+        client: anthropic.Anthropic,
+        model: str = DEFAULT_VISION_MODEL,
+        task: VisionTask = CONDITION_TASK,
+    ) -> None:
         self._client = client
         self._model = model
+        self._task = task
+
+    @property
+    def model_name(self) -> str:
+        return self._model
 
     def classify(self, image: bytes, media_type: str) -> PhotoClassification:
         try:
@@ -128,12 +170,17 @@ class ClaudeConditionClassifier:
                 max_tokens=VISION_MAX_TOKENS,
                 betas=[SERVER_SIDE_FALLBACK_BETA],
                 fallbacks="default",
-                system=SYSTEM_PROMPT,
+                system=self._task.system_prompt,
                 output_config={
                     "effort": VISION_EFFORT,
-                    "format": {"type": "json_schema", "schema": ASSESSMENT_JSON_SCHEMA},
+                    "format": {"type": "json_schema", "schema": self._task.json_schema},
                 },
-                messages=[{"role": "user", "content": _photo_content(image, media_type)}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": _photo_content(image, media_type, self._task.user_instruction),
+                    }
+                ],
             )
         except anthropic.APIStatusError as error:
             logger.error(
@@ -145,18 +192,20 @@ class ClaudeConditionClassifier:
         except anthropic.APIConnectionError as error:
             logger.warning("Vision service unreachable: %s", type(error).__name__)
             return PhotoClassification(None, VisionFailure.UNAVAILABLE)
-        return parse_assessment_response(response)
+        return parse_assessment_response(response, self._task.answer_model)
 
 
-def _photo_content(image: bytes, media_type: str) -> list[dict[str, object]]:
+def _photo_content(image: bytes, media_type: str, instruction: str) -> list[dict[str, object]]:
     encoded = base64.standard_b64encode(image).decode("ascii")
     return [
         {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": encoded}},
-        {"type": "text", "text": USER_INSTRUCTION},
+        {"type": "text", "text": instruction},
     ]
 
 
-def parse_assessment_response(response: object) -> PhotoClassification:
+def parse_assessment_response(
+    response: object, answer_model: type[BaseModel] = PhotoAssessment
+) -> PhotoClassification:
     """Treats the model's answer as untrusted input: anything off-schema is discarded."""
     stop_reason = getattr(response, "stop_reason", None)
     if stop_reason == "refusal":
@@ -170,13 +219,15 @@ def parse_assessment_response(response: object) -> PhotoClassification:
     ]
     if not text_blocks:
         return PhotoClassification(None, VisionFailure.INVALID_OUTPUT)
-    return classification_from_json(text_blocks[0])
+    return classification_from_json(text_blocks[0], answer_model)
 
 
-def classification_from_json(answer: str) -> PhotoClassification:
-    """Shared by every provider: the answer must match the assessment schema exactly."""
+def classification_from_json(
+    answer: str, answer_model: type[BaseModel] = PhotoAssessment
+) -> PhotoClassification:
+    """Shared by every provider: the answer must match the task's schema exactly."""
     try:
-        assessment = PhotoAssessment.model_validate_json(answer)
+        assessment = answer_model.model_validate_json(answer)
     except ValidationError:
         logger.warning("Vision answer does not match the assessment schema; photo not assessed")
         return PhotoClassification(None, VisionFailure.INVALID_OUTPUT)
