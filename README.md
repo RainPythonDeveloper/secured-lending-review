@@ -34,11 +34,12 @@ issued, with an independent AI second opinion on the flat, house or car offered 
 
 ## Demo
 
-<!-- Demo video (2–3 min, voice-over): drag the MP4 into this file in the GitHub editor and paste
-the user-attachments link here, on its own line. -->
+https://github.com/user-attachments/assets/8f0b6795-b378-41a0-bb8b-8e84c331b593
 
-> 🎬 The demo video is coming: 2–3 minutes, an uncut run of one loan application from consent to
-> the officer's decision.
+> 🎬 2 min 58 s with voice-over: one mortgage application from the customer's Open Banking consent
+> to the officer's decision, then a car loan. Every product claim is shown on the real console.
+> All data is synthetic; the car's exterior photos are public domain (Wikimedia Commons, CC0), its
+> odometer and VIN plate are synthetic.
 
 ## Contents
 
