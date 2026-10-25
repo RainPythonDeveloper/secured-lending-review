@@ -45,6 +45,9 @@ services:
     build: {context: ., dockerfile: collateral-engine/Dockerfile}
     command: ["streamlit", "run", "app/platform_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
     ports: ["127.0.0.1:8502:8501"]
+    # The image's health check probes the API; this container serves the console instead.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
     environment: *platform-environment
     volumes: ["collateral:/var/collateral"]
     depends_on: [open-banking-gateway]

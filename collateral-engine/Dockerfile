@@ -20,7 +20,10 @@ COPY data/open-banking-synthetic-100-customers.xlsx /data/
 RUN python -m collateral_engine.synth && python -m collateral_engine.vehicles.synth
 RUN cd /income-engine && python -m ite.synth --out data && python -m ite.train && python -m ite.report
 RUN python -m pytest -q && cd /income-engine && python -m pytest -q
-RUN useradd -m platform && chown -R platform /collateral-engine /income-engine
+# The audit log and evidence live on a named volume at /var/collateral; Docker copies this
+# directory's owner into a new volume, so the unprivileged user can write there.
+RUN useradd -m platform && mkdir -p /var/collateral \
+    && chown -R platform /collateral-engine /income-engine /var/collateral
 USER platform
 EXPOSE 8100 8501
 HEALTHCHECK CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8100/health')" || exit 1
