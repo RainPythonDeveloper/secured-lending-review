@@ -9,6 +9,13 @@ issued, with an independent AI second opinion on the flat, house or car offered 
 <p>
   <img src="https://img.shields.io/badge/NBG%20AI%20%26%20Open%20Banking%20Hackathon-2026-16337A?style=for-the-badge&labelColor=0F1F3D" alt="NBG AI & Open Banking Hackathon 2026" />
   <img src="https://img.shields.io/badge/track-AI%20in%20Finance%20·%20AI1%20Credit%20Risk%20%26%20Lending-1F9D55?style=for-the-badge&labelColor=0F1F3D" alt="Track: AI in Finance, AI1 Credit Risk & Lending" />
+  <a href="https://x7x-secured-lending-review.hf.space">
+    <img src="https://img.shields.io/badge/live%20demo-Hugging%20Face%20Space-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black&labelColor=0F1F3D" alt="Live demo on Hugging Face Spaces" />
+  </a>
+</p>
+
+<p>
+  <a href="https://x7x-secured-lending-review.hf.space"><b>🚀 Open the officer console →</b></a>
 </p>
 
 <p>
@@ -102,6 +109,13 @@ Details in [`collateral-engine/README.md`](collateral-engine/README.md) and
 [`income-engine/docs/MODEL_CARD.md`](income-engine/docs/MODEL_CARD.md).
 
 ## Getting started
+
+### Live demo
+
+**https://x7x-secured-lending-review.hf.space**: no login and no test credentials, all data is
+synthetic. The Space runs the officer console alone, so pick a customer with **Use the bank's
+records**; the TBC sandbox consent needs the Open Banking gateway, which runs with Docker below.
+The first visit after a pause can take a minute while the Space wakes up.
 
 ### With Docker (recommended)
 
