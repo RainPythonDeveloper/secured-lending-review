@@ -1,0 +1,93 @@
+{
+  "account": {
+    "iban": "GE11TB1000000000000010",
+    "currency": "GEL"
+  },
+  "transactions": {
+    "_links": {
+      "account": {
+        "href": "/0.8/v1/accounts/acc-gel-001"
+      },
+      "first": {
+        "href": "/0.8/v1/accounts/acc-gel-001/transactions?bookingStatus=both&page=1"
+      }
+    },
+    "booked": [
+      {
+        "transactionId": "tx-GEL-000",
+        "entryReference": "ref-GEL-0",
+        "bookingDate": "2026-10-01",
+        "valueDate": "2026-10-01",
+        "transactionAmount": {
+          "currency": "GEL",
+          "amount": "3500.00"
+        },
+        "debtorName": "Demo employer",
+        "remittanceInformationUnstructured": "ხელფასი / Demo salary",
+        "proprietaryBankTransactionCode": "GMI"
+      },
+      {
+        "transactionId": "tx-GEL-001",
+        "entryReference": "ref-GEL-1",
+        "bookingDate": "2026-10-02",
+        "valueDate": "2026-10-02",
+        "transactionAmount": {
+          "currency": "GEL",
+          "amount": "-45.50"
+        },
+        "creditorName": "Demo Georgian merchant",
+        "remittanceInformationUnstructured": "სატესტო ტრანზაქცია / Synthetic transaction",
+        "proprietaryBankTransactionCode": "GMB"
+      },
+      {
+        "transactionId": "tx-GEL-002",
+        "entryReference": "ref-GEL-2",
+        "bookingDate": "2026-10-03",
+        "valueDate": "2026-10-03",
+        "transactionAmount": {
+          "currency": "GEL",
+          "amount": "-20.00"
+        },
+        "creditorName": "Demo Georgian merchant",
+        "remittanceInformationUnstructured": "სატესტო ტრანზაქცია / Synthetic transaction",
+        "proprietaryBankTransactionCode": "GMB"
+      },
+      {
+        "transactionId": "tx-GEL-003",
+        "entryReference": "ref-GEL-3",
+        "bookingDate": "2026-10-04",
+        "valueDate": "2026-10-04",
+        "transactionAmount": {
+          "currency": "GEL",
+          "amount": "-125.00"
+        },
+        "creditorName": "Demo Georgian merchant",
+        "remittanceInformationUnstructured": "სატესტო ტრანზაქცია / Synthetic transaction",
+        "proprietaryBankTransactionCode": "GMB"
+      },
+      {
+        "transactionId": "tx-GEL-004",
+        "entryReference": "ref-GEL-4",
+        "bookingDate": "2026-10-05",
+        "valueDate": "2026-10-05",
+        "transactionAmount": {
+          "currency": "GEL",
+          "amount": "-62.00"
+        },
+        "creditorName": "Demo Georgian merchant",
+        "remittanceInformationUnstructured": "სატესტო ტრანზაქცია / Synthetic transaction",
+        "proprietaryBankTransactionCode": "GMB"
+      }
+    ],
+    "pending": [
+      {
+        "transactionAmount": {
+          "currency": "GEL",
+          "amount": "-22.50"
+        },
+        "valueDate": "2026-10-20",
+        "remittanceInformationUnstructured": "Pending synthetic purchase"
+      }
+    ]
+  }
+}

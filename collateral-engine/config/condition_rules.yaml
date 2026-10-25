@@ -1,0 +1,26 @@
+# Rules that set the status of the borrower's declared condition from what the photos show.
+# The vision model only describes each photo; these rules alone decide the status.
+version: "2026-10"
+
+# Georgian condition classes ordered by how much work remains before the flat is habitable.
+# A frame flat in a new building and a worn flat in an old one need similar work.
+finish_levels:
+  black_frame: 0
+  white_frame: 1
+  green_frame: 2
+  needs_renovation: 2
+  under_renovation: 3
+  old_renovated: 4
+  newly_renovated: 5
+
+# Gap = |finish level declared - finish level observed|.
+verified_max_gap: 0
+partly_max_gap: 1
+
+# The borrower uploads at least this many photos of the flat (different rooms).
+min_photos: 3
+# Photos count towards the observed condition only when the vision model is at least this sure.
+min_confidence: medium
+min_classified_photos: 3
+# Share of counted photos that must agree on the most frequent condition (two of three).
+min_agreement_share: 0.66

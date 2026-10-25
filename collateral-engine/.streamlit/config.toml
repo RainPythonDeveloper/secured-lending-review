@@ -1,0 +1,17 @@
+[theme]
+base = "light"
+primaryColor = "#16337a"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f6fb"
+textColor = "#0f1f3d"
+
+[client]
+# Hides the Deploy button; the menu keeps rerun and settings.
+toolbarMode = "minimal"
+
+[server]
+headless = true
+maxUploadSize = 15
+# The engine is cached across reruns, so its package must not be hot-reloaded: a reload would
+# mix old and new classes. Changes under app/ still reload; restart the console after src/ changes.
+folderWatchBlacklist = ["src"]

@@ -1,0 +1,14 @@
+{
+  "type": "about:blank",
+  "title": "SERVICE_UNAVAILABLE",
+  "status": 502,
+  "code": "SERVICE_UNAVAILABLE",
+  "detail": "Injected synthetic failure",
+  "tppMessages": [
+    {
+      "category": "ERROR",
+      "code": "SERVICE_UNAVAILABLE",
+      "text": "Injected synthetic failure"
+    }
+  ]
+}

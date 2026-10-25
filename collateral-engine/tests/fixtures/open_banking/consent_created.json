@@ -1,0 +1,10 @@
+{
+  "consentStatus": "received",
+  "consentId": "8e3f2a51-6c1b-4f0e-9a4d-2b7c5e1d9f30",
+  "_links": {
+    "scaRedirect": {"href": "https://tbc-bank-mock-open-banking-api.vercel.app/psd2/openbanking/oauth/authorize?state=demo"},
+    "self": {"href": "/v1/consents/8e3f2a51-6c1b-4f0e-9a4d-2b7c5e1d9f30"},
+    "status": {"href": "/v1/consents/8e3f2a51-6c1b-4f0e-9a4d-2b7c5e1d9f30/status"}
+  },
+  "psuMessage": "Consent bound to organizer dataset customer CUS-001"
+}

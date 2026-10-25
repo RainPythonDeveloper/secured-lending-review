@@ -1,0 +1,169 @@
+{
+  "source": "OpenStreetMap, Overpass API query for node[station=subway] in the Tbilisi bounding box",
+  "retrieved_on": "2026-10-22",
+  "licence": "Open Database License (ODbL) 1.0",
+  "attribution": "© OpenStreetMap contributors",
+  "stations": [
+    {
+      "osm_node_id": 288584312,
+      "name_en": "300 Aragveli",
+      "name_ka": "300 არაგველი",
+      "latitude": 41.687995,
+      "longitude": 44.826233
+    },
+    {
+      "osm_node_id": 437955651,
+      "name_en": "Akhmeteli Theatre",
+      "name_ka": "ახმეტელის თეატრი",
+      "latitude": 41.791056,
+      "longitude": 44.814998
+    },
+    {
+      "osm_node_id": 5768595732,
+      "name_en": "Avlabari",
+      "name_ka": "ავლაბარი",
+      "latitude": 41.692259,
+      "longitude": 44.815841
+    },
+    {
+      "osm_node_id": 729562894,
+      "name_en": "Delisi",
+      "name_ka": "დელისი",
+      "latitude": 41.725487,
+      "longitude": 44.745341
+    },
+    {
+      "osm_node_id": 4632061332,
+      "name_en": "Didube",
+      "name_ka": "დიდუბე",
+      "latitude": 41.749452,
+      "longitude": 44.779994
+    },
+    {
+      "osm_node_id": 5267558014,
+      "name_en": "Ghrmaghele",
+      "name_ka": "ღრმაღელე",
+      "latitude": 41.764974,
+      "longitude": 44.78996
+    },
+    {
+      "osm_node_id": 725175525,
+      "name_en": "Gotsiridze",
+      "name_ka": "გოცირიძე",
+      "latitude": 41.74294,
+      "longitude": 44.784045
+    },
+    {
+      "osm_node_id": 437955726,
+      "name_en": "Guramishvili",
+      "name_ka": "გურამიშვილი",
+      "latitude": 41.775765,
+      "longitude": 44.79558
+    },
+    {
+      "osm_node_id": 288584317,
+      "name_en": "Isani",
+      "name_ka": "ისანი",
+      "latitude": 41.686625,
+      "longitude": 44.839963
+    },
+    {
+      "osm_node_id": 289358479,
+      "name_en": "Liberty Square",
+      "name_ka": "თავისუფლების მოედანი",
+      "latitude": 41.694525,
+      "longitude": 44.800563
+    },
+    {
+      "osm_node_id": 289384125,
+      "name_en": "Marjanishvili",
+      "name_ka": "მარჯანიშვილი",
+      "latitude": 41.709594,
+      "longitude": 44.796875
+    },
+    {
+      "osm_node_id": 729561142,
+      "name_en": "Medical University",
+      "name_ka": "სამედიცინო უნივერსიტეტი",
+      "latitude": 41.727279,
+      "longitude": 44.76384
+    },
+    {
+      "osm_node_id": 289383777,
+      "name_en": "Nadzaledevi",
+      "name_ka": "ნაძალადევი",
+      "latitude": 41.733404,
+      "longitude": 44.796426
+    },
+    {
+      "osm_node_id": 289358478,
+      "name_en": "Rustaveli",
+      "name_ka": "რუსთაველი",
+      "latitude": 41.703497,
+      "longitude": 44.789647
+    },
+    {
+      "osm_node_id": 729529330,
+      "name_en": "Samgori",
+      "name_ka": "სამგორი",
+      "latitude": 41.685518,
+      "longitude": 44.854483
+    },
+    {
+      "osm_node_id": 437955710,
+      "name_en": "Sarajishvili",
+      "name_ka": "სარაჯიშვილი",
+      "latitude": 41.784058,
+      "longitude": 44.799918
+    },
+    {
+      "osm_node_id": 358503996,
+      "name_en": "State University",
+      "name_ka": "სახელმწიფო უნივერსიტეტი",
+      "latitude": 41.722825,
+      "longitude": 44.718511
+    },
+    {
+      "osm_node_id": 7285245525,
+      "name_en": "Station Square-1",
+      "name_ka": "სადგურის მოედანი-1",
+      "latitude": 41.722544,
+      "longitude": 44.797769
+    },
+    {
+      "osm_node_id": 7285245526,
+      "name_en": "Station Square-2",
+      "name_ka": "სადგურის მოედანი-2",
+      "latitude": 41.722578,
+      "longitude": 44.796442
+    },
+    {
+      "osm_node_id": 729551832,
+      "name_en": "Technical University",
+      "name_ka": "ტექნიკური უნივერსიტეტი",
+      "latitude": 41.720349,
+      "longitude": 44.776643
+    },
+    {
+      "osm_node_id": 729578803,
+      "name_en": "Tsereteli",
+      "name_ka": "წერეთელი",
+      "latitude": 41.726412,
+      "longitude": 44.787661
+    },
+    {
+      "osm_node_id": 7285245527,
+      "name_en": "Varketili",
+      "name_ka": "ვარკეთილი",
+      "latitude": 41.691897,
+      "longitude": 44.870885
+    },
+    {
+      "osm_node_id": 729562896,
+      "name_en": "Vazha-Pshavela",
+      "name_ka": "ვაჟა-ფშაველა",
+      "latitude": 41.724034,
+      "longitude": 44.730853
+    }
+  ]
+}

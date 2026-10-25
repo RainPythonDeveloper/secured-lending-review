@@ -1,0 +1,29 @@
+{
+  "account": {"iban": "GE00SY0000000000000001", "currency": "GEL"},
+  "transactions": {
+    "booked": [
+      {
+        "transactionId": "TX-0000561",
+        "entryReference": "561",
+        "bookingDate": "2026-04-25",
+        "valueDate": "2026-04-25",
+        "transactionAmount": {"currency": "GEL", "amount": "2150.00"},
+        "debtorName": "Rioni Technology (synthetic)",
+        "remittanceInformationUnstructured": "Net salary 2026-04",
+        "additionalInformation": "bank_transfer",
+        "proprietaryBankTransactionCode": "salary"
+      },
+      {
+        "transactionId": "TX-0000202",
+        "entryReference": "202",
+        "bookingDate": "2026-04-22",
+        "valueDate": "2026-04-22",
+        "transactionAmount": {"currency": "GEL", "amount": "-39.86"},
+        "creditorName": "Carrefour",
+        "remittanceInformationUnstructured": "Grocery purchase",
+        "additionalInformation": "card",
+        "proprietaryBankTransactionCode": "groceries"
+      }
+    ]
+  }
+}

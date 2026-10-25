@@ -1,0 +1,22 @@
+# Vehicle models of the synthetic market. Georgia imports most of its cars used, about 58% of them
+# from the United States (2023), so the list leans on US-market sedans, crossovers and hybrids.
+#
+# Every number below is a demo assumption, not market data: there is no official series of used
+# car prices in Georgia. new_price_usd is the price of the model new; annual_depreciation the
+# share of value lost each year; km_per_year a typical yearly mileage; right_hand_drive_share and
+# petrol_gas_share the share of sales with a right-hand drive or a gas conversion.
+models:
+  - {make: Toyota, model: Prius, fuel: hybrid, engine_volume_cm3: 1800, new_price_usd: 28000, annual_depreciation: 0.11, km_per_year: 18000, market_share: 0.16, right_hand_drive_share: 0.10, petrol_gas_share: 0.0}
+  - {make: Toyota, model: Camry, fuel: petrol, engine_volume_cm3: 2500, new_price_usd: 30000, annual_depreciation: 0.10, km_per_year: 16000, market_share: 0.10, right_hand_drive_share: 0.02, petrol_gas_share: 0.15}
+  - {make: Toyota, model: RAV4, fuel: petrol, engine_volume_cm3: 2500, new_price_usd: 32000, annual_depreciation: 0.09, km_per_year: 15000, market_share: 0.07, right_hand_drive_share: 0.02, petrol_gas_share: 0.10}
+  - {make: Toyota, model: Corolla, fuel: petrol, engine_volume_cm3: 1800, new_price_usd: 24000, annual_depreciation: 0.10, km_per_year: 15000, market_share: 0.06, right_hand_drive_share: 0.02, petrol_gas_share: 0.15}
+  - {make: Lexus, model: RX 350, fuel: petrol, engine_volume_cm3: 3500, new_price_usd: 52000, annual_depreciation: 0.10, km_per_year: 14000, market_share: 0.05, right_hand_drive_share: 0.01, petrol_gas_share: 0.05}
+  - {make: Mercedes-Benz, model: E-Class, fuel: petrol, engine_volume_cm3: 2000, new_price_usd: 60000, annual_depreciation: 0.12, km_per_year: 14000, market_share: 0.08, right_hand_drive_share: 0.0, petrol_gas_share: 0.05}
+  - {make: BMW, model: 5 Series, fuel: petrol, engine_volume_cm3: 2000, new_price_usd: 58000, annual_depreciation: 0.13, km_per_year: 14000, market_share: 0.06, right_hand_drive_share: 0.0, petrol_gas_share: 0.05}
+  - {make: Hyundai, model: Elantra, fuel: petrol, engine_volume_cm3: 2000, new_price_usd: 22000, annual_depreciation: 0.11, km_per_year: 15000, market_share: 0.08, right_hand_drive_share: 0.0, petrol_gas_share: 0.20}
+  - {make: Hyundai, model: Sonata, fuel: petrol, engine_volume_cm3: 2400, new_price_usd: 26000, annual_depreciation: 0.12, km_per_year: 16000, market_share: 0.07, right_hand_drive_share: 0.0, petrol_gas_share: 0.20}
+  - {make: Hyundai, model: Tucson, fuel: petrol, engine_volume_cm3: 2000, new_price_usd: 28000, annual_depreciation: 0.10, km_per_year: 15000, market_share: 0.05, right_hand_drive_share: 0.0, petrol_gas_share: 0.10}
+  - {make: Ford, model: Fusion, fuel: hybrid, engine_volume_cm3: 2000, new_price_usd: 26000, annual_depreciation: 0.13, km_per_year: 16000, market_share: 0.06, right_hand_drive_share: 0.0, petrol_gas_share: 0.0}
+  - {make: Honda, model: Fit, fuel: petrol, engine_volume_cm3: 1500, new_price_usd: 18000, annual_depreciation: 0.10, km_per_year: 12000, market_share: 0.05, right_hand_drive_share: 0.25, petrol_gas_share: 0.10}
+  - {make: Subaru, model: Forester, fuel: petrol, engine_volume_cm3: 2500, new_price_usd: 29000, annual_depreciation: 0.09, km_per_year: 15000, market_share: 0.06, right_hand_drive_share: 0.05, petrol_gas_share: 0.05}
+  - {make: Nissan, model: Leaf, fuel: electric, engine_volume_cm3: 0, new_price_usd: 30000, annual_depreciation: 0.15, km_per_year: 12000, market_share: 0.05, right_hand_drive_share: 0.15, petrol_gas_share: 0.0}

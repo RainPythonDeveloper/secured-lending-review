@@ -1,0 +1,58 @@
+# Bank policy for the loan application pipeline. These are bank settings, not NBG rules; NBG rule
+# values (PTI, LTV, maturity, foreign-currency lending) live in income-engine/config/nbg_rules.yaml.
+version: "2026-10"
+
+income:
+  # Months of statement the income estimate needs.
+  min_months_with_income: 4
+  # The verified income is the median month; affordability uses the lower quartile month.
+  conservative_quantile: 0.25
+  # Declared income this much above the verified one goes to the officer.
+  max_declared_over_verified: 0.30
+  # Month-to-month variation (coefficient of variation) above this is flagged as unstable.
+  max_income_variation: 0.45
+
+credit_history:
+  # Days past due in the last 12 months that send the application to the officer.
+  max_days_past_due: 30
+
+# The application form starts from these terms; the officer changes them per application.
+products:
+  consumer: {annual_rate: "0.18", default_term_months: 36, default_amount_gel: "15000"}
+  mortgage: {annual_rate: "0.11", default_term_months: 180, default_amount_gel: "250000"}
+  # NBG publishes no separate cap for car loans; the pipeline applies the 4-year consumer cap
+  # (VERIFY whether it covers car loans).
+  auto: {annual_rate: "0.14", default_term_months: 48, default_amount_gel: "30000"}
+
+# Manual checks the pipeline replaces, in minutes per application (assumption for the impact
+# estimate shown to the officer: RS.ge, Creditinfo, statements, PTI and LTV worksheets, valuation
+# review).
+manual_minutes:
+  identity_and_watchlists: 15
+  credit_history: 10
+  income_verification: 45
+  affordability: 20
+  collateral: 60
+  # A video identification call with a bank employee, counted only when the liveness check ran.
+  remote_identification: 10
+
+# Remote identification of an applicant who is not in a branch.
+liveness:
+  # NBG Order 104/04: at least three randomly chosen tasks, at most three attempts in 24 hours.
+  task_count: 3
+  max_attempts_per_day: 3
+  # Children are not filmed.
+  min_applicant_age: 18
+  task_timeout_ms: 9000
+  align_timeout_ms: 15000
+  # Thresholds of the face landmark model in the browser, measured against the applicant's own
+  # pose while looking at the camera: the shift of the nose across the face width (turn), along
+  # the face height (tilt), and the eye-blink scores of a closed and an open eye.
+  min_head_turn: 0.12
+  min_head_tilt: 0.06
+  eye_closed_score: 0.5
+  eye_open_score: 0.25
+  hold_frames: 3
+  # One small evidence frame per completed task.
+  frame_width_px: 320
+  max_frame_bytes: 200000

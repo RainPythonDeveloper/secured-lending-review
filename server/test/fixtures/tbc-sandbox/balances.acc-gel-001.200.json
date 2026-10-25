@@ -1,0 +1,28 @@
+{
+  "account": {
+    "iban": "GE11TB1000000000000010",
+    "currency": "GEL"
+  },
+  "balances": [
+    {
+      "balanceAmount": {
+        "currency": "GEL",
+        "amount": "3247.50"
+      },
+      "balanceType": "interimBooked",
+      "creditLimitIncluded": false,
+      "referenceDate": "2026-10-20",
+      "lastChangeDateTime": "2026-10-20T09:00:00+04:00"
+    },
+    {
+      "balanceAmount": {
+        "currency": "GEL",
+        "amount": "3225.00"
+      },
+      "balanceType": "interimAvailable",
+      "creditLimitIncluded": false,
+      "referenceDate": "2026-10-20",
+      "lastChangeDateTime": "2026-10-20T09:00:00+04:00"
+    }
+  ]
+}

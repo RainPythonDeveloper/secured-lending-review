@@ -1,0 +1,21 @@
+{
+  "consentId": "3f0c9a52-6d1e-4b7a-9c3e-1a2b3c4d5e6f",
+  "consentStatus": "received",
+  "_links": {
+    "scaOAuth": {
+      "href": "https://tbc-bank-mock-open-banking-api.vercel.app/.well-known/oauth-authorization-server"
+    },
+    "self": {
+      "href": "/0.8/v1/consents/3f0c9a52-6d1e-4b7a-9c3e-1a2b3c4d5e6f"
+    },
+    "status": {
+      "href": "/0.8/v1/consents/3f0c9a52-6d1e-4b7a-9c3e-1a2b3c4d5e6f/status"
+    },
+    "startAuthorisation": {
+      "href": "/0.8/v1/consents/3f0c9a52-6d1e-4b7a-9c3e-1a2b3c4d5e6f/authorisations"
+    },
+    "scaStatus": {
+      "href": "/0.8/v1/consents/3f0c9a52-6d1e-4b7a-9c3e-1a2b3c4d5e6f/authorisations/9d8c7b6a-5f4e-4d3c-8b2a-1f0e9d8c7b6a"
+    }
+  }
+}

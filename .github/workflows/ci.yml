@@ -1,0 +1,56 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  income-engine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: income-engine
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m ite.synth --out data && python -m ite.train && python -m ite.report
+      - run: python -m pytest -q
+
+  # The platform: the collateral engine with the income engine installed in the same environment.
+  collateral-engine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: collateral-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ../income-engine -e ".[dev]"
+      - run: ruff format --check .
+      - run: ruff check .
+      - run: python -m ite.synth --out data && python -m ite.train && python -m ite.report
+        working-directory: income-engine
+      - run: pytest
+
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:e2e
+      - run: npm run build

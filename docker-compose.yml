@@ -1,14 +1,56 @@
-version: '3.8'
-
 services:
-  server:
-    build:
-      context: ./server   
-      dockerfile: Dockerfile
-    container_name: finance-hackathon-server
-    ports:
-      - "3000:3000"
+  open-banking-gateway:
+    build: ./server
+    # Callers are not authenticated (a Consent-ID acts as a capability), so publish on localhost only.
+    ports: ["127.0.0.1:3000:3000"]
     environment:
-      - PORT=3000
-      - NODE_ENV=production
+      PORT: 3000
+      NODE_ENV: production
+      TBC_API_BASE_URL: https://tbc-bank-mock-open-banking-api.vercel.app/0.8
+      TBC_OAUTH_AUTHORIZE_URL: https://tbc-bank-mock-open-banking-api.vercel.app/psd2/openbanking/oauth/authorize
+      TBC_OAUTH_TOKEN_URL: https://tbc-bank-mock-open-banking-api.vercel.app/openbanking/oauth/token
+      TBC_OAUTH_CLIENT_ID: virtual-field-visit-gateway
+      TBC_OAUTH_REDIRECT_URI: http://localhost:3000/oauth/callback
+      TBC_OAUTH_UI_LOCALE: en
+      TBC_HTTP_TIMEOUT_MS: 8000
+      TBC_RETRY_MAX_ATTEMPTS: 3
+      TBC_RETRY_BASE_DELAY_MS: 250
+      TBC_RETRY_MAX_DELAY_MS: 2000
+      OAUTH_STATE_TTL_MS: 600000
+      OAUTH_TOKEN_REFRESH_MARGIN_MS: 60000
+      DATASET_XLSX_PATH: /app/data/open-banking-synthetic-100-customers.xlsx
+    volumes: ["./data:/app/data:ro"]
     restart: unless-stopped
+
+  # The whole platform: income (PTI), collateral (LTV) and the full application in one image.
+  # Built from the repository root so the image carries income-engine/ next to collateral-engine/.
+  platform-api:
+    build: {context: ., dockerfile: collateral-engine/Dockerfile}
+    # Collateral routes are not authenticated, so publish on localhost only.
+    ports: ["127.0.0.1:8100:8100"]
+    environment: &platform-environment
+      COLLATERAL_AUDIT_DB_PATH: /var/collateral/audit.db
+      COLLATERAL_EVIDENCE_DIR: /var/collateral/evidence
+      COLLATERAL_VISION_ENABLED: ${COLLATERAL_VISION_ENABLED:-false}
+      COLLATERAL_VISION_PROVIDER: ${COLLATERAL_VISION_PROVIDER:-nvidia}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ITE_API_KEY: ${ITE_API_KEY:-}
+      # The loan pipeline reads customer accounts through the Open Banking gateway.
+      OPEN_BANKING_GATEWAY_URL: http://open-banking-gateway:3000
+    volumes: ["collateral:/var/collateral"]
+    depends_on: [open-banking-gateway]
+
+  platform-console:
+    build: {context: ., dockerfile: collateral-engine/Dockerfile}
+    command: ["streamlit", "run", "app/platform_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports: ["127.0.0.1:8502:8501"]
+    # The image's health check probes the API; this container serves the console instead.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+    environment: *platform-environment
+    volumes: ["collateral:/var/collateral"]
+    depends_on: [open-banking-gateway]
+
+volumes:
+  collateral:

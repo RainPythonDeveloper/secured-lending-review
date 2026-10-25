@@ -1,0 +1,11 @@
+# SYNTHETIC stand-ins for the lists a Georgian bank screens an applicant against. Every name and id
+# is invented. In production these come from the sanctions and PEP screening provider and from the
+# NAPR Debtors Registry (მოვალეთა რეესტრი); neither offers a public API to this prototype.
+version: "2026-10-demo"
+sanctions_and_pep:
+  - {full_name: "Zurab Invented-Sanctioned", list: "Synthetic sanctions list"}
+  - {full_name: "Ketevan Imaginary-PEP", list: "Synthetic PEP list"}
+debtors_registry:
+  # Customers of the NBG hackathon dataset given an invented enforcement record for the demo.
+  - {customer_id: "CUS-017", case: "Synthetic enforcement case 2025/0417", amount_gel: "2400"}
+  - {customer_id: "CUS-063", case: "Synthetic enforcement case 2026/0112", amount_gel: "950"}

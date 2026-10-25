@@ -1,32 +1,42 @@
-import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { createObserveModule } from '@nestjs/observe';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';      // Путь к вашему сервису
-import { AccountsController } from './account/accounts.controller.js';
-import { AccountsService } from './account/accounts.service.js';
-
-export const { ObserveModule, ObserveInstrument } = createObserveModule();
+import { Module, ValidationPipe } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { AccountsModule } from './ais/accounts/accounts.module.js';
+import { BalancesModule } from './ais/balances/balances.module.js';
+import { ConsentsModule } from './ais/consents/consents.module.js';
+import { TransactionsModule } from './ais/transactions/transactions.module.js';
+import { CommonModule } from './common/common.module.js';
+import { DataSourceHeaderInterceptor } from './common/data-source/data-source-header.interceptor.js';
+import { ProblemDetailsFilter } from './common/problem-details/problem-details.filter.js';
+import { ConfigModule } from './config/config.module.js';
+import { HealthModule } from './health/health.module.js';
+import { OAuthModule } from './oauth/oauth.module.js';
+import { OrganizerDatasetModule } from './organizer-dataset/organizer-dataset.module.js';
+import { TbcClientModule } from './tbc-client/tbc-client.module.js';
 
 @Module({
   imports: [
-    // Distributed tracing, auto-correlated logs, request/job metrics, error
-    // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com,
-    // then run `npx @nestjs/observe link` to write your key pair into .env.
-    ObserveModule.forRoot({
-      appKey: process.env.OBSERVE_APP_KEY ?? 'YOUR_APP_KEY',
-      appSecret: process.env.OBSERVE_APP_SECRET ?? 'YOUR_APP_SECRET',
-      serviceId: 'server',
-    }),
-    HttpModule, // Обязательно для работы Axios-запросов к TBC Mock API
-  ],
-  controllers: [
-    AppController,
-    AccountsController, 
+    ConfigModule,
+    CommonModule,
+    HealthModule,
+    TbcClientModule,
+    OAuthModule,
+    OrganizerDatasetModule,
+    ConsentsModule,
+    AccountsModule,
+    BalancesModule,
+    TransactionsModule,
   ],
   providers: [
-    AppService,
-    AccountsService,  
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    },
+    { provide: APP_FILTER, useClass: ProblemDetailsFilter },
+    { provide: APP_INTERCEPTOR, useClass: DataSourceHeaderInterceptor },
   ],
 })
 export class AppModule {}

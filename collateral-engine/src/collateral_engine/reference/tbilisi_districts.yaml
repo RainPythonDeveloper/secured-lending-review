@@ -1,0 +1,85 @@
+# The ten administrative districts of Tbilisi.
+#
+# geostat_apartment_gel_per_m2: average price of a square metre in newly built multi-storey
+# residential buildings, Q1 2026, published by Geostat (National Statistics Office of Georgia,
+# residential property price statistics; figures as reported by 1tv.ge and cbw.ge in 2026).
+# geostat_house_gel_per_m2: the same for detached houses, per m² of house floor area; Geostat
+# models the plot as a separate characteristic (IMF RPPI technical assistance report, April 2025).
+# Q1 2026 as reported in the press; the Q2 2026 release shows them only as a chart.
+# Both are median offer prices scraped from myhome.ge and ss.ge, new construction only.
+#
+# centroid_*: approximate points inside each district. They place synthetic sales on the map and
+# are not official boundaries.
+statistics_period: "2026-Q1"
+statistics_source: "Geostat, residential property prices in Tbilisi, Q1 2026"
+districts:
+  - code: mtatsminda
+    name_ka: მთაწმინდა
+    name_en: Mtatsminda
+    geostat_apartment_gel_per_m2: "6814"
+    geostat_house_gel_per_m2: "4835"
+    centroid_latitude: 41.6930
+    centroid_longitude: 44.7900
+  - code: vake
+    name_ka: ვაკე
+    name_en: Vake
+    geostat_apartment_gel_per_m2: "5958"
+    geostat_house_gel_per_m2: "4500"
+    centroid_latitude: 41.7110
+    centroid_longitude: 44.7600
+  - code: krtsanisi
+    name_ka: კრწანისი
+    name_en: Krtsanisi
+    geostat_apartment_gel_per_m2: "4465"
+    geostat_house_gel_per_m2: "3164"
+    centroid_latitude: 41.6800
+    centroid_longitude: 44.8150
+  - code: saburtalo
+    name_ka: საბურთალო
+    name_en: Saburtalo
+    geostat_apartment_gel_per_m2: "4333"
+    geostat_house_gel_per_m2: "3471"
+    centroid_latitude: 41.7300
+    centroid_longitude: 44.7450
+  - code: chughureti
+    name_ka: ჩუღურეთი
+    name_en: Chughureti
+    geostat_apartment_gel_per_m2: "4268"
+    geostat_house_gel_per_m2: "3249"
+    centroid_latitude: 41.7150
+    centroid_longitude: 44.8050
+  - code: didube
+    name_ka: დიდუბე
+    name_en: Didube
+    geostat_apartment_gel_per_m2: "4085"
+    geostat_house_gel_per_m2: "4242"
+    centroid_latitude: 41.7500
+    centroid_longitude: 44.7750
+  - code: nadzaladevi
+    name_ka: ნაძალადევი
+    name_en: Nadzaladevi
+    geostat_apartment_gel_per_m2: "3993"
+    geostat_house_gel_per_m2: "2594"
+    centroid_latitude: 41.7600
+    centroid_longitude: 44.7950
+  - code: isani
+    name_ka: ისანი
+    name_en: Isani
+    geostat_apartment_gel_per_m2: "3948"
+    geostat_house_gel_per_m2: "3172"
+    centroid_latitude: 41.6900
+    centroid_longitude: 44.8450
+  - code: gldani
+    name_ka: გლდანი
+    name_en: Gldani
+    geostat_apartment_gel_per_m2: "3775"
+    geostat_house_gel_per_m2: "2596"
+    centroid_latitude: 41.7950
+    centroid_longitude: 44.8150
+  - code: samgori
+    name_ka: სამგორი
+    name_en: Samgori
+    geostat_apartment_gel_per_m2: "3651"
+    geostat_house_gel_per_m2: "3164"
+    centroid_latitude: 41.6950
+    centroid_longitude: 44.8800

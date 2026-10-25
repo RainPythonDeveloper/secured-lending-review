@@ -1,0 +1,14 @@
+{
+  "type": "about:blank",
+  "title": "CONSENT_INVALID",
+  "status": 401,
+  "code": "CONSENT_INVALID",
+  "detail": "Consent is terminatedByTpp",
+  "tppMessages": [
+    {
+      "category": "ERROR",
+      "code": "CONSENT_INVALID",
+      "text": "Consent is terminatedByTpp"
+    }
+  ]
+}

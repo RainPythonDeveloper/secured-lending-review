@@ -1,0 +1,87 @@
+# NBG rules for lending to natural persons (retail) and for valuing real estate collateral.
+# Sources: nbg.gov.ge "PTI and LTV Requirements"; NBG Financial Stability Committee decision published
+# 26 Feb 2025 (temporary LTV easing); 2027 PTI threshold change announced by the Committee (reported
+# 30 Sep 2026); NBG Order 84/04 (14 May 2018), Real Estate Valuation Instruction for Commercial Banks.
+# VERIFY every value with NBG before production use. Each version has an effective date, so the engines
+# always apply the rules in force on the application or valuation date.
+#
+# ltv.gel: loans in GEL secured by real estate. ltv.fx: foreign-currency loans.
+# ltv.fx_income_from_abroad: foreign-currency mortgages of borrowers with income from abroad.
+# valuation: NBG Order 84/04 Art. 4(5): at least three comparables; a single adjustment within +/-15%,
+# the gross adjustment within +/-25%, or up to +/-35% when the report justifies it.
+# maturity: longest term in months. Unsecured consumer loans 4 years (cap raised back from 3 years,
+# Georgia Today 2023), mortgages 20 years, foreign-currency mortgages 10 years (secondary sources).
+# fx_lending: a loan below min_amount_gel must be in GEL unless the borrower's income is in the loan
+# currency (NBG decision raising the threshold to 750,000 from 1 Aug 2025 and to 1,000,000 from
+# 1 Jul 2026, as reported by bm.ge and georgiatoday.ge). VERIFY all three against NBG acts.
+versions:
+  - id: "2022-01"
+    effective_from: "2022-01-01"
+    pti:
+      income_threshold_gel: 1500          # monthly net income
+      below: {hedged: 0.25, unhedged: 0.20}   # hedged = loan in GEL, or in the borrower's income currency
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: {gel: 0.85, fx: 0.70, fx_income_from_abroad: 0.70}
+    valuation: &valuation_84_04
+      min_comparables: 3
+      max_single_adjustment: 0.15
+      max_gross_adjustment: 0.25
+      max_gross_adjustment_justified: 0.35
+  # Temporary easing; the decision gives no end date and its effective date is taken from the
+  # publication date. VERIFY both against NBG act 281/04.
+  - id: "2025-02"
+    effective_from: "2025-02-26"
+    pti:
+      income_threshold_gel: 1500
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: &ltv_2025_easing {gel: 0.90, fx: 0.70, fx_income_from_abroad: 0.80}
+    valuation: *valuation_84_04
+    maturity: &maturity_limits {consumer_unsecured_months: 48, mortgage_months: 240, fx_mortgage_months: 120}
+  - id: "2025-08"
+    effective_from: "2025-08-01"
+    pti: &pti_1500
+      income_threshold_gel: 1500
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: {min_amount_gel: 750000}
+  - id: "2026-07"
+    effective_from: "2026-07-01"
+    pti: *pti_1500
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: &fx_lending_2026 {min_amount_gel: 1000000}
+  - id: "2027-02"
+    effective_from: "2027-02-01"
+    pti:
+      income_threshold_gel: 2000
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: *fx_lending_2026
+  - id: "2027-09"
+    effective_from: "2027-09-01"
+    pti:
+      income_threshold_gel: 2500
+      below: {hedged: 0.25, unhedged: 0.20}
+      above: {hedged: 0.50, unhedged: 0.30}
+    ltv: *ltv_2025_easing
+    valuation: *valuation_84_04
+    maturity: *maturity_limits
+    fx_lending: *fx_lending_2026
+
+# Internal policy (bank-configurable, not NBG rules)
+policy:
+  income_quantile_for_pti: 0.25      # conservative income estimate used for affordability
+  pd_approve_max: 0.12               # auto-recommend approve below this PD
+  pd_reject_min: 0.30                # recommend reject above this PD
+  band_width_review: 0.45            # (P90-P10)/P50 above this -> human review required
+  round_trip_review: 0.15            # share of inflows that are circular -> review
+  lgd: 0.55                          # loss given default for unsecured retail (assumption)
+  min_loan_gel: 500

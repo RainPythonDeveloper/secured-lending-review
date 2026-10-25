@@ -1,0 +1,14 @@
+{
+  "type": "about:blank",
+  "title": "CONSENT_INVALID",
+  "status": 403,
+  "code": "CONSENT_INVALID",
+  "detail": "Consent does not allow transactions for this account",
+  "tppMessages": [
+    {
+      "category": "ERROR",
+      "code": "CONSENT_INVALID",
+      "text": "Consent does not allow transactions for this account"
+    }
+  ]
+}
