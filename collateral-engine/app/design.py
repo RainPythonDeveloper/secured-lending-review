@@ -6,6 +6,7 @@ Every text passed in is escaped here, so callers pass plain strings.
 import html
 from dataclasses import dataclass
 from enum import StrEnum
+from urllib.parse import urlparse
 
 import streamlit as st
 
@@ -140,9 +141,34 @@ section[data-testid="stSidebar"]{min-width:340px}
   color:rgba(255,255,255,.55);margin-top:2px}
 .lv-issues{margin:12px 0 0;padding-left:18px;color:#fcd34d;font-size:.9rem}
 .lv-note{color:rgba(255,255,255,.6);font-size:.8rem;margin:12px 0 0}
+.refs{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:4px 22px 14px;margin:6px 0 10px}
+.refs-legend{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
+.ref-kind{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.72rem;font-weight:700;
+  white-space:nowrap;color:var(--kind);background:color-mix(in srgb,var(--kind) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--kind) 35%,transparent)}
+.ref-group{font-size:.78rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);margin:20px 0 2px}
+.ref{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:4px 12px;padding:12px 0;
+  border-top:1px solid var(--line)}
+.ref-group + .ref{border-top:0}
+.ref > .ref-kind{align-self:start;height:auto}
+.ref .num{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--brand);
+  padding-top:1px}
+.ref .cite{color:var(--ink);line-height:1.5;font-size:.95rem}
+.ref .cite i{font-style:italic}
+.ref .link{display:inline-block;margin-top:3px;font-size:.82rem;color:var(--brand);
+  text-decoration:none;font-weight:600}
+.ref .link:hover{text-decoration:underline}
+.ref .no-link{display:inline-block;margin-top:3px;font-size:.82rem;color:var(--muted)}
+.ref .use{color:var(--muted);font-size:.88rem;margin-top:4px;line-height:1.45}
+.ref .use b{color:var(--ink);font-weight:600}
+.ref .caveat{margin-top:6px;font-size:.83rem;color:#8a5a12;background:rgba(183,121,31,.1);
+  border-radius:8px;padding:4px 9px;display:inline-block}
 @media (max-width: 900px){
   .flow{grid-template-columns:1fr 1fr} .cards{grid-template-columns:1fr 1fr}
   .stages{grid-template-columns:1fr 1fr} .lv-strip{grid-template-columns:1fr 1fr}
+  .ref{grid-template-columns:34px minmax(0,1fr)} .ref .ref-kind{grid-column:2}
   .guarantees{grid-template-columns:1fr} .limit-row{grid-template-columns:1fr}
   .limit-row .amount{text-align:left}
 }
@@ -201,6 +227,31 @@ class LivenessCard:
     frames: list[LivenessFrame]
     issues: list[str]
     note: str
+
+
+@dataclass(frozen=True)
+class ReferenceItem:
+    number: int
+    publisher: str
+    title: str
+    date: str
+    url: str | None
+    used_for: str
+    caveat: str | None
+    kind_label: str
+    kind_colour: str
+
+
+@dataclass(frozen=True)
+class ReferenceGroup:
+    title: str
+    items: list[ReferenceItem]
+
+
+@dataclass(frozen=True)
+class ReferenceLabels:
+    used_for: str
+    no_link: str
 
 
 @dataclass(frozen=True)
@@ -372,3 +423,42 @@ def _liveness_frame(frame: LivenessFrame) -> str:
         f'<span class="state">{_escape(frame.state)}</span>{sha}</div></div>'
     )
 
+
+def references(
+    groups: list[ReferenceGroup], legend: list[tuple[str, str]], labels: ReferenceLabels
+) -> None:
+    """A numbered reference list, as at the end of a paper, with a link to every source."""
+    legend_html = "".join(
+        f'<span class="ref-kind" style="--kind:{colour}">{_escape(name)}</span>'
+        for name, colour in legend
+    )
+    body = "".join(
+        f'<div class="ref-group">{_escape(group.title)}</div>'
+        + "".join(_reference(item, labels) for item in group.items)
+        for group in groups
+    )
+    st.markdown(
+        f'<div class="refs"><div class="refs-legend">{legend_html}</div>{body}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _reference(item: ReferenceItem, labels: ReferenceLabels) -> str:
+    if item.url:
+        domain = urlparse(item.url).netloc.removeprefix("www.")
+        link = (
+            f'<a class="link" href="{_escape(item.url)}" target="_blank" '
+            f'rel="noopener noreferrer">{_escape(domain)} ↗</a>'
+        )
+    else:
+        link = f'<span class="no-link">{_escape(labels.no_link)}</span>'
+    caveat = f'<div class="caveat">⚠ {_escape(item.caveat)}</div>' if item.caveat else ""
+    return (
+        f'<div class="ref"><div class="num">[{item.number}]</div><div>'
+        f'<div class="cite">{_escape(item.publisher)}. <i>{_escape(item.title)}</i>. '
+        f"{_escape(item.date)}.</div>{link}"
+        f'<div class="use"><b>{_escape(labels.used_for)}:</b> {_escape(item.used_for)}</div>'
+        f"{caveat}</div>"
+        f'<span class="ref-kind" style="--kind:{item.kind_colour}">{_escape(item.kind_label)}'
+        f"</span></div>"
+    )

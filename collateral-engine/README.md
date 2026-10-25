@@ -72,7 +72,7 @@ make data           # 6,000 flat and 1,200 house sales -> data/comparables.csv,
                     # synthetic borrowers and trained models in ../income-engine (about 2 min)
 make app            # platform console on http://localhost:8502 (restart it after editing src/)
 make api            # platform API on http://localhost:8100/docs
-make check          # ruff, then the tests of both engines (579 tests, about 45 s)
+make check          # ruff, then the tests of both engines (634 tests, about 45 s)
 make evaluate       # backtest of flats, houses and vehicles -> reports/metrics.json
 ```
 

@@ -147,6 +147,13 @@ def test_overview_explains_the_four_steps(console: AppTest) -> None:
     assert all(UI_TEXT[f"step{number}_title"][Language.GEORGIAN] in html for number in (1, 2, 3, 4))
 
 
+def test_overview_lists_its_sources_with_links(console: AppTest) -> None:
+    html = page_html(console)
+
+    assert UI_TEXT["overview_refs_title"][Language.GEORGIAN] in html
+    assert "https://matsne.gov.ge/ka/document/view/4190992" in html
+
+
 def test_checks_wait_for_the_applicant_data(application: AppTest) -> None:
     assert application.button(key="loan_run_checks").disabled
 

@@ -236,6 +236,20 @@ UI_TEXT: dict[str, Bilingual] = {
         EN: "The captured frames are not stored: they are shown only in this session, and the "
         "audit log keeps nothing but their SHA-256.",
     },
+    "overview_refs_title": {KA: "წყაროები", EN: "References"},
+    "overview_refs_lead": {
+        KA: "საქართველოსა და სებ-ის ყველა წესი და ციფრი, რომელსაც პლატფორმა იყენებს, თავისი "
+        "წყაროთი. პრესის ანგარიშები მონიშნულია: მათი მნიშვნელობები წარმოებაში გამოყენებამდე "
+        "აქტის ტექსტით უნდა გადამოწმდეს.",
+        EN: "Every Georgian and NBG rule and figure the platform uses, with its source. Press "
+        "reports are marked: their values must be checked against the act itself before "
+        "production use.",
+    },
+    "refs_used_for": {KA: "გამოყენება", EN: "Used for"},
+    "refs_no_link": {
+        KA: "ორგანიზატორებმა გადასცეს გუნდებს (ფაილი რეპოზიტორიაშია)",
+        EN: "Provided to the teams by the organisers (file in the repository)",
+    },
     "tab_identification": {KA: "დისტანციური იდენტიფიკაცია", EN: "Remote identification"},
     "lv_kicker": {
         KA: "სებ 104/04 · დისტანციური იდენტიფიკაცია",

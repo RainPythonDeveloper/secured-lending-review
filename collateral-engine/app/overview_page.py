@@ -14,12 +14,26 @@ from collateral_engine.i18n import Language
 from collateral_engine.lending.income_analysis import analyse_income
 from collateral_engine.lending.policy import load_lending_policy
 from collateral_engine.policy import SERVICE_ROOT
+from collateral_engine.sources import (
+    GROUP_NAMES,
+    SOURCE_KIND_NAMES,
+    SOURCES,
+    Source,
+    SourceGroup,
+    SourceKind,
+)
 from language import current_language
 from report_view import label
 from resources import get_bank_snapshot, get_statement_rates
 
 COLLATERAL_METRICS_PATH = SERVICE_ROOT / "reports" / "metrics.json"
 P90 = 0.9
+SOURCE_KIND_COLOURS = {
+    SourceKind.LEGAL_ACT: "#16337a",
+    SourceKind.OFFICIAL: "#1f9d55",
+    SourceKind.LIVE_SERVICE: "#2563eb",
+    SourceKind.PRESS_REPORT: "#b7791f",
+}
 
 
 class _Metrics(BaseModel):
@@ -155,6 +169,43 @@ def _render_links(language: Language) -> None:
     st.page_link("application_page.py", label=label("try_full", language), icon="🏦")
 
 
+def _render_references(language: Language) -> None:
+    design.section(label("overview_refs_title", language), label("overview_refs_lead", language))
+    # Numbered in the order of SOURCES, which already lists them group by group.
+    numbered = list(enumerate(SOURCES, start=1))
+    groups = [
+        design.ReferenceGroup(
+            GROUP_NAMES[group][language],
+            [
+                _reference_item(source, number, language)
+                for number, source in numbered
+                if source.group is group
+            ],
+        )
+        for group in SourceGroup
+    ]
+    legend = [(SOURCE_KIND_NAMES[kind][language], SOURCE_KIND_COLOURS[kind]) for kind in SourceKind]
+    design.references(
+        groups,
+        legend,
+        design.ReferenceLabels(label("refs_used_for", language), label("refs_no_link", language)),
+    )
+
+
+def _reference_item(source: Source, number: int, language: Language) -> design.ReferenceItem:
+    return design.ReferenceItem(
+        number=number,
+        publisher=source.publisher,
+        title=source.title,
+        date=source.date,
+        url=source.url,
+        used_for=source.used_for[language],
+        caveat=source.caveat[language] if source.caveat else None,
+        kind_label=SOURCE_KIND_NAMES[source.kind][language],
+        kind_colour=SOURCE_KIND_COLOURS[source.kind],
+    )
+
+
 def main() -> None:
     language = current_language()
     _render_hero(language)
@@ -162,6 +213,7 @@ def main() -> None:
     _render_links(language)
     _render_quality(language)
     _render_guarantees(language)
+    _render_references(language)
 
 
 main()
