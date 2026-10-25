@@ -11,6 +11,7 @@ from pydantic import ValidationError
 import collateral_form
 import collateral_view
 import design
+import liveness_view
 from collateral_engine.audit import ReasonRequiredError
 from collateral_engine.demo_cases import DEMO_USD_RATE, DEMO_VALUATION_DATE
 from collateral_engine.domain import Currency
@@ -111,11 +112,13 @@ def _reset_applicant() -> None:
     _clear(
         "customer_file", "application_id", "consent", "consent_pending", "source_error", "report"
     )
+    liveness_view.clear_liveness()
 
 
 def _start_application(customer_file: CustomerFile) -> None:
     # One number per applicant: reruns keep it, so the applicant's own photos are not taken for
     # photos reused from another application.
+    liveness_view.clear_liveness()
     _set_state("customer_file", customer_file)
     _set_state("application_id", new_application_id())
 
@@ -406,6 +409,7 @@ def _build_application(customer_file: CustomerFile) -> LoanApplication:
         vehicle=vehicle,
         usd_rate=DEMO_USD_RATE,
         gel_per_unit=get_statement_rates(APPLICATION_DATE),
+        liveness=liveness_view.current_check(),
     )
 
 
@@ -747,6 +751,7 @@ def _render_report(report: LoanApplicationReport, language: Language) -> None:
         "tab_collateral_ai": lambda: collateral_view.render_collateral(
             report, _state("photo_bytes") or {}, language
         ),
+        "tab_identification": lambda: liveness_view.render_check(report.liveness, language),
         "tab_income_detail": lambda: _render_income(report, language),
         "tab_credit": lambda: _render_credit(report, language),
         "tab_audit": lambda: _render_audit(report, language),
@@ -754,6 +759,8 @@ def _render_report(report: LoanApplicationReport, language: Language) -> None:
     # The AI analysis of the collateral opens first; a consumer loan has none to show.
     if not has_collateral:
         renderers.pop("tab_collateral_ai")
+    if report.liveness is None:
+        renderers.pop("tab_identification")
     tabs = st.tabs([label(key, language) for key in renderers])
     for tab, render in zip(tabs, renderers.values(), strict=True):
         with tab:
@@ -766,6 +773,7 @@ def main() -> None:
     st.title(label("loan_title", language))
     st.caption(label("loan_lead", language))
     _render_applicant(language)
+    liveness_view.render_identification(_state("customer_file"), _state("application_id"), language)
     _render_loan(language)
     with st.container(border=True):
         st.markdown(

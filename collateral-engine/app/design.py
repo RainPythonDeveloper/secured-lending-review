@@ -119,9 +119,30 @@ section[data-testid="stSidebar"]{min-width:340px}
 .ai-model{color:var(--brand);background:var(--brand-soft);border-radius:8px;padding:2px 9px;
   font-size:.8rem;font-weight:600}
 .ai-note{color:var(--muted);font-size:.84rem;margin:0 0 8px}
+.lv-card{background:radial-gradient(120% 160% at 0% 0%,#1e3a8a 0%,#0f1f3d 55%,#081430 100%);
+  color:#fff;border-radius:16px;padding:18px 20px;margin:6px 0 12px}
+.lv-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lv-head .title{font-weight:700;font-size:1.08rem}
+.lv-status{background:var(--lv);color:#fff;border-radius:999px;padding:3px 12px;font-weight:800;
+  font-size:.82rem;letter-spacing:.02em}
+.lv-summary{color:rgba(255,255,255,.74);font-size:.9rem;margin:6px 0 12px}
+.lv-strip{display:grid;grid-template-columns:repeat(var(--count,3),minmax(0,1fr));gap:12px}
+.lv-frame{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;overflow:hidden}
+.lv-frame.done{border-color:rgba(34,197,94,.55)} .lv-frame.missed{border-color:rgba(239,68,68,.55)}
+.lv-frame img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;transform:scaleX(-1)}
+.lv-frame .no-frame{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+  font-size:2rem;color:#f87171;background:rgba(239,68,68,.08)}
+.lv-frame .meta{padding:8px 10px;font-size:.86rem;line-height:1.35}
+.lv-frame .state{font-weight:700} .lv-frame.done .state{color:#4ade80}
+.lv-frame.missed .state{color:#f87171}
+.lv-frame .hash{display:block;font-family:ui-monospace,Menlo,monospace;font-size:.7rem;
+  color:rgba(255,255,255,.55);margin-top:2px}
+.lv-issues{margin:12px 0 0;padding-left:18px;color:#fcd34d;font-size:.9rem}
+.lv-note{color:rgba(255,255,255,.6);font-size:.8rem;margin:12px 0 0}
 @media (max-width: 900px){
   .flow{grid-template-columns:1fr 1fr} .cards{grid-template-columns:1fr 1fr}
-  .stages{grid-template-columns:1fr 1fr}
+  .stages{grid-template-columns:1fr 1fr} .lv-strip{grid-template-columns:1fr 1fr}
   .guarantees{grid-template-columns:1fr} .limit-row{grid-template-columns:1fr}
   .limit-row .amount{text-align:left}
 }
@@ -160,6 +181,26 @@ class LimitBar:
     amount_text: str
     colour: str
     is_binding: bool = False
+
+
+@dataclass(frozen=True)
+class LivenessFrame:
+    title: str
+    state: str
+    is_completed: bool
+    image_data_url: str | None
+    sha256: str | None
+
+
+@dataclass(frozen=True)
+class LivenessCard:
+    title: str
+    status: str
+    colour: str
+    summary: str
+    frames: list[LivenessFrame]
+    issues: list[str]
+    note: str
 
 
 @dataclass(frozen=True)
@@ -298,3 +339,36 @@ def form_subhead(title: str, hint: str = "") -> None:
 
 def subtitle(text: str) -> None:
     st.markdown(f'<div class="subtitle">{_escape(text)}</div>', unsafe_allow_html=True)
+
+
+def liveness_card(card: LivenessCard) -> None:
+    """The liveness session: status, then one evidence frame per task with its SHA-256."""
+    frames = "".join(_liveness_frame(frame) for frame in card.frames)
+    issues = "".join(f"<li>{_escape(issue)}</li>" for issue in card.issues)
+    issues_html = f'<ul class="lv-issues">{issues}</ul>' if issues else ""
+    strip_html = (
+        f'<div class="lv-strip" style="--count:{len(card.frames)}">{frames}</div>' if frames else ""
+    )
+    st.markdown(
+        f'<div class="lv-card"><div class="lv-head">'
+        f'<span class="lv-status" style="--lv:{card.colour}">{_escape(card.status)}</span>'
+        f'<span class="title">{_escape(card.title)}</span></div>'
+        f'<p class="lv-summary">{_escape(card.summary)}</p>{strip_html}{issues_html}'
+        f'<p class="lv-note">{_escape(card.note)}</p></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _liveness_frame(frame: LivenessFrame) -> str:
+    image = (
+        f'<img src="{_escape(frame.image_data_url)}" alt="">'
+        if frame.image_data_url
+        else '<div class="no-frame">✕</div>'
+    )
+    tone = "done" if frame.is_completed else "missed"
+    sha = f'<span class="hash">SHA-256 {_escape(frame.sha256[:16])}…</span>' if frame.sha256 else ""
+    return (
+        f'<div class="lv-frame {tone}">{image}<div class="meta">{_escape(frame.title)}<br>'
+        f'<span class="state">{_escape(frame.state)}</span>{sha}</div></div>'
+    )
+

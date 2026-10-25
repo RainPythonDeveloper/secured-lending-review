@@ -43,6 +43,7 @@ from collateral_engine.lending.affordability import (
 from collateral_engine.lending.bureau import CreditReport, credit_report
 from collateral_engine.lending.customer import CustomerFile, DataSource
 from collateral_engine.lending.income_analysis import IncomeAnalysis, analyse_income
+from collateral_engine.lending.liveness import LivenessCheck, LivenessStatus
 from collateral_engine.lending.policy import IncomePolicy, LendingPolicy, ScreeningLists
 from collateral_engine.lending.screening import ScreeningResult, screen_customer
 from collateral_engine.nbg_rules import NbgRules, rule_version_in_force
@@ -86,6 +87,9 @@ class StageStatus(StrEnum):
 
 class LendingReason(StrEnum):
     IDENTITY_CONFIRMED = "IDENTITY_CONFIRMED"
+    LIVENESS_PASSED = "LIVENESS_PASSED"
+    LIVENESS_NOT_PASSED = "LIVENESS_NOT_PASSED"
+    LIVENESS_INCONCLUSIVE = "LIVENESS_INCONCLUSIVE"
     SANCTIONS_MATCH = "SANCTIONS_MATCH"
     DEBTORS_REGISTRY_RECORD = "DEBTORS_REGISTRY_RECORD"
     THIN_FILE = "THIN_FILE"
@@ -173,6 +177,8 @@ class LoanApplication(_Model):
     usd_rate: ExchangeRate
     # NBG rates of the foreign currencies in the statement, GEL per unit.
     gel_per_unit: dict[str, Decimal]
+    # Remote identification; None when the applicant is identified in a branch.
+    liveness: LivenessCheck | None = None
 
     @model_validator(mode="after")
     def _check_collateral_matches_product(self) -> Self:
@@ -193,6 +199,7 @@ class LoanApplicationReport(_Model):
     data_source: DataSource
     stages: list[Stage]
     screening: ScreeningResult
+    liveness: LivenessCheck | None
     credit: CreditReport
     income: IncomeAnalysis
     pti: PtiCheck
@@ -232,6 +239,12 @@ SOURCE_LABELS = {
     DataSource.SYNTHETIC_APPLICANT: "Synthetic applicant statement",
 }
 SCREENING_SOURCE = "Synthetic stand-in: sanctions/PEP list, NAPR Debtors Registry"
+LIVENESS_SOURCE = "Liveness check · NBG Order 104/04"
+LIVENESS_REASONS = {
+    LivenessStatus.PASSED: LendingReason.LIVENESS_PASSED,
+    LivenessStatus.NOT_PASSED: LendingReason.LIVENESS_NOT_PASSED,
+    LivenessStatus.INCONCLUSIVE: LendingReason.LIVENESS_INCONCLUSIVE,
+}
 BUREAU_SOURCE = "Synthetic stand-in: Creditinfo Georgia"
 REAL_ESTATE_SOURCE = "Collateral engine · comparable sales · NBG Order 84/04"
 # NBG Order 84/04 covers real estate only; vehicles are valued under the bank's own policy.
@@ -273,7 +286,7 @@ class LoanPipeline:
         )
         collateral = _timed(lambda: self._collateral(application, photos))
         stages = [
-            self._identity_stage(screening),
+            self._identity_stage(screening, application.liveness),
             self._credit_stage(credit),
             self._income_stage(income, customer_file.source),
             self._affordability_stage(affordability, application),
@@ -344,9 +357,11 @@ class LoanPipeline:
             return self._vehicle_engine.assess(request, photos)
         return None
 
-    def _identity_stage(self, screening: _Timed[ScreeningResult]) -> Stage:
+    def _identity_stage(
+        self, screening: _Timed[ScreeningResult], liveness: LivenessCheck | None
+    ) -> Stage:
         result = screening.result
-        findings = [
+        watchlist_findings = [
             Finding(reason=LendingReason.SANCTIONS_MATCH, params={"list": entry.list})
             for entry in result.sanctions_matches
         ] + [
@@ -356,15 +371,20 @@ class LoanPipeline:
             )
             for record in result.debtor_records
         ]
-        status = StageStatus.REVIEW if findings else StageStatus.PASSED
-        if not findings:
-            findings = [Finding(reason=LendingReason.IDENTITY_CONFIRMED)]
+        needs_review = bool(watchlist_findings) or (
+            liveness is not None and liveness.status is not LivenessStatus.PASSED
+        )
+        if not watchlist_findings:
+            watchlist_findings = [Finding(reason=LendingReason.IDENTITY_CONFIRMED)]
+        source = SCREENING_SOURCE
+        if liveness is not None:
+            source = f"{source} · {LIVENESS_SOURCE}"
         return Stage(
             kind=StageKind.IDENTITY,
-            status=status,
-            source=SCREENING_SOURCE,
+            status=StageStatus.REVIEW if needs_review else StageStatus.PASSED,
+            source=source,
             duration_ms=screening.duration_ms,
-            findings=findings,
+            findings=_liveness_findings(liveness) + watchlist_findings,
         )
 
     def _credit_stage(self, credit: _Timed[CreditReport]) -> Stage:
@@ -487,6 +507,7 @@ class LoanPipeline:
             data_source=application.customer_file.source,
             stages=stages,
             screening=screening,
+            liveness=application.liveness,
             credit=credit,
             income=income,
             pti=pti,
@@ -507,10 +528,12 @@ class LoanPipeline:
             nbg_rules_version=rule_version_in_force(self._rules, application.application_date).id,
             policy_version=self._policy.version,
             processing_ms=round((time.perf_counter() - started) * MILLISECONDS_PER_SECOND),
-            manual_minutes_replaced=self._manual_minutes(collateral is not None),
+            manual_minutes_replaced=self._manual_minutes(
+                collateral is not None, application.liveness is not None
+            ),
         )
 
-    def _manual_minutes(self, has_collateral: bool) -> int:
+    def _manual_minutes(self, has_collateral: bool, has_liveness: bool) -> int:
         minutes = self._policy.manual_minutes
         total = (
             minutes.identity_and_watchlists
@@ -518,7 +541,11 @@ class LoanPipeline:
             + minutes.income_verification
             + minutes.affordability
         )
-        return total + (minutes.collateral if has_collateral else 0)
+        if has_collateral:
+            total += minutes.collateral
+        if has_liveness:
+            total += minutes.remote_identification
+        return total
 
     def _record(self, report: LoanApplicationReport) -> None:
         report_json = report.model_dump_json()
@@ -529,6 +556,7 @@ class LoanPipeline:
                 "customer_id": report.customer_id,
                 "data_source": report.data_source,
                 "recommendation": report.recommendation,
+                "liveness_status": report.liveness.status if report.liveness else None,
                 "offer_amount_gel": str(report.offer_amount_gel),
                 "nbg_rules_version": report.nbg_rules_version,
                 "report_sha256": hashlib.sha256(report_json.encode()).hexdigest(),
@@ -542,6 +570,23 @@ def new_application_id() -> str:
 
 def _in_gel(amount: Decimal, currency: Currency, usd_rate: ExchangeRate) -> Decimal:
     return amount if currency is Currency.GEL else amount * usd_rate.gel_per_unit
+
+
+def _liveness_findings(liveness: LivenessCheck | None) -> list[Finding]:
+    """None when the applicant is identified in a branch."""
+    if liveness is None:
+        return []
+    completed = sum(task.is_completed for task in liveness.tasks)
+    return [
+        Finding(
+            reason=LIVENESS_REASONS[liveness.status],
+            params={
+                "completed": str(completed),
+                "tasks": str(len(liveness.tasks)),
+                "attempt": str(liveness.attempt),
+            },
+        )
+    ]
 
 
 def _income_reviews(analysis: IncomeAnalysis, policy: IncomePolicy) -> list[Finding]:

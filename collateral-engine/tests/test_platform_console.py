@@ -19,6 +19,13 @@ from collateral_engine.i18n import Language
 from collateral_engine.lending.affordability import LoanProduct
 from collateral_engine.lending.customer import DataSource
 from collateral_engine.lending.decision import LoanDecisionKind
+from collateral_engine.lending.liveness import (
+    LIVENESS_MODEL,
+    LivenessCheck,
+    LivenessStatus,
+    LivenessTask,
+    LivenessTaskResult,
+)
 from collateral_engine.lending.pipeline import LendingRecommendation
 from collateral_engine.lending.policy import load_lending_policy
 from collateral_engine.market import write_market_data
@@ -151,6 +158,49 @@ def test_bank_records_feed_the_whole_pipeline(application: AppTest) -> None:
     assert not application.exception
     assert report.data_source is DataSource.BANK_SNAPSHOT
     assert report.recommendation is LendingRecommendation.OFFER
+
+
+def passed_liveness_check() -> LivenessCheck:
+    return LivenessCheck(
+        session_id="session-1",
+        attempt=1,
+        status=LivenessStatus.PASSED,
+        issues=[],
+        tasks=[
+            LivenessTaskResult(task=task, is_completed=True, response_ms=1500, frame_sha256=None)
+            for task in (LivenessTask.TURN_RIGHT, LivenessTask.BLINK, LivenessTask.LOOK_DOWN)
+        ],
+        frames_analysed=180,
+        model=LIVENESS_MODEL,
+        policy_version="2026-10",
+    )
+
+
+def test_identification_waits_for_the_applicant_data(application: AppTest) -> None:
+    captions = [caption.value for caption in application.caption]
+
+    assert UI_TEXT["liveness_need_data"][Language.GEORGIAN] in captions
+    assert "loan_liveness_tasks" not in application.session_state
+
+
+def test_identification_draws_the_policy_number_of_tasks(application: AppTest) -> None:
+    load_bank_records(application)
+
+    tasks = application.session_state["loan_liveness_tasks"]
+    assert len(set(tasks)) == load_lending_policy().liveness.task_count
+
+
+def test_liveness_check_reaches_the_identity_stage_and_its_tab(application: AppTest) -> None:
+    load_bank_records(application)
+    application.session_state["loan_liveness"] = passed_liveness_check()
+
+    run_checks(application)
+
+    report = application.session_state["loan_report"]
+    assert report.liveness.status is LivenessStatus.PASSED
+    assert UI_TEXT["tab_identification"][Language.GEORGIAN] in [
+        tab.label for tab in application.tabs
+    ]
 
 
 def test_rerunning_the_checks_keeps_the_application_number(application: AppTest) -> None:

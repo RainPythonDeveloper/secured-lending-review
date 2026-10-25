@@ -72,7 +72,7 @@ make data           # 6,000 flat and 1,200 house sales -> data/comparables.csv,
                     # synthetic borrowers and trained models in ../income-engine (about 2 min)
 make app            # platform console on http://localhost:8502 (restart it after editing src/)
 make api            # platform API on http://localhost:8100/docs
-make check          # ruff, then the tests of both engines (549 tests, about 45 s)
+make check          # ruff, then the tests of both engines (579 tests, about 45 s)
 make evaluate       # backtest of flats, houses and vehicles -> reports/metrics.json
 ```
 
@@ -83,7 +83,7 @@ built from the repository root so it carries the income engine and the shared NB
 
 The console has two pages: an **Overview** for first-time visitors and the **Loan application**,
 which runs the checks a loan officer does by hand before a loan is issued, as one pipeline:
-applicant, loan, automated checks, officer's decision. One language selector serves both pages.
+applicant, remote identification, loan, automated checks, officer's decision. One language selector serves both pages.
 
 There are two kinds of applicant:
 
@@ -96,7 +96,7 @@ The pipeline (`src/collateral_engine/lending/`) runs five stages:
 
 | Stage | What it checks | Source |
 |---|---|---|
-| Identity and watchlists | Name against the sanctions/PEP list and the NAPR Debtors Registry | synthetic stand-ins in `config/screening_lists.yaml` |
+| Identity and watchlists | Liveness check of an applicant identified remotely (step 2, below); name against the sanctions/PEP list and the NAPR Debtors Registry | the browser session; synthetic stand-ins in `config/screening_lists.yaml` |
 | Credit history | Thin file, current obligations (counted in PTI), days past due in the last 12 months | synthetic stand-in for Creditinfo Georgia, deterministic per customer |
 | Income | Whole calendar months of the statement: verified income is the median month, PTI uses the lower-quartile month; declared income above the verified one, unstable income, short history; salary and pension count as documented (stand-in for RS.ge), other income is flagged as undocumented | the statement |
 | Affordability | PTI limit by income and currency hedge, GEL lending below the FX threshold, longest term per product; the highest amount within PTI | `income-engine/config/nbg_rules.yaml`, version in force on the application date |
@@ -141,10 +141,33 @@ report) and the decision (`LOAN_DECISION`) go to the shared hash-chained audit l
 the processing time next to the manual minutes the checks replace (`config/lending_policy.yaml`,
 an assumption).
 
-Identity is a list check only: document and biometric verification is out of scope, because the
-platform processes no face or voice data. Creditinfo, RS.ge, the sanctions list and the Debtors
-Registry are synthetic stand-ins, labelled as such on every stage card, because the hackathon
-provides no access to them.
+**Remote identification (step 2).** NBG Order 104/04 lets a bank identify a customer remotely by
+video, with at least three randomly chosen tasks and at most three attempts in 24 hours. The
+console draws the tasks on the server (turn the head left or right, look up or down, blink) and
+the applicant performs them in front of the camera. MediaPipe Face Landmarker runs in the
+browser, follows the head and eye movements against the applicant's own pose while looking at the
+camera, and draws the face mesh, the oval and the progress of each task. The browser reports
+only what happened; `lending/liveness.py` sets the status from `liveness` in
+`config/lending_policy.yaml`:
+
+| Session | Status | Outcome |
+|---|---|---|
+| Every drawn task done in time, one person in the frame | PASSED | the identity stage passes |
+| A task missed, or other tasks than the drawn ones | NOT_PASSED | officer review; a new attempt draws new tasks |
+| No camera, the model did not load, the applicant not centred, several people in the frame | INCONCLUSIVE | officer review, never a refusal |
+
+The frames are not stored: one small frame per completed task is shown to the officer in the
+session's memory only, and the session (tasks, status, the frames' SHA-256, never the images) goes
+to the audit log as `LIVENESS_CHECKED`. No face
+template is created, no faces are matched and nothing is inferred about the person: of the
+model's outputs only the landmarks and the two eye-blink scores are read. Minors are not filmed.
+The step is optional: an applicant identified in person in a branch skips it. The model runs in
+the browser from the jsDelivr and Google CDNs, so the camera page needs internet access;
+`localhost` counts as a secure context for the camera. Matching the face against an ID document
+is out of scope. The thresholds have been set by hand, not measured on a labelled set.
+
+Creditinfo, RS.ge, the sanctions list and the Debtors Registry are synthetic stand-ins, labelled
+as such on every stage card, because the hackathon provides no access to them.
 
 **Open Banking consent, step by step.** Start the gateway (`cd ../server && npm run start:dev`, or
 `docker compose up`). On the Loan application page pick a customer and press *Request consent*:
@@ -280,6 +303,9 @@ the Open Banking gateway of this repository.
 | NBG rule values live only in the dated rules file | `nbg_rules.py`, `income-engine/config/nbg_rules.yaml` |
 | Two independent estimates; large disagreement goes to review | `valuation.py`, `findings.py` |
 | No fields about honesty, emotion or biometrics in the report | `tests/test_engine.py` |
+| Liveness tasks are drawn on the server, at least three (NBG 104/04); the browser cannot choose them or set the status | `lending/liveness.py`, `config/lending_policy.yaml` (`liveness`) |
+| At most three liveness attempts per customer in 24 hours, counted from the audit log | `lending/liveness.py` (`attempts_in_last_day`) |
+| Liveness frames are not stored; the audit log holds only their SHA-256; no face template, matching or attributes | `lending/liveness.py`, `app/components/liveness/index.html` |
 | Release gates on accuracy, coverage, COD and PRD | `tests/test_evaluation.py` |
 | Money in `Decimal`; limits rounded down | `money.py`, `ltv.py` |
 
@@ -365,6 +391,8 @@ Licences as declared by the installed packages.
 | openpyxl | 3.1.5 | MIT | Reading the organizer dataset |
 | streamlit | 1.66.1 | Apache-2.0 | Officer console |
 | pydeck | 0.9.3 | Apache-2.0 | Map |
+| MediaPipe Tasks Vision (browser, jsDelivr CDN) | 0.10.14 | Apache-2.0 | Face landmarks for the liveness check |
+| MediaPipe Face Landmarker model | float16/1 | Apache-2.0 | Face landmarks for the liveness check |
 | pytest, ruff (dev) | 9.1.1, 0.16.10 | MIT | Tests and lint |
 | OpenStreetMap metro stations | 2026-10-22 | ODbL 1.0, © OpenStreetMap contributors | `reference/tbilisi_metro_stations.json` |
 | Geostat district prices | Q1 2026 | public statistics | Synthetic price anchors |

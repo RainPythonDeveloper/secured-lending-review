@@ -27,6 +27,7 @@ class AuditEvent(StrEnum):
     LOAN_APPLICATION_ASSESSED = "loan_application_assessed"
     OFFICER_DECISION = "officer_decision"
     LOAN_DECISION = "loan_decision"
+    LIVENESS_CHECKED = "liveness_checked"
 
 
 class OfficerDecisionKind(StrEnum):
@@ -137,6 +138,28 @@ class AuditLog:
             if record.get("event") == event and record.get(field) == value:
                 return record
         return None
+
+    def records_of(self, event: "AuditEvent", field: str, value: str) -> list[AuditRecord]:
+        """Every record of the event whose field has the value, oldest first."""
+        with sqlite3.connect(self._path) as connection:
+            rows = connection.execute(
+                "SELECT sequence, recorded_at, record_hash, payload FROM audit_log "
+                "ORDER BY sequence"
+            ).fetchall()
+        records = [
+            AuditRecord(
+                sequence=sequence,
+                recorded_at=recorded_at,
+                record_hash=record_hash,
+                payload=json.loads(payload),
+            )
+            for sequence, recorded_at, record_hash, payload in rows
+        ]
+        return [
+            record
+            for record in records
+            if record.payload.get("event") == event and record.payload.get(field) == value
+        ]
 
     def find_valuation(self, valuation_id: str) -> dict:
         with sqlite3.connect(self._path) as connection:

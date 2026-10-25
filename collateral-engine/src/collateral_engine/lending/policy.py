@@ -48,6 +48,26 @@ class ManualMinutes(_Config):
     income_verification: Annotated[int, Field(ge=0)]
     affordability: Annotated[int, Field(ge=0)]
     collateral: Annotated[int, Field(ge=0)]
+    remote_identification: Annotated[int, Field(ge=0)]
+
+
+# NBG Order 104/04 asks for at least three randomly chosen tasks.
+MIN_LIVENESS_TASKS = 3
+
+
+class LivenessPolicy(_Config):
+    task_count: Annotated[int, Field(ge=MIN_LIVENESS_TASKS)]
+    max_attempts_per_day: Annotated[int, Field(ge=1)]
+    min_applicant_age: Annotated[int, Field(ge=18)]
+    task_timeout_ms: Annotated[int, Field(gt=0)]
+    align_timeout_ms: Annotated[int, Field(gt=0)]
+    min_head_turn: Share
+    min_head_tilt: Share
+    eye_closed_score: Share
+    eye_open_score: Share
+    hold_frames: Annotated[int, Field(ge=1)]
+    frame_width_px: Annotated[int, Field(ge=160, le=1280)]
+    max_frame_bytes: Annotated[int, Field(gt=0)]
 
 
 class LendingPolicy(_Config):
@@ -56,6 +76,7 @@ class LendingPolicy(_Config):
     credit_history: CreditHistoryPolicy
     products: Products
     manual_minutes: ManualMinutes
+    liveness: LivenessPolicy
 
 
 class SanctionsEntry(_Config):

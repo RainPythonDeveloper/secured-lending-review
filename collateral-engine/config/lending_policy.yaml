@@ -33,3 +33,26 @@ manual_minutes:
   income_verification: 45
   affordability: 20
   collateral: 60
+  # A video identification call with a bank employee, counted only when the liveness check ran.
+  remote_identification: 10
+
+# Remote identification of an applicant who is not in a branch.
+liveness:
+  # NBG Order 104/04: at least three randomly chosen tasks, at most three attempts in 24 hours.
+  task_count: 3
+  max_attempts_per_day: 3
+  # Children are not filmed.
+  min_applicant_age: 18
+  task_timeout_ms: 9000
+  align_timeout_ms: 15000
+  # Thresholds of the face landmark model in the browser, measured against the applicant's own
+  # pose while looking at the camera: the shift of the nose across the face width (turn), along
+  # the face height (tilt), and the eye-blink scores of a closed and an open eye.
+  min_head_turn: 0.12
+  min_head_tilt: 0.06
+  eye_closed_score: 0.5
+  eye_open_score: 0.25
+  hold_frames: 3
+  # One small evidence frame per completed task.
+  frame_width_px: 320
+  max_frame_bytes: 200000

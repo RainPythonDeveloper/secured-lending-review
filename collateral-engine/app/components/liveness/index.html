@@ -1,0 +1,499 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+:root{
+  --night:#081430; --navy:#0f1f3d; --brand:#16337a; --sky:#38bdf8; --sky-soft:rgba(56,189,248,.16);
+  --good:#22c55e; --bad:#ef4444; --warn:#f59e0b; --text:#e8eefc; --muted:rgba(232,238,252,.62);
+  --line:rgba(232,238,252,.14);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:transparent;
+  font-family:"Source Sans Pro","Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
+.shell{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:0;
+  background:radial-gradient(120% 140% at 0% 0%,#1e3a8a 0%,var(--navy) 46%,var(--night) 100%);
+  border-radius:18px;overflow:hidden;color:var(--text);border:1px solid rgba(15,31,61,.25);
+  box-shadow:0 18px 40px rgba(8,20,48,.28)}
+.viewport{position:relative;min-height:440px;overflow:hidden;background:#050b1c}
+/* Both fill the viewport the same way, so the mesh stays on the face. */
+video,canvas.mesh{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transform:scaleX(-1)}
+video{opacity:0;transition:opacity .5s}
+video.live{opacity:1}
+.frame{position:absolute;left:50%;top:50%;height:80%;aspect-ratio:.78;
+  transform:translate(-50%,-50%);pointer-events:none}
+.oval{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2000px rgba(5,11,28,.66)}
+.ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring ellipse{fill:none;stroke-width:1.6}
+.ring .track{stroke:rgba(232,238,252,.18);stroke-dasharray:1.2 1.6}
+.ring .progress{stroke:var(--sky);stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;
+  opacity:0;transition:stroke-dashoffset .18s ease-out,stroke .3s,opacity .2s;
+  filter:drop-shadow(0 0 4px var(--sky))}
+.ring.done .progress{stroke:var(--good);filter:drop-shadow(0 0 6px var(--good))}
+.ring.missed .progress{stroke:var(--bad);filter:drop-shadow(0 0 6px var(--bad))}
+.scan{position:absolute;left:10%;right:10%;height:2px;top:8%;opacity:0;
+  background:linear-gradient(90deg,transparent,var(--sky),transparent);box-shadow:0 0 12px var(--sky)}
+.scan.on{opacity:.9;animation:scan 2.2s ease-in-out infinite}
+@keyframes scan{0%,100%{top:8%}50%{top:90%}}
+.cue{position:absolute;width:54px;height:54px;opacity:0;transition:opacity .25s;
+  filter:drop-shadow(0 0 10px rgba(56,189,248,.8))}
+.cue svg{width:100%;height:100%;stroke:var(--sky);stroke-width:3;fill:none;stroke-linecap:round;
+  stroke-linejoin:round}
+.cue.on{opacity:1}
+.cue.left{left:-76px;top:calc(50% - 27px)} .cue.left.on{animation:nudge-left 1s ease-in-out infinite}
+.cue.right{right:-76px;top:calc(50% - 27px)} .cue.right.on{animation:nudge-right 1s ease-in-out infinite}
+.cue.up{left:calc(50% - 27px);top:-46px} .cue.up.on{animation:nudge-up 1s ease-in-out infinite}
+.cue.down{left:calc(50% - 27px);bottom:-46px} .cue.down.on{animation:nudge-down 1s ease-in-out infinite}
+.cue.blink{left:calc(50% - 27px);top:-46px} .cue.blink.on{animation:pulse 1.1s ease-in-out infinite}
+@keyframes nudge-left{50%{transform:translateX(-10px)}}
+@keyframes nudge-right{50%{transform:translateX(10px)}}
+@keyframes nudge-up{50%{transform:translateY(-8px)}}
+@keyframes nudge-down{50%{transform:translateY(8px)}}
+@keyframes pulse{50%{transform:scale(.82)}}
+.badge{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px 0 0 -46px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;
+  transform:scale(.4);transition:opacity .2s,transform .35s cubic-bezier(.2,1.6,.4,1);
+  pointer-events:none}
+.badge svg{width:46px;height:46px;stroke:#fff;stroke-width:4;fill:none;stroke-linecap:round;
+  stroke-linejoin:round}
+.badge.good{background:rgba(34,197,94,.9);box-shadow:0 0 0 10px rgba(34,197,94,.22);opacity:1;
+  transform:scale(1)}
+.badge.bad{background:rgba(239,68,68,.9);box-shadow:0 0 0 10px rgba(239,68,68,.22);opacity:1;
+  transform:scale(1)}
+.hud{position:absolute;left:12px;right:12px;bottom:10px;display:flex;justify-content:space-between;
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  font-variant-numeric:tabular-nums;pointer-events:none}
+.hud b{color:var(--sky);font-weight:700}
+.rec{display:inline-flex;align-items:center;gap:6px}
+.rec::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--bad);
+  animation:pulse 1.2s infinite}
+.alert{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(245,158,11,.92);
+  color:#1a1205;font-weight:700;font-size:13px;border-radius:999px;padding:4px 14px;opacity:0;
+  transition:opacity .2s;white-space:nowrap;pointer-events:none}
+.alert.on{opacity:1}
+.idle{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;color:var(--muted);font-size:14px;text-align:center;padding:24px}
+.idle .glyph{width:84px;height:84px;border-radius:50%;border:2px dashed rgba(56,189,248,.5);
+  display:flex;align-items:center;justify-content:center}
+.idle .glyph svg{width:40px;height:40px;stroke:var(--sky);stroke-width:2;fill:none}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(56,189,248,.2);
+  border-top-color:var(--sky);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.panel{padding:22px 24px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.kicker{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--sky)}
+.kicker .chip{background:linear-gradient(90deg,#2563eb,#38bdf8);color:#fff;border-radius:999px;
+  padding:2px 9px;letter-spacing:.04em}
+h2{margin:0;font-size:1.65rem;line-height:1.15;font-weight:700;color:#fff}
+.hint{margin:0;color:var(--muted);font-size:.95rem;line-height:1.4;min-height:1.4em}
+.tasks{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.task{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:12px;background:rgba(232,238,252,.05);border:1px solid var(--line);
+  transition:background .25s,border-color .25s}
+.task .num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:13px;font-weight:700;background:rgba(232,238,252,.1)}
+.task .title{font-size:.95rem}
+.task .state{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.task.active{background:var(--sky-soft);border-color:rgba(56,189,248,.55)}
+.task.active .num{background:var(--sky);color:var(--night)}
+.task.done .num{background:var(--good);color:#fff}
+.task.done .state{color:var(--good)}
+.task.missed .num{background:var(--bad);color:#fff}
+.task.missed .state{color:var(--bad)}
+.timer{height:5px;border-radius:3px;background:rgba(232,238,252,.1);overflow:hidden}
+.timer .fill{height:100%;width:0;background:linear-gradient(90deg,var(--sky),#818cf8);
+  transition:width .1s linear}
+button{appearance:none;border:0;border-radius:12px;padding:12px 18px;font-size:1rem;
+  font-weight:700;cursor:pointer;color:#fff;font-family:inherit;
+  background:linear-gradient(90deg,#2563eb,#0ea5e9);box-shadow:0 8px 22px rgba(37,99,235,.35)}
+button:hover{filter:brightness(1.08)}
+button:disabled{opacity:.5;cursor:default}
+.privacy{margin:auto 0 0;font-size:.76rem;line-height:1.4;color:var(--muted);
+  border-top:1px solid var(--line);padding-top:10px}
+.hidden{display:none !important}
+@media (max-width:760px){.shell{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+  <div class="viewport">
+    <video id="video" playsinline muted></video>
+    <canvas class="mesh" id="mesh"></canvas>
+    <div class="frame">
+    <div class="oval"></div>
+    <svg class="ring" id="ring" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <ellipse class="track" cx="50" cy="50" rx="49" ry="49"/>
+      <ellipse class="progress" id="ring-progress" cx="50" cy="50" rx="49" ry="49"
+        pathLength="100" transform="rotate(-90 50 50)"/>
+    </svg>
+    <div class="scan" id="scan"></div>
+    <div class="cue left" data-task="turn_left"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
+    <div class="cue right" data-task="turn_right"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></div>
+    <div class="cue up" data-task="look_up"><svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></div>
+    <div class="cue down" data-task="look_down"><svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></div>
+    <div class="cue blink" data-task="blink"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></div>
+    <div class="badge" id="badge"><svg viewBox="0 0 24 24" id="badge-icon"></svg></div>
+    </div>
+    <div class="alert" id="alert"></div>
+    <div class="hud hidden" id="hud">
+      <span class="rec" id="hud-model"></span>
+      <span><span id="hud-frames-label"></span> <b id="hud-frames">0</b> · <b id="hud-fps">0</b> fps · <span id="hud-people-label"></span> <b id="hud-people">0</b></span>
+    </div>
+    <div class="idle" id="idle">
+      <div class="glyph"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.6-6 8-6s6.5 2 8 6"/></svg></div>
+      <div id="idle-text"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="kicker"><span class="chip">AI</span><span id="kicker"></span></div>
+    <h2 id="instruction"></h2>
+    <p class="hint" id="hint"></p>
+    <ol class="tasks" id="tasks"></ol>
+    <div class="timer"><div class="fill" id="timer"></div></div>
+    <button id="start"></button>
+    <p class="privacy" id="privacy"></p>
+  </div>
+</div>
+<script type="module">
+// Streamlit component protocol (v1): render arguments come in, the session result goes out once.
+const ALIGN_FRAMES = 10;
+const ALIGN_CENTRE_TOLERANCE = 0.15;
+const MIN_FACE_WIDTH = 0.16;
+const PAUSE_AFTER_TASK_MS = 900;
+const JPEG_QUALITY = 0.82;
+const FPS_WINDOW_MS = 1000;
+const MAX_PEOPLE_TO_DETECT = 2;
+// Landmarks of the MediaPipe face mesh: nose tip, both cheeks, forehead and chin.
+const NOSE_TIP = 1, CHEEK_A = 234, CHEEK_B = 454, FOREHEAD = 10, CHIN = 152;
+const CHECK_ICON = '<path d="M5 12.5l4.5 4.5L19 7.5"/>';
+const CROSS_ICON = '<path d="M6 6l12 12M18 6L6 18"/>';
+
+const $ = (id) => document.getElementById(id);
+const video = $("video"), mesh = $("mesh"), ringProgress = $("ring-progress");
+let args = null;
+let state = null;
+
+function post(type, data) {
+  window.parent.postMessage({isStreamlitMessage: true, type, ...data}, "*");
+}
+
+function resizeFrame() {
+  post("streamlit:setFrameHeight", {height: Math.ceil($("shell").getBoundingClientRect().height) + 4});
+}
+
+window.addEventListener("message", (event) => {
+  if (event.data?.type !== "streamlit:render") return;
+  if (args && args.session_id === event.data.args.session_id) return;
+  args = event.data.args;
+  setUp();
+});
+new ResizeObserver(resizeFrame).observe(document.body);
+post("streamlit:componentReady", {apiVersion: 1});
+
+function setUp() {
+  const texts = args.texts;
+  $("kicker").textContent = texts.kicker;
+  $("instruction").textContent = texts.start_title;
+  $("hint").textContent = texts.start_hint;
+  $("idle-text").textContent = texts.idle;
+  $("start").textContent = texts.start_button;
+  $("privacy").textContent = texts.privacy;
+  $("hud-model").textContent = texts.model_label;
+  $("hud-frames-label").textContent = texts.frames_label;
+  $("hud-people-label").textContent = texts.people_label;
+  $("tasks").innerHTML = "";
+  args.tasks.forEach((task, index) => {
+    const item = document.createElement("li");
+    item.className = "task";
+    item.innerHTML = '<span class="num"></span><span class="title"></span><span class="state"></span>';
+    item.querySelector(".num").textContent = String(index + 1);
+    item.querySelector(".title").textContent = task.title;
+    $("tasks").appendChild(item);
+  });
+  $("start").onclick = start;
+  resizeFrame();
+}
+
+function setRing(share, tone = "") {
+  const clamped = Math.max(0, Math.min(1, share));
+  ringProgress.style.strokeDashoffset = String(100 - clamped * 100);
+  ringProgress.style.opacity = clamped > 0 ? "1" : "0";
+  $("ring").classList.toggle("done", tone === "done");
+  $("ring").classList.toggle("missed", tone === "missed");
+}
+
+function showCue(taskId) {
+  document.querySelectorAll(".cue").forEach((cue) => cue.classList.toggle("on", cue.dataset.task === taskId));
+}
+
+function showBadge(tone) {
+  const badge = $("badge");
+  badge.className = "badge" + (tone ? " " + tone : "");
+  $("badge-icon").innerHTML = tone === "good" ? CHECK_ICON : CROSS_ICON;
+}
+
+function showAlert(text) {
+  $("alert").textContent = text || "";
+  $("alert").classList.toggle("on", Boolean(text));
+}
+
+async function start() {
+  $("start").disabled = true;
+  $("idle").innerHTML = '<div class="spinner"></div><div></div>';
+  $("idle").lastChild.textContent = args.texts.loading;
+  state = {
+    phase: "loading", frames: 0, maxPeople: 0, isCameraAvailable: false, isModelAvailable: false,
+    isAligned: false, alignedFrames: 0, poseSum: {turn: 0, tilt: 0}, baseline: null,
+    taskIndex: -1, taskStartedAt: 0, holdFrames: 0, sawEyesClosed: false, outcomes: [],
+    fpsFrames: 0, fpsSince: performance.now(), lastVideoTime: -1, phaseStartedAt: 0,
+  };
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: "user", width: 640, height: 480}, audio: false});
+    video.srcObject = stream;
+    await video.play();
+    state.isCameraAvailable = true;
+  } catch (error) {
+    finish();
+    return;
+  }
+  try {
+    state.landmarker = await loadLandmarker();
+    state.isModelAvailable = true;
+  } catch (error) {
+    finish();
+    return;
+  }
+  mesh.width = video.videoWidth;
+  mesh.height = video.videoHeight;
+  video.classList.add("live");
+  $("idle").classList.add("hidden");
+  $("hud").classList.remove("hidden");
+  $("start").classList.add("hidden");
+  beginAlign();
+  requestAnimationFrame(loop);
+}
+
+async function loadLandmarker() {
+  const vision = await import(args.urls.bundle);
+  state.vision = vision;
+  const fileset = await vision.FilesetResolver.forVisionTasks(args.urls.wasm);
+  const options = (delegate) => ({
+    baseOptions: {modelAssetPath: args.urls.model, delegate},
+    runningMode: "VIDEO", numFaces: MAX_PEOPLE_TO_DETECT, outputFaceBlendshapes: true,
+  });
+  try {
+    return await vision.FaceLandmarker.createFromOptions(fileset, options("GPU"));
+  } catch (gpuError) {
+    return await vision.FaceLandmarker.createFromOptions(fileset, options("CPU"));
+  }
+}
+
+function beginAlign() {
+  state.phase = "align";
+  state.phaseStartedAt = performance.now();
+  $("instruction").textContent = args.texts.align_title;
+  $("hint").textContent = args.texts.align_hint;
+  $("scan").classList.add("on");
+  setRing(0);
+}
+
+function beginTask(index) {
+  state.taskIndex = index;
+  state.phase = "task";
+  state.taskStartedAt = performance.now();
+  state.holdFrames = 0;
+  state.sawEyesClosed = false;
+  const task = args.tasks[index];
+  const items = $("tasks").children;
+  [...items].forEach((item, position) => item.classList.toggle("active", position === index));
+  items[index].querySelector(".state").textContent = args.texts.step.replace("{n}", index + 1).replace("{total}", args.tasks.length);
+  $("instruction").textContent = task.title;
+  $("hint").textContent = args.texts.task_hint;
+  showCue(task.id);
+  showBadge("");
+  setRing(0);
+}
+
+function loop(now) {
+  if (state.phase === "done") return;
+  if (video.readyState >= 2 && video.currentTime !== state.lastVideoTime) {
+    state.lastVideoTime = video.currentTime;
+    onResult(state.landmarker.detectForVideo(video, performance.now()));
+  }
+  tick(performance.now());
+  requestAnimationFrame(loop);
+}
+
+function tick(now) {
+  if (state.phase === "align" && now - state.phaseStartedAt > args.policy.align_timeout_ms) {
+    finish();
+    return;
+  }
+  if (state.phase !== "task") {
+    $("timer").style.width = "0%";
+    return;
+  }
+  const elapsed = now - state.taskStartedAt;
+  $("timer").style.width = `${Math.max(0, 100 - (elapsed / args.policy.task_timeout_ms) * 100)}%`;
+  if (elapsed > args.policy.task_timeout_ms) completeTask(false, elapsed);
+}
+
+function onResult(result) {
+  state.frames += 1;
+  updateHud(result.faceLandmarks.length);
+  drawMesh(result.faceLandmarks);
+  const people = result.faceLandmarks.length;
+  state.maxPeople = Math.max(state.maxPeople, people);
+  showAlert(people > 1 ? args.texts.several_people : people === 0 && state.phase !== "pause" ? args.texts.no_face : "");
+  if (people !== 1) return;
+  const pose = headPose(result.faceLandmarks[0]);
+  if (state.phase === "align") alignOn(pose);
+  if (state.phase === "task") followTask(pose, eyeBlink(result.faceBlendshapes?.[0]));
+}
+
+function headPose(landmarks) {
+  const left = Math.min(landmarks[CHEEK_A].x, landmarks[CHEEK_B].x);
+  const right = Math.max(landmarks[CHEEK_A].x, landmarks[CHEEK_B].x);
+  const top = landmarks[FOREHEAD].y, bottom = landmarks[CHIN].y;
+  const nose = landmarks[NOSE_TIP];
+  return {turn: (nose.x - left) / (right - left), tilt: (nose.y - top) / (bottom - top), width: right - left, centre: nose.x};
+}
+
+// Only the two eye-blink scores are read; the model's other expression scores are ignored.
+function eyeBlink(blendshapes) {
+  const score = (name) => blendshapes?.categories.find((category) => category.categoryName === name)?.score ?? 0;
+  return Math.min(score("eyeBlinkLeft"), score("eyeBlinkRight"));
+}
+
+function alignOn(pose) {
+  const isCentred = Math.abs(pose.centre - 0.5) < ALIGN_CENTRE_TOLERANCE && pose.width > MIN_FACE_WIDTH;
+  if (!isCentred) {
+    state.alignedFrames = 0;
+    state.poseSum = {turn: 0, tilt: 0};
+    setRing(0);
+    return;
+  }
+  state.alignedFrames += 1;
+  state.poseSum.turn += pose.turn;
+  state.poseSum.tilt += pose.tilt;
+  setRing(state.alignedFrames / ALIGN_FRAMES);
+  if (state.alignedFrames < ALIGN_FRAMES) return;
+  state.baseline = {turn: state.poseSum.turn / ALIGN_FRAMES, tilt: state.poseSum.tilt / ALIGN_FRAMES};
+  state.isAligned = true;
+  $("scan").classList.remove("on");
+  setRing(1, "done");
+  showBadge("good");
+  pauseThen(() => beginTask(0));
+}
+
+// The frames are not mirrored: the applicant's left is the right of the camera image.
+function taskShift(taskId, pose) {
+  const base = state.baseline, policy = args.policy;
+  const shifts = {
+    turn_left: (pose.turn - base.turn) / policy.min_head_turn,
+    turn_right: (base.turn - pose.turn) / policy.min_head_turn,
+    look_up: (base.tilt - pose.tilt) / policy.min_head_tilt,
+    look_down: (pose.tilt - base.tilt) / policy.min_head_tilt,
+  };
+  return shifts[taskId];
+}
+
+function followTask(pose, blinkScore) {
+  const task = args.tasks[state.taskIndex];
+  const elapsed = performance.now() - state.taskStartedAt;
+  if (task.id === "blink") {
+    if (blinkScore > args.policy.eye_closed_score) state.sawEyesClosed = true;
+    setRing(state.sawEyesClosed ? 0.6 : 0.15);
+    if (state.sawEyesClosed && blinkScore < args.policy.eye_open_score) completeTask(true, elapsed);
+    return;
+  }
+  const shift = taskShift(task.id, pose);
+  setRing(shift);
+  state.holdFrames = shift >= 1 ? state.holdFrames + 1 : 0;
+  if (state.holdFrames >= args.policy.hold_frames) completeTask(true, elapsed);
+}
+
+function completeTask(isCompleted, elapsedMs) {
+  const index = state.taskIndex;
+  const item = $("tasks").children[index];
+  state.outcomes.push({
+    task: args.tasks[index].id, is_completed: isCompleted, response_ms: Math.round(elapsedMs),
+    frame_jpeg: isCompleted ? captureFrame() : null,
+  });
+  item.classList.remove("active");
+  item.classList.add(isCompleted ? "done" : "missed");
+  item.querySelector(".state").textContent = isCompleted
+    ? `${args.texts.task_done} · ${(elapsedMs / 1000).toFixed(1)} s`
+    : args.texts.task_missed;
+  showCue("");
+  setRing(1, isCompleted ? "done" : "missed");
+  showBadge(isCompleted ? "good" : "bad");
+  const isLast = index === args.tasks.length - 1;
+  pauseThen(() => (isLast ? finish() : beginTask(index + 1)));
+}
+
+function pauseThen(next) {
+  state.phase = "pause";
+  setTimeout(next, PAUSE_AFTER_TASK_MS);
+}
+
+function captureFrame() {
+  const width = args.policy.frame_width_px;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = Math.round((video.videoHeight / video.videoWidth) * width);
+  canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+}
+
+function drawMesh(faces) {
+  const context = mesh.getContext("2d");
+  context.clearRect(0, 0, mesh.width, mesh.height);
+  if (!state.drawer) state.drawer = new state.vision.DrawingUtils(context);
+  const {FaceLandmarker} = state.vision;
+  for (const landmarks of faces) {
+    state.drawer.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {color: "rgba(125,211,252,0.22)", lineWidth: 0.6});
+    for (const contour of [FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, FaceLandmarker.FACE_LANDMARKS_LIPS]) {
+      state.drawer.drawConnectors(landmarks, contour, {color: "rgba(56,189,248,0.85)", lineWidth: 1.4});
+    }
+  }
+}
+
+function updateHud(people) {
+  state.fpsFrames += 1;
+  const now = performance.now();
+  if (now - state.fpsSince >= FPS_WINDOW_MS) {
+    $("hud-fps").textContent = String(Math.round((state.fpsFrames * 1000) / (now - state.fpsSince)));
+    state.fpsFrames = 0;
+    state.fpsSince = now;
+  }
+  $("hud-frames").textContent = String(state.frames);
+  $("hud-people").textContent = String(people);
+}
+
+function finish() {
+  state.phase = "done";
+  video.srcObject?.getTracks().forEach((track) => track.stop());
+  showCue("");
+  showAlert("");
+  $("scan").classList.remove("on");
+  $("timer").style.width = "0%";
+  $("instruction").textContent = args.texts.done_title;
+  $("hint").textContent = args.texts.done_hint;
+  post("streamlit:setComponentValue", {
+    dataType: "json",
+    value: {
+      session_id: args.session_id,
+      is_camera_available: state.isCameraAvailable,
+      is_model_available: state.isModelAvailable,
+      is_applicant_aligned: state.isAligned,
+      frames_analysed: state.frames,
+      max_people_in_frame: state.maxPeople,
+      outcomes: state.outcomes,
+    },
+  });
+}
+</script>
+</body>
+</html>

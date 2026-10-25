@@ -176,14 +176,115 @@ UI_TEXT: dict[str, Bilingual] = {
     },
     "loan_title": {KA: "სესხის განაცხადი", EN: "Loan application"},
     "loan_lead": {
-        KA: "ერთი პროცესი: განმცხადებელი → სესხი → ავტომატური შემოწმებები → ოფიცრის "
-        "გადაწყვეტილება. ყველა მონაცემი სინთეტიკურია.",
-        EN: "One pipeline: applicant → loan → automated checks → the officer's decision. All "
-        "data is synthetic.",
+        KA: "ერთი პროცესი: განმცხადებელი → დისტანციური იდენტიფიკაცია → სესხი → ავტომატური "
+        "შემოწმებები → ოფიცრის გადაწყვეტილება. ყველა მონაცემი სინთეტიკურია.",
+        EN: "One pipeline: applicant → remote identification → loan → automated checks → the "
+        "officer's decision. All data is synthetic.",
     },
     "step_applicant": {KA: "1 · განმცხადებელი", EN: "1 · Applicant"},
-    "step_loan": {KA: "2 · სესხი", EN: "2 · Loan"},
-    "step_checks": {KA: "3 · შემოწმებები", EN: "3 · Checks"},
+    "step_identification": {
+        KA: "2 · დისტანციური იდენტიფიკაცია",
+        EN: "2 · Remote identification",
+    },
+    "step_loan": {KA: "3 · სესხი", EN: "3 · Loan"},
+    "step_checks": {KA: "4 · შემოწმებები", EN: "4 · Checks"},
+    "liveness_title": {
+        KA: "ცოცხალი პირის შემოწმება · სებ-ის ბრძანება 104/04",
+        EN: "Liveness check · NBG Order 104/04",
+    },
+    "liveness_note": {
+        KA: "{count} შემთხვევითი დავალება კამერის წინ. სახის წერტილების მოდელი ამ ბრაუზერში "
+        "ადევნებს თვალს თავისა და თვალების მოძრაობას; სტატუსს ბანკის წესები ადგენს.",
+        EN: "{count} randomly chosen tasks in front of the camera. A face landmark model follows "
+        "the head and eye movements in this browser; the bank's rules set the status.",
+    },
+    "liveness_skip_hint": {
+        KA: "გამოტოვეთ ეს ნაბიჯი, თუ განმცხადებელი ფილიალში პირადად იდენტიფიცირდება.",
+        EN: "Skip this step when the applicant is identified in person in a branch.",
+    },
+    "liveness_need_data": {
+        KA: "ჯერ ჩატვირთეთ განმცხადებლის მონაცემები.",
+        EN: "Load the applicant's data first.",
+    },
+    "liveness_too_young": {
+        KA: "განმცხადებელი {age} წლამდეა: არასრულწლოვნებს არ ვიღებთ; იდენტიფიკაცია ფილიალში.",
+        EN: "The applicant is under {age}: minors are not filmed; identify them in a branch.",
+    },
+    "liveness_attempt": {
+        KA: "მცდელობა {attempt} / {max} ბოლო 24 საათში",
+        EN: "Attempt {attempt} of {max} in the last 24 hours",
+    },
+    "liveness_attempts_used": {
+        KA: "ბოლო 24 საათის {max} მცდელობა ამოიწურა (სებ-ის ბრძანება 104/04): განმცხადებელი "
+        "ფილიალში იდენტიფიცირდება.",
+        EN: "All {max} attempts of the last 24 hours are used (NBG Order 104/04): identify the "
+        "applicant in a branch.",
+    },
+    "liveness_retry": {KA: "ახალი მცდელობა, ახალი დავალებებით", EN: "New attempt, new tasks"},
+    "liveness_invalid": {
+        KA: "ბრაუზერის სესია წესებს არ შეესაბამება: {error}",
+        EN: "The session from the browser does not match the rules: {error}",
+    },
+    "liveness_tasks_done": {
+        KA: "შესრულებულია {completed} დავალება {total}-დან · {frames} კადრი გაანალიზდა",
+        EN: "{completed} of {total} tasks done · {frames} frames analysed",
+    },
+    "liveness_missed": {KA: "დრო ამოიწურა", EN: "Time is up"},
+    "liveness_not_stored": {
+        KA: "მიღებული კადრები არ ინახება: ისინი მხოლოდ ამ სესიაში ჩანს, აუდიტის ჟურნალში კი "
+        "მხოლოდ მათი SHA-256 იწერება.",
+        EN: "The captured frames are not stored: they are shown only in this session, and the "
+        "audit log keeps nothing but their SHA-256.",
+    },
+    "tab_identification": {KA: "დისტანციური იდენტიფიკაცია", EN: "Remote identification"},
+    "lv_kicker": {
+        KA: "სებ 104/04 · დისტანციური იდენტიფიკაცია",
+        EN: "NBG 104/04 · remote identification",
+    },
+    "lv_start_title": {KA: "ცოცხალი პირის შემოწმება", EN: "Liveness check"},
+    "lv_start_hint": {
+        KA: "განმცხადებელი კამერის წინ ასრულებს {count} შემთხვევით დავალებას.",
+        EN: "The applicant performs {count} randomly chosen tasks in front of the camera.",
+    },
+    "lv_idle": {
+        KA: "კამერა ჩაირთვება ღილაკზე დაჭერის შემდეგ.",
+        EN: "The camera starts when you press the button.",
+    },
+    "lv_start_button": {KA: "კამერის ჩართვა", EN: "Start the camera"},
+    "lv_loading": {KA: "სახის მოდელი იტვირთება…", EN: "Loading the face model…"},
+    "lv_align_title": {KA: "შეხედეთ კამერას", EN: "Look at the camera"},
+    "lv_align_hint": {
+        KA: "მოათავსეთ სახე ოვალში და გაჩერდით წამით.",
+        EN: "Keep your face inside the oval and hold still for a moment.",
+    },
+    "lv_task_hint": {
+        KA: "შეასრულეთ დავალება და დაბრუნდით კამერისკენ.",
+        EN: "Do the task, then look back at the camera.",
+    },
+    "lv_several_people": {
+        KA: "კადრში მხოლოდ განმცხადებელი უნდა იყოს",
+        EN: "Only the applicant should be in the frame",
+    },
+    "lv_no_face": {
+        KA: "სახე ვერ მოიძებნა — მიუახლოვდით კამერას",
+        EN: "No face found — move closer",
+    },
+    "lv_step": {KA: "დავალება {n} / {total}", EN: "Task {n} of {total}"},
+    "lv_task_done": {KA: "შესრულდა", EN: "Done"},
+    "lv_done_title": {KA: "სესია დასრულდა", EN: "Session complete"},
+    "lv_done_hint": {
+        KA: "ბანკის წესები ამოწმებს სესიას…",
+        EN: "The bank's rules are checking the session…",
+    },
+    "lv_privacy": {
+        KA: "მუშავდება ამ მოწყობილობაზე. კადრები არ ინახება; აუდიტის ჟურნალში მხოლოდ მათი "
+        "SHA-256 იწერება.",
+        EN: "Processed on this device. The frames are not stored; only their SHA-256 goes to "
+        "the audit log.",
+    },
+    "lv_model_label": {KA: "მოწყობილობაზე", EN: "On device"},
+    "lv_frames_label": {KA: "კადრი", EN: "frames"},
+    "lv_people_label": {KA: "ადამიანი კადრში", EN: "people in frame"},
     "path_existing": {KA: "არსებული კლიენტი", EN: "Existing customer"},
     "path_new": {KA: "ახალი კლიენტი", EN: "New customer"},
     "path_existing_hint": {
@@ -366,10 +467,12 @@ UI_TEXT: dict[str, Bilingual] = {
         KA: "ფოტოები SHA-256-ით, შეფასებები და გადაწყვეტილებები ჰეშ-ჯაჭვში.",
         EN: "Photos by SHA-256, assessments and decisions in a hash chain.",
     },
-    "g4_title": {KA: "არანაირი ბიომეტრია", EN: "No biometrics"},
+    "g4_title": {KA: "სახიდან არაფერი დგინდება", EN: "Nothing inferred from faces"},
     "g4_body": {
-        KA: "სახიდან ან ხმიდან გამოყვანილი ნიშნები და დაცული ატრიბუტები მოდელში არ შედის.",
-        EN: "No traits read from faces or voices, and no protected attributes in the models.",
+        KA: "ცოცხალი პირის შემოწმება მხოლოდ თავისა და თვალების მოძრაობას ამოწმებს; კადრები არ "
+        "ინახება, სახის ნიშნები და დაცული ატრიბუტები მოდელებში არ შედის.",
+        EN: "The liveness check follows only head and eye movements; frames are not stored, and "
+        "no traits read from faces and no protected attributes go into the models.",
     },
     "overview_try_title": {KA: "სცადეთ", EN: "Try it"},
     "try_full": {KA: "სესხის განაცხადი →", EN: "Loan application →"},

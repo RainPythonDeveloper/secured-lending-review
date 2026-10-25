@@ -29,6 +29,7 @@ from collateral_engine.income import EmploymentType, IncomeRecommendation
 from collateral_engine.lending.affordability import LoanProduct
 from collateral_engine.lending.customer import CustomerProfile, DataSource
 from collateral_engine.lending.decision import LoanDecisionKind
+from collateral_engine.lending.liveness import LivenessIssue, LivenessStatus, LivenessTask
 from collateral_engine.lending.pipeline import BindingLimit as LendingBindingLimit
 from collateral_engine.lending.pipeline import (
     LendingReason,
@@ -42,6 +43,9 @@ from collateral_engine.lending.texts import (
     LENDING_BINDING_NAMES,
     LENDING_REASON_TEMPLATES,
     LENDING_RECOMMENDATION_NAMES,
+    LIVENESS_ISSUE_NAMES,
+    LIVENESS_STATUS_NAMES,
+    LIVENESS_TASK_NAMES,
     LOAN_DECISION_NAMES,
     LOAN_PRODUCT_NAMES,
     STAGE_NAMES,
@@ -82,6 +86,9 @@ from collateral_engine.vehicles.report import VehicleAdjustmentGroup
         (CUSTOMER_PROFILE_NAMES, CustomerProfile),
         (LENDING_BINDING_NAMES, LendingBindingLimit),
         (LOAN_DECISION_NAMES, LoanDecisionKind),
+        (LIVENESS_TASK_NAMES, LivenessTask),
+        (LIVENESS_STATUS_NAMES, LivenessStatus),
+        (LIVENESS_ISSUE_NAMES, LivenessIssue),
     ],
 )
 def test_every_value_has_georgian_and_english_text(names: dict, members) -> None:

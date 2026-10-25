@@ -4,6 +4,7 @@ from collateral_engine.i18n import Bilingual, Language
 from collateral_engine.lending.affordability import LoanProduct
 from collateral_engine.lending.customer import CustomerProfile, DataSource
 from collateral_engine.lending.decision import LoanDecisionKind
+from collateral_engine.lending.liveness import LivenessIssue, LivenessStatus, LivenessTask
 from collateral_engine.lending.pipeline import (
     BindingLimit,
     Finding,
@@ -17,8 +18,26 @@ KA, EN = Language.GEORGIAN, Language.ENGLISH
 
 LENDING_REASON_TEMPLATES: dict[LendingReason, Bilingual] = {
     LendingReason.IDENTITY_CONFIRMED: {
-        KA: "პირი იდენტიფიცირებულია; სანქციების სიებსა და მოვალეთა რეესტრში ჩანაწერი არ არის.",
-        EN: "Identity confirmed; no record on the sanctions lists or in the debtors registry.",
+        KA: "სანქციების სიებსა და მოვალეთა რეესტრში ჩანაწერი არ არის.",
+        EN: "No record on the sanctions lists or in the debtors registry.",
+    },
+    LendingReason.LIVENESS_PASSED: {
+        KA: "დისტანციური იდენტიფიკაცია: შესრულებულია {completed} შემთხვევითი დავალება {tasks}-დან "
+        "(მცდელობა {attempt}, სებ-ის ბრძანება 104/04).",
+        EN: "Remote identification: {completed} of {tasks} randomly chosen liveness tasks done "
+        "(attempt {attempt}, NBG Order 104/04).",
+    },
+    LendingReason.LIVENESS_NOT_PASSED: {
+        KA: "დისტანციური იდენტიფიკაცია არ დასრულდა: შესრულებულია {completed} დავალება {tasks}-დან "
+        "(მცდელობა {attempt}); ოფიცერი განმცხადებელს ფილიალში იდენტიფიცირებს.",
+        EN: "Remote identification not completed: {completed} of {tasks} tasks done (attempt "
+        "{attempt}); the officer identifies the applicant in a branch.",
+    },
+    LendingReason.LIVENESS_INCONCLUSIVE: {
+        KA: "დისტანციური იდენტიფიკაცია ვერ შეფასდა (კამერა, მოდელი ან კადრი; შესრულებულია "
+        "{completed} დავალება {tasks}-დან, მცდელობა {attempt}); ეს უარის საფუძველი არ არის.",
+        EN: "Remote identification inconclusive (camera, model or frame; {completed} of {tasks} "
+        "tasks done, attempt {attempt}); this is not a ground for refusal.",
     },
     LendingReason.SANCTIONS_MATCH: {
         KA: "სახელი ემთხვევა ჩანაწერს სიაში „{list}“; საჭიროა შესაბამისობის შემოწმება.",
@@ -203,3 +222,46 @@ LOAN_DECISION_NAMES: dict[LoanDecisionKind, Bilingual] = {
 
 def finding_text(finding: Finding, language: Language) -> str:
     return LENDING_REASON_TEMPLATES[finding.reason][language].format(**finding.params)
+
+
+# Spoken to the applicant; the camera view is mirrored, so "left" is the applicant's own left.
+LIVENESS_TASK_NAMES: dict[LivenessTask, Bilingual] = {
+    LivenessTask.TURN_LEFT: {KA: "მოაბრუნეთ თავი მარცხნივ", EN: "Turn your head to the left"},
+    LivenessTask.TURN_RIGHT: {KA: "მოაბრუნეთ თავი მარჯვნივ", EN: "Turn your head to the right"},
+    LivenessTask.LOOK_UP: {KA: "აიხედეთ ზემოთ", EN: "Look up"},
+    LivenessTask.LOOK_DOWN: {KA: "დაიხედეთ ქვემოთ", EN: "Look down"},
+    LivenessTask.BLINK: {KA: "დაახამხამეთ თვალები", EN: "Blink"},
+}
+
+LIVENESS_STATUS_NAMES: dict[LivenessStatus, Bilingual] = {
+    LivenessStatus.PASSED: {KA: "ცოცხალი პირის შემოწმება გავლილია", EN: "Liveness confirmed"},
+    LivenessStatus.NOT_PASSED: {KA: "შემოწმება არ დასრულდა", EN: "Liveness not completed"},
+    LivenessStatus.INCONCLUSIVE: {KA: "ვერ შეფასდა", EN: "Inconclusive"},
+}
+
+LIVENESS_ISSUE_NAMES: dict[LivenessIssue, Bilingual] = {
+    LivenessIssue.CAMERA_UNAVAILABLE: {
+        KA: "კამერა მიუწვდომელია ან წვდომა არ დაიშვა.",
+        EN: "The camera was not available or access was denied.",
+    },
+    LivenessIssue.MODEL_UNAVAILABLE: {
+        KA: "სახის წერტილების მოდელი ვერ ჩაიტვირთა.",
+        EN: "The face landmark model did not load.",
+    },
+    LivenessIssue.APPLICANT_NOT_IN_FRAME: {
+        KA: "განმცხადებელი კადრის ცენტრში არ იყო.",
+        EN: "The applicant was not centred in the frame.",
+    },
+    LivenessIssue.SEVERAL_PEOPLE_IN_FRAME: {
+        KA: "კადრში ერთზე მეტი ადამიანი იყო.",
+        EN: "More than one person was in the frame.",
+    },
+    LivenessIssue.TASKS_DIFFER_FROM_DRAWN: {
+        KA: "შესრულებული დავალებები არ ემთხვევა ბანკის მიერ შერჩეულს.",
+        EN: "The tasks performed differ from the tasks the bank drew.",
+    },
+    LivenessIssue.TASK_NOT_COMPLETED: {
+        KA: "დავალება დროულად არ შესრულდა.",
+        EN: "A task was not done in time.",
+    },
+}

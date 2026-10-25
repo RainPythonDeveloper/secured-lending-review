@@ -37,6 +37,13 @@ from collateral_engine.lending.decision import (
     record_loan_decision,
 )
 from collateral_engine.lending.income_analysis import analyse_income
+from collateral_engine.lending.liveness import (
+    LIVENESS_MODEL,
+    LivenessCheck,
+    LivenessStatus,
+    LivenessTask,
+    LivenessTaskResult,
+)
 from collateral_engine.lending.pipeline import (
     BindingLimit,
     LendingReason,
@@ -237,6 +244,73 @@ def test_affordable_consumer_loan_is_offered_in_full(pipeline, snapshot) -> None
 
     assert report.recommendation is LendingRecommendation.OFFER
     assert report.offer_amount_gel == Decimal("15000")
+
+
+def liveness_check(status: LivenessStatus) -> LivenessCheck:
+    is_completed = status is LivenessStatus.PASSED
+    return LivenessCheck(
+        session_id="session-1",
+        attempt=1,
+        status=status,
+        issues=[],
+        tasks=[
+            LivenessTaskResult(
+                task=task, is_completed=is_completed, response_ms=1500, frame_sha256=None
+            )
+            for task in (LivenessTask.TURN_LEFT, LivenessTask.BLINK, LivenessTask.LOOK_UP)
+        ],
+        frames_analysed=200,
+        model=LIVENESS_MODEL,
+        policy_version="2026-10",
+    )
+
+
+def test_passed_liveness_check_is_named_in_the_identity_stage(pipeline, snapshot) -> None:
+    passed = liveness_check(LivenessStatus.PASSED)
+
+    report = pipeline.assess(
+        application(snapshot.customer_file(SALARIED_CUSTOMER), liveness=passed)
+    )
+
+    identity = stage(report, StageKind.IDENTITY)
+    assert identity.status is StageStatus.PASSED
+    assert identity.findings[0].reason is LendingReason.LIVENESS_PASSED
+    assert "104/04" in identity.source
+    assert report.recommendation is LendingRecommendation.OFFER
+
+
+@pytest.mark.parametrize("status", [LivenessStatus.NOT_PASSED, LivenessStatus.INCONCLUSIVE])
+def test_liveness_check_not_passed_goes_to_the_officer_not_to_refusal(
+    pipeline, snapshot, status
+) -> None:
+    customer_file = snapshot.customer_file(SALARIED_CUSTOMER)
+
+    report = pipeline.assess(application(customer_file, liveness=liveness_check(status)))
+
+    assert stage(report, StageKind.IDENTITY).status is StageStatus.REVIEW
+    assert report.recommendation is LendingRecommendation.OFFICER_REVIEW
+
+
+def test_branch_identification_adds_no_liveness_finding(pipeline, snapshot) -> None:
+    report = pipeline.assess(application(snapshot.customer_file(SALARIED_CUSTOMER)))
+
+    reasons = [finding.reason for finding in stage(report, StageKind.IDENTITY).findings]
+    assert reasons == [LendingReason.IDENTITY_CONFIRMED]
+
+
+def test_remote_identification_counts_towards_the_time_saved(
+    pipeline, snapshot, lending_policy
+) -> None:
+    customer_file = snapshot.customer_file(SALARIED_CUSTOMER)
+    passed = liveness_check(LivenessStatus.PASSED)
+
+    in_branch = pipeline.assess(application(customer_file))
+    remote = pipeline.assess(application(customer_file, liveness=passed))
+
+    assert (
+        remote.manual_minutes_replaced - in_branch.manual_minutes_replaced
+        == lending_policy.manual_minutes.remote_identification
+    )
 
 
 def test_pti_cuts_a_large_request(pipeline, snapshot) -> None:
