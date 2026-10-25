@@ -113,9 +113,10 @@ Details in [`collateral-engine/README.md`](collateral-engine/README.md) and
 ### Live demo
 
 **https://x7x-secured-lending-review.hf.space**: no login and no test credentials, all data is
-synthetic. The Space runs the officer console alone, so pick a customer with **Use the bank's
-records**; the TBC sandbox consent needs the Open Banking gateway, which runs with Docker below.
-The first visit after a pause can take a minute while the Space wakes up.
+synthetic. The Space runs the officer console and the Open Banking gateway together, so the TBC
+sandbox consent works end to end (approve it on the sandbox page that opens in a new tab), and
+the AI reads the uploaded photos. Its configuration is in [`deploy/huggingface/`](deploy/huggingface/);
+the API keys are Space secrets, never in the repository.
 
 ### With Docker (recommended)
 

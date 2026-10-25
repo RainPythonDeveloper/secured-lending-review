@@ -18,6 +18,10 @@ https://github.com/Weegoos/gita-project
 
 All data is synthetic. No login is needed.
 
-This Space runs the console alone. The Open Banking gateway is not deployed here, so **Use the
-bank's records** loads a customer instead of the TBC sandbox consent; the full platform, gateway
-included, runs with `docker compose up --build` from the repository.
+The Space runs the officer console and the Open Banking gateway in one container: nginx on port
+7860 sends the TBC sandbox's OAuth callback (`/oauth/callback`) and the gateway's Swagger
+(`/api/docs`) to the gateway and everything else to the console.
+
+The AI analysis of photos uses the Space secrets `NVIDIA_API_KEY` (or `ANTHROPIC_API_KEY` with
+`COLLATERAL_VISION_PROVIDER=anthropic`) and the variable `COLLATERAL_VISION_ENABLED=true`; keys are
+never stored in the repository.
