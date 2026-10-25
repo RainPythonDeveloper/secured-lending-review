@@ -310,7 +310,7 @@ Exact versions and every dependency: [`collateral-engine/README.md`](collateral-
   set by hand.
 - Credit history, RS.ge, the sanctions list and the Debtors Registry are synthetic stand-ins.
 - Some NBG values come from press reports and are marked to verify (see References).
-- The API does not authenticate callers; run it on localhost or a private network.
+- The API does not authenticate callers; run it on localhost or a private network. 
 
 ## Repository layout
 
