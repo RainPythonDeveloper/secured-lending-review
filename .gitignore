@@ -14,6 +14,8 @@ coverage/
 # Kept local: the repository is public.
 docs/hackathon/
 docs/research/
+# Demo video sources: voice takes, screen recordings and the render.
+demo-video/
 
 # Local session notes
 *-results-copyhtml.txt
