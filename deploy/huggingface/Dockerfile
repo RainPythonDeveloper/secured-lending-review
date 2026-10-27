@@ -1,7 +1,7 @@
 # Hugging Face Space: the officer console and the Open Banking gateway in one container, built
 # from the GitHub repository. The Space exposes one port, so nginx on 7860 sends the OAuth
 # callback and the gateway's Swagger to the gateway and everything else to the console.
-ARG REPOSITORY=https://github.com/Weegoos/gita-project.git
+ARG REPOSITORY=https://github.com/RainPythonDeveloper/secured-lending-review.git
 ARG BRANCH=main
 
 FROM node:24-slim AS source
@@ -10,7 +10,7 @@ ARG BRANCH
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 # Changes whenever main moves, so a rebuild never reuses an old clone.
-ADD https://api.github.com/repos/Weegoos/gita-project/git/refs/heads/${BRANCH} /tmp/branch-ref.json
+ADD https://api.github.com/repos/RainPythonDeveloper/secured-lending-review/git/refs/heads/${BRANCH} /tmp/branch-ref.json
 RUN git clone --depth 1 --branch "${BRANCH}" "${REPOSITORY}" /platform
 WORKDIR /platform/server
 RUN npm ci && npm run build && npm prune --omit=dev

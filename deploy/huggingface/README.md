@@ -14,7 +14,7 @@ short_description: Collateral second opinion and NBG loan checks
 
 The officer console of the platform built for the NBG AI & Open Banking Hackathon 2026 (Track 1
 AI in Finance, AI1 Credit Risk & Lending). Source, architecture and guardrails:
-https://github.com/Weegoos/gita-project
+https://github.com/RainPythonDeveloper/secured-lending-review
 
 All data is synthetic. No login is needed.
 
