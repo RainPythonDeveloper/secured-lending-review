@@ -124,8 +124,8 @@ the API keys are Space secrets, never in the repository.
 Requires Docker Desktop with about 8 GB of memory.
 
 ```bash
-git clone https://github.com/Weegoos/gita-project.git
-cd gita-project
+git clone https://github.com/RainPythonDeveloper/secured-lending-review.git
+cd secured-lending-review
 docker compose up --build
 ```
 
